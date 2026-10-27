@@ -18,7 +18,7 @@ button{background:#164e87;color:white;border:0;padding:10px 14px;border-radius:8
 button:disabled{opacity:.45;cursor:not-allowed}.hint{font-size:12px;color:#667085;line-height:1.5}
 .status{padding:10px 12px;background:#eef5fc;border-radius:8px;font-size:13px;margin-top:12px}
 .cards{display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:12px}
-.metric{border:1px solid #e1e7ef;border-radius:12px;padding:15px;background:linear-gradient(180deg,#fff,#fbfcfe)}.metric span{font-size:12px;color:#667085;display:block}.metric strong{font-size:20px;display:block;margin-top:7px;overflow-wrap:anywhere;color:#12345a}
+.metric{border:1px solid #e1e7ef;border-radius:12px;padding:15px;background:linear-gradient(180deg,#fff,#fbfcfe)}.metric span{font-size:12px;color:#667085;display:block}.metric strong{font-size:20px;display:block;margin-top:7px;overflow-wrap:anywhere;color:#12345a}.metric.negative-balance{background:#fff1f0;border-color:#dc2626}.metric.negative-balance span,.metric.negative-balance strong{color:#b91c1c}
 .table-wrap{overflow-x:auto;overflow-y:visible;max-height:none;border:1px solid #cbd7e6;border-radius:10px;background:#fff}
 table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px;white-space:nowrap}
 th,td{padding:10px 12px;border-right:1px solid #dce4ef;border-bottom:1px solid #dce4ef;text-align:left;vertical-align:middle}
@@ -86,7 +86,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
       <div class="metric"><span>Total cadastrado em aditamentos</span><strong id="mCadAditamentos">—</strong></div>
       <div class="metric"><span>Total cadastrado</span><strong id="mTotalCadastrado">—</strong></div>
       <div class="metric"><span>Total empenhado</span><strong id="mEmp">—</strong></div>
-      <div class="metric"><span>Saldo do ajuste</span><strong id="mSaldo">—</strong></div>
+      <div class="metric" id="saldoAjusteCard"><span>Saldo do ajuste</span><strong id="mSaldo">—</strong></div>
       <div class="metric"><span>Total pago</span><strong id="mPago">—</strong></div>
       <div class="metric"><span>Saldo total a pagar</span><strong id="mSaldoPagar">—</strong></div>
     </div>
@@ -353,6 +353,16 @@ function render(){
     {label:'Capital',num:true,get:r=>money(r.cap)},
     {label:'Total',num:true,get:r=>money(r.total)}
   ],empAgg,'Nenhum empenho encontrado para este ajuste.');
+  // Linha de total da tabela de empenhos, somando exatamente os valores apresentados.
+  const empTableElement=$('empTable').querySelector('table');
+  if(empTableElement){
+    const totalEmpCusteio=empAgg.reduce((s,r)=>s+r.c,0);
+    const totalEmpCapital=empAgg.reduce((s,r)=>s+r.cap,0);
+    const totalEmpGeral=empAgg.reduce((s,r)=>s+r.total,0);
+    const tfoot=document.createElement('tfoot');
+    tfoot.innerHTML=`<tr><td colspan="2">TOTAL GERAL</td><td class="num">${esc(money(totalEmpCusteio))}</td><td class="num">${esc(money(totalEmpCapital))}</td><td class="num">${esc(money(totalEmpGeral))}</td></tr>`;
+    empTableElement.appendChild(tfoot);
+  }
     // Payments, preserve every row, because OP duplication rule not yet confirmed.
   currentPayments=currentRows.filter(r=>String(get(r,'OP')).trim()!=='').map(r=>{
     const dt=dateParts(r,'pay');
@@ -373,6 +383,7 @@ function render(){
   $('mTotalCadastrado').textContent=money(totalCadastrado);
   $('mEmp').textContent=money(totalEmpenhado);
   $('mSaldo').textContent=money(saldoAjuste);
+  $('saldoAjusteCard').classList.toggle('negative-balance',saldoAjuste<0);
   $('mPago').textContent=layoutInfo.hasPayments?money(totalPago):'Não disponível';
   $('mSaldoPagar').textContent=layoutInfo.hasPayments?money(saldoAPagar):'Não disponível';
   $('dateFrom').value='';$('dateTo').value='';
@@ -432,7 +443,7 @@ function loadTextIntoPage(text, filename){
     $('conv').innerHTML='<option value="">Selecione um ajuste</option>'+convs.map(c=>`<option value="${esc(c)}">${esc(formatAdjustmentNumber(c))}</option>`).join('');
     $('conv').disabled=false;$('search').disabled=false;
         $('status').hidden=true;
-    $('conv').value='';$('search').value='';$('mConv').textContent='—';$('mEnt').textContent='—';$('mCadInicial').textContent='—';$('mCadAditamentos').textContent='—';$('mTotalCadastrado').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';$('mSaldo').textContent='—';$('mSaldoPagar').textContent='—';
+    $('conv').value='';$('search').value='';$('mConv').textContent='—';$('mEnt').textContent='—';$('mCadInicial').textContent='—';$('mCadAditamentos').textContent='—';$('mTotalCadastrado').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';$('mSaldo').textContent='—';$('saldoAjusteCard').classList.remove('negative-balance');$('mSaldoPagar').textContent='—';
         ['reconTable','cadTable','empTable','payTable'].forEach(id=>$(id).innerHTML='<div class="empty">Selecione um ajuste para visualizar os dados.</div>');
     $('dateFrom').disabled=true;$('dateTo').disabled=true;$('clearDates').disabled=true;$('export').disabled=true;
     $('payCount').textContent='0 registros';

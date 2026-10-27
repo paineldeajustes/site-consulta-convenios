@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Consulta de Convênios — SEFAZ (v6)</title>
+<title>Consulta de Ajustes</title>
 <style>
 :root{font-family:Inter,'Segoe UI',Arial,sans-serif;color:#172b4d;background:#f3f6fb}
 *{box-sizing:border-box}body{margin:0}header{background:linear-gradient(120deg,#12345a,#176b75);color:white;padding:26px 28px;box-shadow:0 4px 18px #12345a20}
@@ -51,61 +51,65 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 .recon-metrics tr.metric-paid td{border-top:2px solid #d4deeb}
 .recon-card-foot{padding:8px 13px;font-size:11px;color:#6a7890;background:#fafbfd;border-top:1px solid #e5ebf3}
 @media(max-width:850px){.recon-grid{grid-template-columns:1fr}}
-
-
+.payment-filters{grid-template-columns:repeat(5,minmax(125px,1fr))}
+.payment-actions{flex-wrap:wrap}
+@media(max-width:1100px){.payment-filters{grid-template-columns:repeat(2,minmax(140px,1fr))}}
+@media(max-width:560px){.payment-filters{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header>
-  <h1>Consulta de Ajustes do Terceiro Setor</h1>
-  <p>SEFAZ · Consulta local do arquivo diário de convênios</p>
+  <h1>Consulta de Ajustes</h1>
+  <p>Sefaz - Secretaria da Fazenda</p>
+  <p>Departamento de Orçamento e Gestão - SEFAZ-4</p>
 </header>
 <main>
   <section class="panel">
     <div class="section-head">
-      <h2>Consulta diária</h2>
+      <h2>Seleção do ajuste</h2>
       <span id="fileMeta" class="pill">Conectando ao Supabase…</span>
     </div>
     <div class="controls" style="margin-top:14px;grid-template-columns:repeat(2,minmax(180px,1fr))">
-      <div><label for="conv">Número do convênio</label><select id="conv" disabled><option value="">Carregando convênios…</option></select></div>
-      <div class="search-wrap"><label for="search">Localizar convênio</label><input id="search" type="search" placeholder="Digite o número ou nome da entidade" autocomplete="off" disabled><div id="suggestions" class="suggestions" hidden></div></div>
+      <div><label for="conv">Número do ajuste</label><select id="conv" disabled><option value="">Carregando ajustes…</option></select></div>
+      <div class="search-wrap"><label for="search">Localizar ajuste</label><input id="search" type="search" placeholder="Digite o número ou nome da entidade" autocomplete="off" disabled><div id="suggestions" class="suggestions" hidden></div></div>
     </div>
     <div id="status" class="status">Conectando ao Supabase e carregando a base mais recente…</div>
   </section>
 
   <section class="panel">
-    <div class="section-head"><h2>Identificação do ajuste</h2><span id="recordCount" class="pill">Nenhum convênio selecionado</span></div>
+    <div class="section-head"><h2>Identificação do ajuste</h2></div>
     <div class="cards">
-      <div class="metric"><span>Convênio</span><strong id="mConv">—</strong></div>
+      <div class="metric"><span>Ajuste</span><strong id="mConv">—</strong></div>
       <div class="metric"><span>Entidade</span><strong id="mEnt" style="font-size:15px">—</strong></div>
       <div class="metric"><span>Total empenhado</span><strong id="mEmp">—</strong></div>
       <div class="metric"><span>Total pago</span><strong id="mPago">—</strong></div>
     </div>
-    <p class="hint">Os totais de empenho e pagamento são somas dos registros identificados na base. Antes de uso oficial, confirme se cada registro é único e se não há repetição de valores por detalhamento.</p>
   </section>
 
   <section class="panel">
-    <div class="section-head"><div><h2>1. Conciliação financeira por fonte</h2><p class="hint">Cadastro inicial + aditamentos = total cadastrado; depois, empenhos e pagamentos. O total pago considera VALOR-OP, consolidado por fonte e sem separar categoria econômica.</p></div><span class="pill">Visão consolidada</span></div>
-    <div id="reconTable" class="table-wrap"><div class="empty">Selecione um convênio para visualizar a conciliação.</div></div>
-    <p class="hint">Esta visão soma custeio e capital para facilitar a leitura por fonte. A tabela seguinte detalha os valores cadastrados por categoria econômica. Os saldos são apresentados separadamente; as fontes mantêm o código de origem do arquivo.</p>
+    <div class="section-head"><h2>1. Cruzamento entre valores cadastrados do ajuste inicial vs valores empenhados e pagos</h2><span class="pill">Visão consolidada</span></div>
+    <div id="reconTable" class="table-wrap"><div class="empty">Selecione um ajuste para visualizar a conciliação.</div></div>
+    <p class="hint">Esta visão soma custeio e capital para facilitar a leitura por fonte. A tabela seguinte detalha os valores cadastrados por categoria econômica.</p>
   </section>
 
   <section class="panel">
     <div class="section-head"><h2>2. Valores cadastrados por fonte e categoria econômica</h2><span class="pill">Termo inicial e aditamentos conforme registros do arquivo</span></div>
-    <div id="cadTable" class="table-wrap"><div class="empty">Carregue um arquivo e selecione um convênio.</div></div>
+    <div id="cadTable" class="table-wrap"><div class="empty">Carregue um arquivo e selecione um ajuste.</div></div>
   </section>
 
   <section class="panel">
-    <div class="section-head"><h2>3. Empenhos por ano, fonte e categoria econômica</h2><span id="empCount" class="pill">0 registros</span></div>
+    <div class="section-head"><h2>3. Empenhos por ano, fonte e categoria econômica</h2></div>
     <div id="empTable" class="table-wrap"><div class="empty">Sem dados para exibir.</div></div>
   </section>
 
   <section class="panel">
     <div class="section-head"><h2>4. Pagamentos à entidade</h2><span id="payCount" class="pill">0 registros</span></div>
-    <div class="controls" style="margin-bottom:12px">
+    <div class="controls payment-filters" style="margin-bottom:12px">
       <div><label for="dateFrom">Data inicial</label><input type="date" id="dateFrom" disabled></div>
       <div><label for="dateTo">Data final</label><input type="date" id="dateTo" disabled></div>
-      <div style="display:flex;align-items:end;gap:8px"><button id="clearDates" type="button" disabled>Limpar período</button><button id="export" type="button" disabled>Exportar pagamentos CSV</button></div>
+      <div><label for="yearFilter">Ano</label><select id="yearFilter" disabled><option value="">Todos os anos</option></select></div>
+      <div><label for="quadrimFilter">Quadrimestre</label><select id="quadrimFilter" disabled><option value="">Todos os quadrimestres</option><option value="1">1º quadrimestre (jan–abr)</option><option value="2">2º quadrimestre (mai–ago)</option><option value="3">3º quadrimestre (set–dez)</option></select></div>
+      <div class="payment-actions" style="display:flex;align-items:end;gap:8px"><button id="clearDates" type="button" disabled>Limpar filtros</button><button id="export" type="button" disabled>Exportar pagamentos CSV</button></div>
     </div>
     <div id="payTable" class="table-wrap"><div class="empty">Sem dados para exibir.</div></div>
   </section>
@@ -128,6 +132,7 @@ async function supabaseGet(path){
 
 async function loadLatestFromSupabase(){
   if(!SUPABASE_PUBLIC_KEY || SUPABASE_PUBLIC_KEY === 'COLE_SUA_CHAVE_PUBLICA_AQUI'){
+    $('status').hidden=false;
     $('status').textContent = 'Falta configurar a chave pública do Supabase no index.html.';
     return;
   }
@@ -148,8 +153,9 @@ async function loadLatestFromSupabase(){
       lines.push(fields.map(quoteField).join(';'));
     }
     loadTextIntoPage(lines.join('\n'), `Supabase · ${latest.file_name || 'RET_FONTES.txt'}`);
-    $('fileMeta').textContent = `Supabase · ${records.length.toLocaleString('pt-BR')} registros · importado em ${latest.finished_at ? new Date(latest.finished_at).toLocaleString('pt-BR') : 'data não informada'}`;
+    $('fileMeta').textContent = `Supabase · atualizado em ${latest.finished_at ? new Date(latest.finished_at).toLocaleString('pt-BR') : 'data não informada'}`;
   }catch(err){
+    $('status').hidden=false;
     $('status').textContent = 'Não foi possível carregar os dados do Supabase: ' + (err?.message || String(err)) + '.';
     console.error('Falha ao carregar dados do Supabase', err);
   }
@@ -218,7 +224,19 @@ function dateParts(row,prefix){
 }
 function fmtDate(dt){return dt?dt.toLocaleDateString('pt-BR'):'—';}
 function iso(dt){return dt?`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`:'';}
-function sourceLabel(v){return String(v||'Não informada').trim()||'Não informada';}
+function sourceLabel(v){
+  const raw=String(v??'').trim();
+  if(!raw)return 'Não informada';
+  const labels={M:'Municipal',E:'Estadual',F:'Federal',O:'Outras'};
+  return labels[norm(raw)]||raw;
+}
+function formatAdjustmentNumber(value){
+  const raw=String(value??'').trim();
+  const match=raw.match(/^(\d+)\s*\/\s*(\d{4})\s*-?\s*([A-Za-z].*)$/);
+  if(!match)return raw;
+  return `${match[1].padStart(5,'0')}/${match[2]}-${match[3].trim()}`;
+}
+function normalizeAdjustmentSearch(value){return norm(value).replace(/[\s-]+/g,'');}
 function makeTable(container, cols, rows, empty){
   if(!rows.length){$(container).innerHTML=`<div class="empty">${empty||'Nenhum registro encontrado.'}</div>`;return;}
   let html='<table><thead><tr>'+cols.map(c=>`<th>${esc(c.label)}</th>`).join('')+'</tr></thead><tbody>';
@@ -227,7 +245,7 @@ function makeTable(container, cols, rows, empty){
 }
 function renderReconVertical(rows){
   const el=$('reconTable');
-  if(!rows.length){el.innerHTML='<div class="empty">Não há valores de cadastro, empenhos ou pagamentos para este convênio.</div>';return;}
+  if(!rows.length){el.innerHTML='<div class="empty">Não há valores de cadastro, empenhos ou pagamentos para este ajuste.</div>';return;}
   const metrics=[
     ['Cadastro inicial','initial','base'],
     ['Aditamentos (+/−)','additions','base'],
@@ -239,7 +257,7 @@ function renderReconVertical(rows){
   ];
   let html='<div class="recon-grid">';
   for(const r of rows){
-    html+=`<article class="recon-card"><div class="recon-card-head"><strong>Fonte ${esc(r.source)}</strong><span>Conciliação</span></div><table class="recon-metrics"><tbody>`;
+    html+=`<article class="recon-card"><div class="recon-card-head"><strong>Fonte ${esc(r.source)}</strong></div><table class="recon-metrics"><tbody>`;
     metrics.forEach(m=>{
       const cls=m[2]==='total'?'metric-total':m[2]==='balance'?'metric-balance':m[2]==='flow'?'metric-flow':m[2]==='paid'?'metric-paid':'';
       html+=`<tr class="${cls}"><td>${esc(m[0])}</td><td>${money(r[m[1]])}</td></tr>`;
@@ -260,9 +278,8 @@ function render(){
   if(!cv){return;}
   currentRows=allRows.filter(r=>String(get(r,'CONVENIO')).trim()===cv);
   const ent=currentRows.map(r=>String(get(r,'ENTIDADE')).trim()).find(Boolean)||'—';
-  $('mConv').textContent=cv; $('mEnt').textContent=ent;
-  $('recordCount').textContent=`${currentRows.length} linhas do arquivo`;
-  // Conciliação consolidada somente por fonte: soma custeio e capital para facilitar a leitura.
+  $('mConv').textContent=formatAdjustmentNumber(cv); $('mEnt').textContent=ent;
+    // Conciliação consolidada somente por fonte: soma custeio e capital para facilitar a leitura.
   const recMap = new Map();
   function recAdd(source, field, value){
     const key=sourceLabel(source);
@@ -315,9 +332,8 @@ function render(){
     {label:'Custeio',num:true,get:r=>money(r.c)},
     {label:'Capital',num:true,get:r=>money(r.cap)},
     {label:'Total',num:true,get:r=>money(r.total)}
-  ],empAgg,'Nenhum empenho encontrado para este convênio.');
-  $('empCount').textContent=`${emps.length} linhas de empenho`;
-  // Payments, preserve every row, because OP duplication rule not yet confirmed.
+  ],empAgg,'Nenhum empenho encontrado para este ajuste.');
+    // Payments, preserve every row, because OP duplication rule not yet confirmed.
   currentPayments=currentRows.filter(r=>String(get(r,'OP')).trim()!=='').map(r=>{
     const dt=dateParts(r,'pay');
     return {raw:r,dt,op:String(get(r,'OP')).trim(),ne:String(get(r,'EMPENHO_1')).trim(),
@@ -326,13 +342,26 @@ function render(){
   }).sort((a,b)=>(b.dt?.getTime()||0)-(a.dt?.getTime()||0));
   $('mEmp').textContent=money(emps.reduce((s,r)=>s+num(get(r,'VALOR-NE')),0));
   $('mPago').textContent=layoutInfo.hasPayments?money(currentPayments.reduce((s,r)=>s+r.total,0)):'Não disponível';
+  $('dateFrom').value='';$('dateTo').value='';
+  configurePaymentFilters();
   $('dateFrom').disabled=!layoutInfo.hasPayments;$('dateTo').disabled=!layoutInfo.hasPayments;$('clearDates').disabled=!layoutInfo.hasPayments;$('export').disabled=!layoutInfo.hasPayments;
   renderPayments();
+}
+function configurePaymentFilters(){
+  const yearControl=$('yearFilter');
+  const years=[...new Set(currentPayments.map(p=>p.dt?p.dt.getFullYear():null).filter(Boolean))].sort((a,b)=>b-a);
+  yearControl.innerHTML='<option value="">Todos os anos</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  yearControl.value='';
+  $('quadrimFilter').value='';
+  yearControl.disabled=!layoutInfo.hasPayments;
+  $('quadrimFilter').disabled=!layoutInfo.hasPayments;
 }
 function renderPayments(){
   const from=$('dateFrom').value?new Date($('dateFrom').value+'T00:00:00'):null;
   const to=$('dateTo').value?new Date($('dateTo').value+'T23:59:59'):null;
-  const rows=currentPayments.filter(p=>(!from||(p.dt&&p.dt>=from))&&(!to||(p.dt&&p.dt<=to)));
+  const selectedYear=$('yearFilter').value;
+  const selectedQuad=$('quadrimFilter').value;
+  const rows=currentPayments.filter(p=>(!from||(p.dt&&p.dt>=from))&&(!to||(p.dt&&p.dt<=to))&&(!selectedYear||(p.dt&&p.dt.getFullYear()===Number(selectedYear)))&&(!selectedQuad||(p.dt&&Math.floor(p.dt.getMonth()/4)+1===Number(selectedQuad))));
   $('payCount').textContent=`${rows.length} registros exibidos`;
   makeTable('payTable',[
     {label:'Data do pagamento',get:r=>fmtDate(r.dt)},
@@ -352,6 +381,7 @@ function renderPayments(){
   }
 }
 function loadTextIntoPage(text, filename){
+  $('status').hidden=false;
   try{
     if(!text || !String(text).trim()){
       $('status').textContent='O arquivo foi localizado, mas está vazio. Confira RET_FONTES.txt.';
@@ -361,25 +391,25 @@ function loadTextIntoPage(text, filename){
     headers=parsed.hs;allRows=parsed.rows;layoutInfo={hasPayments:parsed.hasPayments,maxFields:parsed.maxFields};
     const convHeader=headers.find(h=>norm(h.replace(/^\uFEFF/, '').replace(/^\"|\"$/g,''))==='CONVENIO');
     if(!convHeader){
-      $('status').textContent=`Arquivo lido (${String(text).length.toLocaleString('pt-BR')} caracteres), mas o cabeçalho CONVENIO não foi identificado. Separador detectado: ${parsed.delimiter==='\t'?'TAB':JSON.stringify(parsed.delimiter)}; colunas encontradas: ${headers.length}. Verifique se o TXT é delimitado ou de largura fixa.`;
+      $('status').textContent=`Arquivo lido (${String(text).length.toLocaleString('pt-BR')} caracteres), mas o campo que identifica o ajuste (CONVENIO) não foi identificado. Separador detectado: ${parsed.delimiter==='\t'?'TAB':JSON.stringify(parsed.delimiter)}; colunas encontradas: ${headers.length}. Verifique se o TXT é delimitado ou de largura fixa.`;
       console.error('Falha ao reconhecer cabeçalho do TXT', {headers, delimiter:parsed.delimiter, preview:String(text).slice(0,500)});
       return;
     }
     const convs=[...new Set(allRows.map(r=>String(r[convHeader]??'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-    $('conv').innerHTML='<option value="">Selecione um convênio</option>'+convs.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    $('conv').innerHTML='<option value="">Selecione um ajuste</option>'+convs.map(c=>`<option value="${esc(c)}">${esc(formatAdjustmentNumber(c))}</option>`).join('');
     $('conv').disabled=false;$('search').disabled=false;
-    const paymentStatus=parsed.hasPayments?'bloco de pagamentos identificado':'sem bloco de pagamentos (OP/VALOR-OP)';
-    $('status').textContent=`Dados carregados · ${allRows.length.toLocaleString('pt-BR')} linhas · ${convs.length.toLocaleString('pt-BR')} convênios · ${paymentStatus}`;
+        $('status').hidden=true;
     $('conv').value='';$('search').value='';$('mConv').textContent='—';$('mEnt').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';
-    $('recordCount').textContent='Nenhum convênio selecionado';
-    ['reconTable','cadTable','empTable','payTable'].forEach(id=>$(id).innerHTML='<div class="empty">Selecione um convênio para visualizar os dados.</div>');
+        ['reconTable','cadTable','empTable','payTable'].forEach(id=>$(id).innerHTML='<div class="empty">Selecione um ajuste para visualizar os dados.</div>');
     $('dateFrom').disabled=true;$('dateTo').disabled=true;$('clearDates').disabled=true;$('export').disabled=true;
-    $('empCount').textContent='0 registros';$('payCount').textContent='0 registros';
+    $('payCount').textContent='0 registros';
     window.CONVENIO_OPTIONS=convs.map(cv=>{
       const row=allRows.find(r=>String(r[convHeader]??'').trim()===cv);
       return {cv, ent:row?String(get(row,'ENTIDADE')||'').trim():''};
     });
+    $('status').hidden=true;
   }catch(err){
+    $('status').hidden=false;
     $('status').textContent='Falha ao processar o TXT: '+(err&&err.message?err.message:String(err));
     console.error('Falha no carregamento da consulta',err);
   }
@@ -394,22 +424,22 @@ function chooseConv(value){
   const cv=String(value||'').trim();
   if(!cv)return;
   const found=(window.CONVENIO_OPTIONS||[]).find(o=>o.cv===cv || norm(o.cv)===norm(cv));
-  if(found){$('conv').value=found.cv;$('search').value=found.cv;$('suggestions').hidden=true;render();}
+  if(found){$('conv').value=found.cv;$('search').value=formatAdjustmentNumber(found.cv);$('suggestions').hidden=true;render();}
 }
 function showSuggestions(){
   const panel=$('suggestions');
-  const q=norm($('search').value);
+  const q=normalizeAdjustmentSearch($('search').value);
   if(!q || !window.CONVENIO_OPTIONS || !window.CONVENIO_OPTIONS.length){panel.hidden=true;panel.innerHTML='';return;}
-  const matches=window.CONVENIO_OPTIONS.filter(o=>norm(o.cv+' '+o.ent).includes(q)).slice(0,15);
-  if(!matches.length){panel.innerHTML='<div class="empty">Nenhum convênio encontrado.</div>';panel.hidden=false;return;}
-  panel.innerHTML=matches.map(o=>`<button type="button" class="suggestion" data-cv="${esc(o.cv)}"><strong>${esc(o.cv)}</strong><span>${esc(o.ent||'Entidade não informada')}</span></button>`).join('');
+  const matches=window.CONVENIO_OPTIONS.filter(o=>normalizeAdjustmentSearch(o.cv+' '+formatAdjustmentNumber(o.cv)+' '+o.ent).includes(q)).slice(0,15);
+  if(!matches.length){panel.innerHTML='<div class="empty">Nenhum ajuste encontrado.</div>';panel.hidden=false;return;}
+  panel.innerHTML=matches.map(o=>`<button type="button" class="suggestion" data-cv="${esc(o.cv)}"><strong>${esc(formatAdjustmentNumber(o.cv))}</strong><span>${esc(o.ent||'Entidade não informada')}</span></button>`).join('');
   panel.querySelectorAll('button[data-cv]').forEach(btn=>btn.addEventListener('click',()=>chooseConv(btn.getAttribute('data-cv'))));
   panel.hidden=false;
 }
-$('conv').addEventListener('change',()=>{if($('conv').value){$('search').value=$('conv').value;$('suggestions').hidden=true;}render();});
+$('conv').addEventListener('change',()=>{if($('conv').value){$('search').value=formatAdjustmentNumber($('conv').value);$('suggestions').hidden=true;}render();});
 $('search').addEventListener('input',()=>{
   const val=$('search').value.trim();
-  const exact=(window.CONVENIO_OPTIONS||[]).find(o=>norm(o.cv)===norm(val));
+  const exact=(window.CONVENIO_OPTIONS||[]).find(o=>normalizeAdjustmentSearch(o.cv)===normalizeAdjustmentSearch(val));
   if(exact){$('conv').value=exact.cv;render();}
   showSuggestions();
 });
@@ -417,23 +447,26 @@ $('search').addEventListener('keydown',e=>{
   if(e.key==='Enter'){
     e.preventDefault();
     const val=$('search').value.trim();
-    const matches=(window.CONVENIO_OPTIONS||[]).filter(o=>norm(o.cv+' '+o.ent).includes(norm(val)));
+    const matches=(window.CONVENIO_OPTIONS||[]).filter(o=>normalizeAdjustmentSearch(o.cv+' '+formatAdjustmentNumber(o.cv)+' '+o.ent).includes(normalizeAdjustmentSearch(val)));
     if(matches.length===1)chooseConv(matches[0].cv);
     else if(matches.length>1)showSuggestions();
   } else if(e.key==='Escape') $('suggestions').hidden=true;
 });
 document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))$('suggestions').hidden=true;});
 $('dateFrom').addEventListener('change',renderPayments);$('dateTo').addEventListener('change',renderPayments);
-$('clearDates').addEventListener('click',()=>{$('dateFrom').value='';$('dateTo').value='';renderPayments();});
+$('yearFilter').addEventListener('change',renderPayments);$('quadrimFilter').addEventListener('change',renderPayments);
+$('clearDates').addEventListener('click',()=>{$('dateFrom').value='';$('dateTo').value='';$('yearFilter').value='';$('quadrimFilter').value='';renderPayments();});
 $('export').addEventListener('click',()=>{
  const from=$('dateFrom').value?new Date($('dateFrom').value+'T00:00:00'):null;
  const to=$('dateTo').value?new Date($('dateTo').value+'T23:59:59'):null;
- const rows=currentPayments.filter(p=>(!from||(p.dt&&p.dt>=from))&&(!to||(p.dt&&p.dt<=to)));
+ const selectedYear=$('yearFilter').value;
+  const selectedQuad=$('quadrimFilter').value;
+  const rows=currentPayments.filter(p=>(!from||(p.dt&&p.dt>=from))&&(!to||(p.dt&&p.dt<=to))&&(!selectedYear||(p.dt&&p.dt.getFullYear()===Number(selectedYear)))&&(!selectedQuad||(p.dt&&Math.floor(p.dt.getMonth()/4)+1===Number(selectedQuad))));
  const data=[['Data pagamento','OP','Empenho','Fonte','Custeio','Capital','Total pago'],
  ...rows.map(p=>[fmtDate(p.dt),p.op,p.ne,p.source,p.c.toFixed(2).replace('.',','),p.cap.toFixed(2).replace('.',','),p.total.toFixed(2).replace('.',',')])];
  const csv='\uFEFF'+data.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);
- const a=document.createElement('a');a.href=url;a.download='pagamentos_'+$('conv').value.replace(/[^\w.-]+/g,'_')+'.csv';a.click();URL.revokeObjectURL(url);
+ const a=document.createElement('a');a.href=url;a.download='pagamentos_'+formatAdjustmentNumber($('conv').value).replace(/[^\w.-]+/g,'_')+'.csv';a.click();URL.revokeObjectURL(url);
 });
 // Carrega automaticamente os dados publicados no Supabase ao abrir a página.
 loadLatestFromSupabase();

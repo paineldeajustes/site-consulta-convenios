@@ -76,6 +76,41 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 #overviewSearch{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px}
 @media(max-width:1100px){.payment-filters{grid-template-columns:repeat(2,minmax(140px,1fr))}}
 @media(max-width:560px){.payment-filters{grid-template-columns:1fr}}
+
+.auth-wrap{display:flex;justify-content:center;align-items:flex-start;padding:34px 10px 58px;min-height:calc(100vh - 180px)}
+.auth-card{width:100%;max-width:450px;background:#fff;border:1px solid #e1e8f0;border-radius:22px;padding:32px;box-shadow:0 22px 70px #12345a12}
+.auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:25px}
+.auth-mark{width:44px;height:44px;display:grid;place-items:center;color:#fff;background:linear-gradient(145deg,#12345a,#238b8f);border-radius:13px;font-size:20px;font-weight:800;box-shadow:0 6px 15px #12345a25}
+.auth-brand strong{display:block;font-size:15px;color:#17395d}.auth-brand span{display:block;color:#748198;font-size:12px;margin-top:3px}
+.auth-card h2{font-size:24px;letter-spacing:-.5px;margin:0 0 8px;color:#172b4d}
+.auth-subtitle{font-size:13px;line-height:1.6;color:#667085;margin:0 0 24px}
+.auth-field{margin-bottom:16px}.auth-field label{font-size:12px;color:#344054;margin-bottom:7px}
+.auth-field input{width:100%;border:1px solid #cfd8e5;border-radius:10px;padding:12px 13px;background:#fff;color:#172b4d;outline:none;transition:border-color .15s,box-shadow .15s}
+.auth-field input:focus{border-color:#398c9b;box-shadow:0 0 0 3px #398c9b20}
+.auth-password{display:flex;align-items:center;border:1px solid #cfd8e5;border-radius:10px;overflow:hidden;background:#fff}
+.auth-password:focus-within{border-color:#398c9b;box-shadow:0 0 0 3px #398c9b20}
+.auth-password input{border:0;border-radius:0;box-shadow:none!important;min-width:0}
+.auth-password button{flex-shrink:0;border-radius:0;background:#fff;color:#52657e;padding:11px 13px;font-size:12px}
+.auth-password button:hover{background:#f4f7fb}
+.auth-actions{display:flex;justify-content:flex-end;margin:-3px 0 18px}
+.auth-link{border:0;background:transparent;color:#12687a;padding:0;font-size:12px;font-weight:650}
+.auth-link:hover{background:transparent;color:#0c4756;text-decoration:underline}
+.auth-submit{width:100%;padding:12px 16px;border-radius:10px;background:#164e87;color:#fff;font-size:14px;font-weight:700;box-shadow:0 5px 12px #164e8720}
+.auth-submit:hover{background:#123d6a}.auth-submit:disabled{opacity:.65}
+.auth-note{font-size:11px;line-height:1.55;color:#8792a4;text-align:center;margin:18px 0 0}
+.auth-message{font-size:12px;line-height:1.55;padding:11px 12px;border-radius:9px;margin-top:15px;white-space:normal}
+.auth-message.error{color:#9b2525;background:#fff1f0;border:1px solid #f3c5c2}
+.auth-message.info{color:#214d70;background:#eef6fc;border:1px solid #d4e5f4}
+.auth-message.success{color:#176345;background:#ecf8f1;border:1px solid #ccead8}
+.account-bar{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap;padding:0 0 16px}
+.account-email{font-size:12px;color:#52657e;margin-right:auto}
+.account-button{padding:8px 11px;font-size:12px;border:1px solid #cfdae7;border-radius:9px;background:#fff;color:#284a6c}
+.account-button:hover{background:#f0f6fa}
+.account-button.admin-action{color:white;border-color:#164e87;background:#164e87}
+.account-button.admin-action:hover{background:#123d6a}
+.account-button.admin-action[hidden]{display:none!important}
+@media(max-width:520px){.auth-wrap{padding:16px 0 36px}.auth-card{padding:24px 20px;border-radius:17px}.account-bar{justify-content:flex-start}.account-email{width:100%;margin-bottom:4px}}
+
 </style>
 </head>
 <body>
@@ -85,6 +120,58 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
   <p>Departamento de Orçamento e Gestão - SEFAZ-4</p>
 </header>
 <main>
+  <section id="loginScreen" class="auth-wrap" aria-labelledby="loginTitle">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="auth-mark" aria-hidden="true">A</div>
+        <div><strong>Painel de Ajustes</strong><span>Secretaria da Fazenda · SEFAZ-4</span></div>
+      </div>
+      <h2 id="loginTitle">Bem-vindo de volta</h2>
+      <p id="loginSubtitle" class="auth-subtitle">Entre com seu e-mail e senha para acessar as informações dos ajustes e suas ferramentas autorizadas.</p>
+      <form id="loginForm">
+        <div class="auth-field">
+          <label for="loginEmail">E-mail</label>
+          <input id="loginEmail" name="email" type="email" autocomplete="username" placeholder="nome@exemplo.com" required>
+        </div>
+        <div class="auth-field">
+          <label for="loginPassword">Senha</label>
+          <div class="auth-password">
+            <input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" required>
+            <button id="togglePassword" type="button" aria-label="Mostrar senha">Mostrar</button>
+          </div>
+        </div>
+        <div id="confirmPasswordField" class="auth-field" hidden>
+          <label for="confirmPassword">Confirmar senha</label>
+          <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" placeholder="Repita a senha" minlength="8">
+        </div>
+        <div class="auth-actions">
+          <button id="forgotPassword" class="auth-link" type="button">Esqueci minha senha</button>
+        </div>
+        <button id="loginButton" class="auth-submit" type="submit">Entrar no sistema</button>
+        <p style="text-align:center;font-size:12px;color:#78859a;margin:17px 0 0">
+          <span id="accountModeHint">Primeiro acesso?</span>
+          <button id="accountModeToggle" class="auth-link" type="button" style="margin-left:4px">Criar minha senha</button>
+        </p>
+      </form>
+            <section id="resetPasswordPanel" hidden>
+        <h2>Definir nova senha</h2>
+        <p class="auth-subtitle">Escolha uma nova senha para sua conta.</p>
+        <form id="resetPasswordForm">
+          <div class="auth-field"><label for="newPassword">Nova senha</label><input id="newPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Use pelo menos 8 caracteres"></div>
+          <div class="auth-field"><label for="newPasswordConfirm">Confirmar nova senha</label><input id="newPasswordConfirm" type="password" autocomplete="new-password" minlength="8" required placeholder="Repita a nova senha"></div>
+          <button class="auth-submit" id="saveNewPassword" type="submit">Salvar nova senha</button>
+        </form>
+      </section>
+      <div id="authMessage" class="auth-message" role="status" aria-live="polite" hidden></div>
+      <p class="auth-note">O acesso é individual e liberado pela administração do sistema. Não compartilhe sua senha.</p>
+    </div>
+  </section>
+  <div id="appShell" hidden>
+    <div class="account-bar">
+      <span id="signedInAs" class="account-email"></span>
+      <button id="manualRefreshButton" class="account-button admin-action" type="button" hidden>Atualizar dados agora</button>
+      <button id="logoutButton" class="account-button" type="button">Sair da conta</button>
+    </div>
   <nav class="view-tabs" aria-label="Telas do Painel de Ajustes">
     <button type="button" id="tabDetail" class="view-tab active" aria-selected="true">Consulta do ajuste</button>
     <button type="button" id="tabOverview" class="view-tab" aria-selected="false">Visão geral dos ajustes</button>
@@ -174,7 +261,9 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
     <div id="overviewTable" class="table-wrap"><div class="empty">A lista será exibida após o carregamento da base.</div></div>
   </section>
   <div class="footer">Consulte os dados da última importação concluída. As informações devem ser conferidas com os registros oficiais antes de uso administrativo.</div>
+  </div>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const $ = id => document.getElementById(id);
 
@@ -182,9 +271,18 @@ const $ = id => document.getElementById(id);
 const SUPABASE_URL = 'https://qkjudfvlaatdcaosadun.supabase.co';
 const SUPABASE_PUBLIC_KEY = 'sb_publishable_B3A7uwmQWUs8oOivjgJ6Qw_6rqx4U0W';
 
+const supabaseClient = window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY,{
+  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+});
+let currentSession=null;
+let currentProfile=null;
+let manualRefreshBusy=false;
+
 async function supabaseGet(path){
+  const {data:{session}}=await supabaseClient.auth.getSession();
+  if(!session?.access_token)throw new Error('Sua sessão expirou. Entre novamente no sistema.');
   const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    headers: { apikey: SUPABASE_PUBLIC_KEY, Authorization: `Bearer ${SUPABASE_PUBLIC_KEY}`, Accept: 'application/json' }
+    headers: { apikey: SUPABASE_PUBLIC_KEY, Authorization: `Bearer ${session.access_token}`, Accept: 'application/json' }
   });
   if(!response.ok) throw new Error(`Supabase respondeu ${response.status}: ${await response.text()}`);
   return response.json();
@@ -775,8 +873,233 @@ $('export').addEventListener('click',()=>{
  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);
  const a=document.createElement('a');a.href=url;a.download='pagamentos_'+formatAdjustmentNumber($('conv').value).replace(/[^\w.-]+/g,'_')+'.csv';a.click();URL.revokeObjectURL(url);
 });
-// Carrega automaticamente os dados publicados no Supabase ao abrir a página.
-loadLatestFromSupabase();
+function showAuthMessage(message,type='info'){
+  const box=$('authMessage');
+  box.textContent=message;
+  box.className='auth-message '+type;
+  box.hidden=!message;
+}
+function showLogin(message='',type='info'){
+  $('appShell').hidden=true;
+  $('loginScreen').hidden=false;
+  if(message)showAuthMessage(message,type);
+}
+async function activateSession(session){
+  if(!session?.user?.email){showLogin();return false;}
+  const email=session.user.email.trim().toLowerCase();
+  const {data:profile,error}=await supabaseClient
+    .from('panel_users')
+    .select('email,is_admin,is_active')
+    .eq('email',email)
+    .maybeSingle();
+  if(error){
+    await supabaseClient.auth.signOut();
+    currentSession=null;currentProfile=null;
+    showLogin('Não foi possível validar suas permissões. Confira a configuração de acesso ou contate o administrador.','error');
+    console.error('Erro ao verificar perfil do painel',error);
+    return false;
+  }
+  if(!profile || profile.is_active!==true){
+    await supabaseClient.auth.signOut();
+    currentSession=null;currentProfile=null;
+    showLogin('A conta foi autenticada, mas ainda não tem acesso liberado ao Painel de Ajustes. Solicite liberação à administração.','error');
+    return false;
+  }
+  currentSession=session;currentProfile=profile;
+  $('loginScreen').hidden=true;
+  $('appShell').hidden=false;
+  $('signedInAs').textContent=email;
+  $('manualRefreshButton').hidden=profile.is_admin!==true;
+  $('manualRefreshButton').disabled=false;
+  await loadLatestFromSupabase();
+  return true;
+}
+let accountMode='login';
+let recoveryMode=false;
+function setAccountMode(mode){
+  accountMode=mode;
+  const creating=mode==='signup';
+  $('loginTitle').textContent=creating?'Criar acesso':'Bem-vindo de volta';
+  $('loginSubtitle').textContent=creating?'Crie uma senha para o e-mail autorizado pela administração. Somente contas previamente liberadas terão acesso aos dados.':'Entre com seu e-mail e senha para acessar as informações dos ajustes e suas ferramentas autorizadas.';
+  $('confirmPasswordField').hidden=!creating;
+  $('confirmPassword').required=creating;
+  $('loginPassword').autocomplete=creating?'new-password':'current-password';
+  $('forgotPassword').hidden=creating;
+  $('loginButton').textContent=creating?'Criar acesso':'Entrar no sistema';
+  $('accountModeHint').textContent=creating?'Já possui conta?':'Primeiro acesso?';
+  $('accountModeToggle').textContent=creating?'Voltar para entrar':'Criar minha senha';
+  $('loginPassword').value='';
+  $('confirmPassword').value='';
+  showAuthMessage('');
+}
+$('accountModeToggle').addEventListener('click',()=>setAccountMode(accountMode==='login'?'signup':'login'));
+$('loginForm').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const button=$('loginButton');
+  const email=$('loginEmail').value.trim().toLowerCase();
+  const password=$('loginPassword').value;
+  button.disabled=true;button.textContent=accountMode==='signup'?'Criando acesso…':'Validando acesso…';
+  showAuthMessage('');
+  try{
+    if(accountMode==='signup'){
+      if(password.length<8)throw new Error('A senha precisa ter pelo menos 8 caracteres.');
+      if(password!==$('confirmPassword').value)throw new Error('As senhas informadas não são iguais.');
+      const {data,error}=await supabaseClient.auth.signUp({
+        email,password,
+        options:{emailRedirectTo:window.location.origin+window.location.pathname}
+      });
+      if(error)throw error;
+      if(data.session){
+        const allowed=await activateSession(data.session);
+        if(allowed)showAuthMessage('Seu acesso foi criado com sucesso.','success');
+      }else{
+        setAccountMode('login');
+        $('loginEmail').value=email;
+        showAuthMessage('Solicitação recebida. Confira a caixa de entrada do e-mail para confirmar a conta e depois entre no sistema. Se o e-mail não chegar, verifique a configuração de e-mail do Supabase.','success');
+      }
+    }else{
+      const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+      if(error)throw error;
+      const allowed=await activateSession(data.session);
+      if(allowed)showAuthMessage('');
+    }
+  }catch(error){
+    const creating=accountMode==='signup';
+    showLogin(creating?(error.message||'Não foi possível criar o acesso. Verifique o e-mail e tente novamente.'):'Não foi possível entrar. Confira o e-mail e a senha ou use “Esqueci minha senha”.','error');
+    console.warn('Falha na autenticação do painel',error);
+  }finally{
+    button.disabled=false;
+    button.textContent=accountMode==='signup'?'Criar acesso':'Entrar no sistema';
+  }
+});
+$('togglePassword').addEventListener('click',()=>{
+  const field=$('loginPassword');
+  const visible=field.type==='password';
+  field.type=visible?'text':'password';
+  $('togglePassword').textContent=visible?'Ocultar':'Mostrar';
+  $('togglePassword').setAttribute('aria-label',visible?'Ocultar senha':'Mostrar senha');
+});
+$('forgotPassword').addEventListener('click',async()=>{
+  const email=$('loginEmail').value.trim().toLowerCase();
+  if(!email){
+    showAuthMessage('Informe seu e-mail acima para receber as instruções de redefinição da senha.','info');
+    $('loginEmail').focus();return;
+  }
+  const button=$('forgotPassword');
+  button.disabled=true;
+  try{
+    const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{
+      redirectTo:window.location.origin+window.location.pathname
+    });
+    if(error)throw error;
+    showAuthMessage('Se esse e-mail estiver cadastrado, você receberá uma mensagem com as instruções para redefinir a senha.','success');
+  }catch(error){
+    showAuthMessage('Não foi possível solicitar a redefinição. Verifique a configuração de URLs de autenticação e tente novamente.','error');
+    console.warn('Falha ao solicitar redefinição de senha',error);
+  }finally{button.disabled=false;}
+});
+$('resetPasswordForm').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const password=$('newPassword').value;
+  const confirmation=$('newPasswordConfirm').value;
+  if(password.length<8){showAuthMessage('A senha precisa ter pelo menos 8 caracteres.','error');return;}
+  if(password!==confirmation){showAuthMessage('As senhas informadas não são iguais.','error');return;}
+  const button=$('saveNewPassword');button.disabled=true;button.textContent='Salvando…';
+  try{
+    const {error}=await supabaseClient.auth.updateUser({password});
+    if(error)throw error;
+    recoveryMode=false;
+    $('resetPasswordPanel').hidden=true;
+    $('loginForm').hidden=false;
+    showLogin('Senha atualizada. Entre com a nova senha.','success');
+    await supabaseClient.auth.signOut();
+    $('newPassword').value='';$('newPasswordConfirm').value='';
+  }catch(error){
+    showAuthMessage('Não foi possível salvar a nova senha. Abra novamente o link mais recente de recuperação e tente de novo.','error');
+    console.warn('Falha ao atualizar senha',error);
+  }finally{button.disabled=false;button.textContent='Salvar nova senha';}
+});
+supabaseClient.auth.onAuthStateChange((event,session)=>{
+  if(event==='PASSWORD_RECOVERY'){
+    recoveryMode=true;
+    $('appShell').hidden=true;$('loginScreen').hidden=false;
+    $('loginForm').hidden=true;$('resetPasswordPanel').hidden=false;
+    showAuthMessage('Link de recuperação validado. Defina sua nova senha abaixo.','info');
+  }else if(event==='SIGNED_OUT'&&!recoveryMode){
+    currentSession=null;currentProfile=null;
+  }
+});
+$('logoutButton').addEventListener('click',async()=>{
+  $('logoutButton').disabled=true;
+  try{await supabaseClient.auth.signOut();}finally{
+    currentSession=null;currentProfile=null;
+    $('conv').innerHTML='<option value="">Entre para carregar os ajustes</option>';
+    $('conv').disabled=true;$('search').disabled=true;
+    showLogin('Você saiu da sua conta.','info');
+    $('loginPassword').value='';
+    $('logoutButton').disabled=false;
+  }
+});
+async function callImportFunction(name,token){
+  const response=await fetch(`${SUPABASE_URL}/functions/v1/${name}`,{
+    method:'POST',
+    headers:{apikey:SUPABASE_PUBLIC_KEY,Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
+    body:'{}'
+  });
+  let result={};
+  try{result=await response.json();}catch{}
+  if(!response.ok||result.success===false)throw new Error(result.error||`Falha na importação (${response.status}).`);
+  return result;
+}
+$('manualRefreshButton').addEventListener('click',async()=>{
+  if(!currentProfile?.is_admin||manualRefreshBusy)return;
+  manualRefreshBusy=true;
+  const selectedAdjustment=$('conv').value;
+  const button=$('manualRefreshButton');
+  button.disabled=true;button.textContent='Atualizando…';
+  $('status').hidden=false;
+  $('status').textContent='Solicitação autorizada. Importando RET_FONTES.txt e CadConvenios.txt do Google Drive…';
+  try{
+    const {data:{session},error:sessionError}=await supabaseClient.auth.getSession();
+    if(sessionError||!session?.access_token)throw new Error('Sua sessão expirou. Entre novamente e tente de novo.');
+    const results=[];
+    for(const [slug,label] of [['import-ret-fontes','RET_FONTES.txt'],['import-cad-convenios','CadConvenios.txt']]){
+      $('status').textContent=`Importando ${label} do Google Drive…`;
+      try{
+        const result=await callImportFunction(slug,session.access_token);
+        results.push({label,ok:true,count:result.row_count});
+      }catch(error){results.push({label,ok:false,error:error.message||String(error)});}
+    }
+    await loadLatestFromSupabase();
+    if(selectedAdjustment)chooseConv(selectedAdjustment);
+    const failed=results.filter(result=>!result.ok);
+    $('status').hidden=false;
+    if(failed.length){
+      $('status').textContent='Atualização parcial. '+results.map(result=>result.ok?`${result.label}: importado (${Number(result.count||0).toLocaleString('pt-BR')} registros)`:`${result.label}: erro — ${result.error}`).join(' | ');
+    }else{
+      $('status').textContent='Atualização concluída com sucesso. '+results.map(result=>`${result.label}: ${Number(result.count||0).toLocaleString('pt-BR')} registros`).join(' · ');
+    }
+  }catch(error){
+    $('status').hidden=false;
+    $('status').textContent='Não foi possível concluir a atualização manual: '+(error.message||String(error));
+  }finally{
+    manualRefreshBusy=false;button.disabled=false;button.textContent='Atualizar dados agora';
+  }
+});
+async function initializeAuthentication(){
+  $('appShell').hidden=true;
+  $('loginScreen').hidden=false;
+  try{
+    const {data:{session},error}=await supabaseClient.auth.getSession();
+    if(error)throw error;
+    if(session)await activateSession(session);
+    else showLogin();
+  }catch(error){
+    showLogin('Não foi possível inicializar a autenticação. Atualize a página e tente novamente.','error');
+    console.error('Falha ao inicializar autenticação',error);
+  }
+}
+initializeAuthentication();
 </script>
 </body>
 </html>

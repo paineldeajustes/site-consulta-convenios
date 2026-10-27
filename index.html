@@ -84,10 +84,10 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
       <div class="metric"><span>Entidade</span><strong id="mEnt" style="font-size:15px">—</strong></div>
       <div class="metric"><span>Total cadastrado inicial</span><strong id="mCadInicial">—</strong></div>
       <div class="metric"><span>Total cadastrado em aditamentos</span><strong id="mCadAditamentos">—</strong></div>
+      <div class="metric"><span>Total cadastrado</span><strong id="mTotalCadastrado">—</strong></div>
       <div class="metric"><span>Total empenhado</span><strong id="mEmp">—</strong></div>
       <div class="metric"><span>Saldo do ajuste</span><strong id="mSaldo">—</strong></div>
       <div class="metric"><span>Total pago</span><strong id="mPago">—</strong></div>
-      <div class="metric"><span>Saldo total a empenhar</span><strong id="mSaldoEmpenhar">—</strong></div>
       <div class="metric"><span>Saldo total a pagar</span><strong id="mSaldoPagar">—</strong></div>
     </div>
   </section>
@@ -365,15 +365,15 @@ function render(){
   const totalAditamentos=recon.reduce((s,r)=>s+r.additions,0);
   const totalCadastrado=totalInicial+totalAditamentos;
   const totalPago=currentPayments.reduce((s,r)=>s+r.total,0);
-  const saldoAEmpenhar=totalCadastrado-totalEmpenhado;
+  const saldoAjuste=totalCadastrado-totalEmpenhado;
   const saldoAPagar=totalEmpenhado-totalPago;
 
   $('mCadInicial').textContent=money(totalInicial);
   $('mCadAditamentos').textContent=money(totalAditamentos);
+  $('mTotalCadastrado').textContent=money(totalCadastrado);
   $('mEmp').textContent=money(totalEmpenhado);
-  $('mSaldo').textContent=money(saldoAEmpenhar);
+  $('mSaldo').textContent=money(saldoAjuste);
   $('mPago').textContent=layoutInfo.hasPayments?money(totalPago):'Não disponível';
-  $('mSaldoEmpenhar').textContent=money(saldoAEmpenhar);
   $('mSaldoPagar').textContent=layoutInfo.hasPayments?money(saldoAPagar):'Não disponível';
   $('dateFrom').value='';$('dateTo').value='';
   configurePaymentFilters();
@@ -432,7 +432,7 @@ function loadTextIntoPage(text, filename){
     $('conv').innerHTML='<option value="">Selecione um ajuste</option>'+convs.map(c=>`<option value="${esc(c)}">${esc(formatAdjustmentNumber(c))}</option>`).join('');
     $('conv').disabled=false;$('search').disabled=false;
         $('status').hidden=true;
-    $('conv').value='';$('search').value='';$('mConv').textContent='—';$('mEnt').textContent='—';$('mCadInicial').textContent='—';$('mCadAditamentos').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';$('mSaldo').textContent='—';$('mSaldoEmpenhar').textContent='—';$('mSaldoPagar').textContent='—';
+    $('conv').value='';$('search').value='';$('mConv').textContent='—';$('mEnt').textContent='—';$('mCadInicial').textContent='—';$('mCadAditamentos').textContent='—';$('mTotalCadastrado').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';$('mSaldo').textContent='—';$('mSaldoPagar').textContent='—';
         ['reconTable','cadTable','empTable','payTable'].forEach(id=>$(id).innerHTML='<div class="empty">Selecione um ajuste para visualizar os dados.</div>');
     $('dateFrom').disabled=true;$('dateTo').disabled=true;$('clearDates').disabled=true;$('export').disabled=true;
     $('payCount').textContent='0 registros';

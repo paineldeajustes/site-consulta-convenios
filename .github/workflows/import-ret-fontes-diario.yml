@@ -1,6 +1,10 @@
 name: Importar RET_FONTES diariamente
 
 on:
+  push:
+    paths:
+      - '.github/workflows/import-ret-fontes-diario.yml'
+      - '.github/supabase-functions/import-cad-convenios/index.ts'
   schedule:
     # 09:00 UTC = 06:00 no horário de Brasília (UTC-3).
     - cron: '0 9 * * *'

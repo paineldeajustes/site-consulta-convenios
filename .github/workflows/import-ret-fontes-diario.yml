@@ -1,0 +1,39 @@
+name: Importar RET_FONTES diariamente
+
+on:
+  schedule:
+    # 09:00 UTC = 06:00 no horário de Brasília (UTC-3).
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: import-ret-fontes
+  cancel-in-progress: false
+
+jobs:
+  importar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verificar configuração do segredo
+        env:
+          IMPORT_FUNCTION_SECRET: ${{ secrets.IMPORT_FUNCTION_SECRET }}
+        run: |
+          if [ -z "$IMPORT_FUNCTION_SECRET" ]; then
+            echo 'O segredo IMPORT_FUNCTION_SECRET não está configurado nos Actions secrets do repositório.'
+            exit 1
+          fi
+
+      - name: Executar importação no Supabase
+        env:
+          IMPORT_FUNCTION_SECRET: ${{ secrets.IMPORT_FUNCTION_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --url 'https://qkjudfvlaatdcaosadun.supabase.co/functions/v1/import-ret-fontes' \
+            --header "Authorization: Bearer ${IMPORT_FUNCTION_SECRET}" \
+            --header 'Content-Type: application/json' \
+            --data '{}'

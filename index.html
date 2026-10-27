@@ -190,6 +190,18 @@ async function supabaseGet(path){
   return response.json();
 }
 
+async function supabaseGetAll(path, pageSize=1000){
+  const results=[];
+  let offset=0;
+  while(true){
+    const batch=await supabaseGet(`${path}&limit=${pageSize}&offset=${offset}`);
+    results.push(...batch);
+    if(batch.length<pageSize)break;
+    offset+=batch.length;
+  }
+  return results;
+}
+
 const CAD_TYPE_LABELS={
   '1':'AUXÍLIO-CONCESSÃO','2':'SUBVENÇÃO-CONCESSÃO','3':'CONTRIBUIÇÃO-CONCESSÃO',
   '4':'AUXÍLIO-RECEBIDO','5':'SUBVENÇÃO-RECEBIDO','6':'CONTRIBUIÇÃO-RECEBIDO',
@@ -228,7 +240,7 @@ async function loadCadMetadataFromSupabase(){
     const imports=await supabaseGet('ret_fontes_imports?select=id,file_name,status,row_count,finished_at&file_name=eq.CadConvenios.txt&status=eq.success&order=finished_at.desc&limit=1');
     if(!imports.length){renderCadMetadata($('conv').value);renderOverview();return;}
     const latest=imports[0];
-    const records=await supabaseGet(`ret_fontes_rows?select=fields&import_id=eq.${encodeURIComponent(latest.id)}&order=row_number.asc&limit=20000`);
+    const records=await supabaseGetAll(`ret_fontes_rows?select=fields&import_id=eq.${encodeURIComponent(latest.id)}&order=row_number.asc`,1000);
     for(const record of records){
       let metadata=record.fields;
       if(typeof metadata==='string'){try{metadata=JSON.parse(metadata);}catch{continue;}}
@@ -253,7 +265,7 @@ async function loadLatestFromSupabase(){
     const imports = await supabaseGet('ret_fontes_imports?select=id,file_name,status,row_count,finished_at&file_name=eq.RET_FONTES.txt&status=eq.success&order=finished_at.desc&limit=1');
     if(!imports.length) throw new Error('Não há importação concluída disponível.');
     const latest = imports[0];
-    const records = await supabaseGet(`ret_fontes_rows?select=row_number,fields&import_id=eq.${encodeURIComponent(latest.id)}&order=row_number.asc&limit=100000`);
+    const records = await supabaseGetAll(`ret_fontes_rows?select=row_number,fields&import_id=eq.${encodeURIComponent(latest.id)}&order=row_number.asc`,1000);
     if(!records.length) throw new Error('A importação mais recente não contém registros.');
     const schema = ['CONVENIO','ENTIDADE','TIPOAD','NUMEROAD','TPCAD','TPFOTE','VL-BEM','VL-CUSTEIO','VL-REFORMA','EMPENHO','VALOR-NE','VALOR CUSTEIO','VALOR CAPITAL','FONTE-NE','ANO','MES','DIA','OP','EMPENHO_1','VALOR-OP','VALOR CUSTEIO_2','VALOR CAPITAL_3','FONTE-NE_4','ANO_5','MES_6','DIA_7','Column1'];
     const quoteField = value => '"' + String(value ?? '').replace(/"/g, '""') + '"';

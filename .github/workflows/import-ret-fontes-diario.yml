@@ -6,7 +6,7 @@ on:
       - '.github/workflows/import-ret-fontes-diario.yml'
       - '.github/supabase-functions/import-cad-convenios/index.ts'
   schedule:
-    # 09:00 UTC = 06:00 no horário de Brasília (UTC-3).
+    # 09:00 UTC = 06:00 no horário de Brasília (UTC-3). Atualizado após liberar acesso ao CadConvenios.
     - cron: '0 9 * * *'
   workflow_dispatch:
 

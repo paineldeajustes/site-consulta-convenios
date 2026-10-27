@@ -271,6 +271,7 @@ const $ = id => document.getElementById(id);
 const SUPABASE_URL = 'https://qkjudfvlaatdcaosadun.supabase.co';
 const SUPABASE_PUBLIC_KEY = 'sb_publishable_B3A7uwmQWUs8oOivjgJ6Qw_6rqx4U0W';
 
+const AUTH_REDIRECT_URL = 'https://paineldeajustes.github.io/site-consulta-convenios/';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY,{
   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
 });
@@ -946,7 +947,7 @@ $('loginForm').addEventListener('submit',async event=>{
       if(password!==$('confirmPassword').value)throw new Error('As senhas informadas não são iguais.');
       const {data,error}=await supabaseClient.auth.signUp({
         email,password,
-        options:{emailRedirectTo:window.location.origin+window.location.pathname}
+        options:{emailRedirectTo:AUTH_REDIRECT_URL}
       });
       if(error)throw error;
       if(data.session){
@@ -989,7 +990,7 @@ $('forgotPassword').addEventListener('click',async()=>{
   button.disabled=true;
   try{
     const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{
-      redirectTo:window.location.origin+window.location.pathname
+      redirectTo:AUTH_REDIRECT_URL
     });
     if(error)throw error;
     showAuthMessage('Se esse e-mail estiver cadastrado, você receberá uma mensagem com as instruções para redefinir a senha.','success');

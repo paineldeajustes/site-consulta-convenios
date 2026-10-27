@@ -333,16 +333,16 @@ function renderCadAmendments(rows){
   if(initialRows.length)ordered.push(initial);
   ordered.push(...amendmentsOrdered);
   if(!ordered.length){$('cadDetailTable').innerHTML='<div class="empty">Não há registros de ajuste inicial (TPCAD=V) nem aditamentos (TPCAD=A) para este ajuste.</div>';return;}
-  let html='<table><thead><tr><th>Cadastro</th><th>Tipo</th><th>Fonte(s)</th><th>Custeio</th><th>Capital</th><th>Total</th></tr></thead><tbody>';
+  let html='<table><thead><tr><th>Cadastro</th><th>Fonte(s)</th><th>Custeio</th><th>Capital</th><th>Total</th></tr></thead><tbody>';
   for(const item of ordered){
     const sources=[...item.sources].sort((a,b)=>a.localeCompare(b,'pt-BR')).join(', ')||'Não informada';
-    html+=`<tr><td>${esc(item.label)}</td><td>${esc(item.type)}</td><td>${esc(sources)}</td><td class="num">${esc(money(item.c))}</td><td class="num">${esc(money(item.cap))}</td><td class="num">${esc(money(item.total))}</td></tr>`;
+    html+=`<tr><td>${esc(item.label)}</td><td>${esc(sources)}</td><td class="num">${esc(money(item.c))}</td><td class="num">${esc(money(item.cap))}</td><td class="num">${esc(money(item.total))}</td></tr>`;
   }
   const totalC=ordered.reduce((s,item)=>s+item.c,0);
   const totalCap=ordered.reduce((s,item)=>s+item.cap,0);
   const total=ordered.reduce((s,item)=>s+item.total,0);
   const countLabel=initialRows.length?'cadastro(s)':'aditamento(s)';
-  html+='</tbody><tfoot><tr><td colspan="3">TOTAL DOS AJUSTES CADASTRADOS ('+ordered.length.toLocaleString('pt-BR')+' '+countLabel+')</td><td class="num">'+esc(money(totalC))+'</td><td class="num">'+esc(money(totalCap))+'</td><td class="num">'+esc(money(total))+'</td></tr></tfoot></table>';
+  html+='</tbody><tfoot><tr><td colspan="2">TOTAL DOS AJUSTES CADASTRADOS ('+ordered.length.toLocaleString('pt-BR')+' '+countLabel+')</td><td class="num">'+esc(money(totalC))+'</td><td class="num">'+esc(money(totalCap))+'</td><td class="num">'+esc(money(total))+'</td></tr></tfoot></table>';
   $('cadDetailTable').innerHTML=html;
 }
 function renderReconVertical(rows){

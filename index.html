@@ -54,6 +54,17 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 @media(max-width:850px){.recon-grid{grid-template-columns:1fr}}
 .payment-filters{grid-template-columns:repeat(5,minmax(125px,1fr))}
 .payment-actions{flex-wrap:wrap}
+.view-tabs{display:flex;gap:8px;margin:0 0 18px;padding:4px;background:#e7eef7;border:1px solid #d5e0ed;border-radius:12px;width:max-content;max-width:100%}
+.view-tab{background:transparent;color:#344054;border:1px solid transparent;border-radius:8px;padding:10px 16px}
+.view-tab.active{background:#fff;color:#12345a;border-color:#cbd7e6;box-shadow:0 2px 6px #10203010}
+.view-tabs [hidden], [hidden]{display:none!important}
+.year-total td{background:#e8f4ef!important;color:#174e3d;font-weight:800;border-top:2px solid #a8cfc0}
+.emp-detail td{background:#fff!important;font-weight:400}
+.emp-detail td:nth-child(2){padding-left:24px;color:#344054}
+.negative-value{background:#fff1f0!important;color:#b91c1c!important;font-weight:800!important}
+.overview-select{background:transparent;color:#164e87;text-decoration:underline;padding:0;border-radius:0;font-weight:650}
+.overview-select:hover{background:transparent;color:#12345a}
+#overviewSearch{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px}
 @media(max-width:1100px){.payment-filters{grid-template-columns:repeat(2,minmax(140px,1fr))}}
 @media(max-width:560px){.payment-filters{grid-template-columns:1fr}}
 </style>
@@ -65,6 +76,11 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
   <p>Departamento de Orçamento e Gestão - SEFAZ-4</p>
 </header>
 <main>
+  <nav class="view-tabs" aria-label="Telas do Painel de Ajustes">
+    <button type="button" id="tabDetail" class="view-tab active" aria-selected="true">Consulta do ajuste</button>
+    <button type="button" id="tabOverview" class="view-tab" aria-selected="false">Visão geral dos ajustes</button>
+  </nav>
+  <div id="detailView">
   <section class="panel">
     <div class="section-head">
       <h2>Seleção do ajuste</h2>
@@ -118,6 +134,19 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
       <div class="payment-actions" style="display:flex;align-items:end;gap:8px"><button id="clearDates" type="button" disabled>Limpar filtros</button><button id="export" type="button" disabled>Exportar pagamentos CSV</button></div>
     </div>
     <div id="payTable" class="table-wrap"><div class="empty">Sem dados para exibir.</div></div>
+  </section>
+  </div>
+  <section id="overviewView" class="panel" hidden>
+    <div class="section-head">
+      <div><h2>Visão geral dos ajustes</h2><p class="hint">Todos os ajustes da base atual, com os saldos negativos destacados em vermelho. Clique no número do ajuste para abrir o detalhamento.</p></div>
+      <span id="overviewCount" class="pill">Carregando ajustes…</span>
+    </div>
+    <div class="controls" style="grid-template-columns:repeat(2,minmax(180px,1fr));margin-bottom:14px">
+      <div><label for="overviewSearch">Localizar ajuste ou entidade</label><input id="overviewSearch" type="search" placeholder="Digite o número do ajuste ou nome da entidade" autocomplete="off"></div>
+      <div><label for="overviewBalanceFilter">Exibição</label><select id="overviewBalanceFilter"><option value="all">Todos os ajustes</option><option value="negative">Somente saldo negativo</option></select></div>
+    </div>
+    <div id="overviewSummary" class="status">Aguardando dados do Supabase.</div>
+    <div id="overviewTable" class="table-wrap"><div class="empty">A lista será exibida após o carregamento da base.</div></div>
   </section>
   <div class="footer">Consulte os dados da última importação concluída. As informações devem ser conferidas com os registros oficiais antes de uso administrativo.</div>
 </main>
@@ -293,6 +322,43 @@ function aggregate(rows,keyFn,valuesFn){
   for(const r of rows){const k=keyFn(r);if(!m.has(k))m.set(k,valuesFn(r));else{const a=m.get(k),b=valuesFn(r);a.c+=b.c;a.cap+=b.cap;a.total+=b.total;}}
   return [...m.entries()].map(([k,v])=>({key:k,...v}));
 }
+function renderEmpenhoTable(rows){
+  const container=$('empTable');
+  if(!rows.length){container.innerHTML='<div class="empty">Nenhum empenho encontrado para este ajuste.</div>';return;}
+  const byYear=new Map();
+  for(const row of rows){
+    const year=String(get(row,'ANO')||'Não informado').trim();
+    const item={
+      empenho:String(get(row,'EMPENHO')||'Não informado').trim(),
+      source:sourceLabel(get(row,'FONTE-NE')),
+      c:num(get(row,'VALOR CUSTEIO')),
+      cap:num(get(row,'VALOR CAPITAL'))
+    };
+    item.total=item.c+item.cap;
+    if(!byYear.has(year))byYear.set(year,[]);
+    byYear.get(year).push(item);
+  }
+  const years=[...byYear.keys()].sort((a,b)=>{
+    const na=Number(a),nb=Number(b);
+    if(Number.isFinite(na)&&Number.isFinite(nb))return na-nb;
+    return a.localeCompare(b,'pt-BR');
+  });
+  let html='<table><thead><tr><th>Ano</th><th>Empenho</th><th>Fonte</th><th>Custeio</th><th>Capital</th><th>Total</th></tr></thead><tbody>';
+  let grandC=0,grandCap=0,grandTotal=0;
+  for(const year of years){
+    const details=byYear.get(year).sort((a,b)=>a.empenho.localeCompare(b.empenho,'pt-BR')||a.source.localeCompare(b.source,'pt-BR'));
+    const totalC=details.reduce((s,r)=>s+r.c,0);
+    const totalCap=details.reduce((s,r)=>s+r.cap,0);
+    const total=details.reduce((s,r)=>s+r.total,0);
+    grandC+=totalC;grandCap+=totalCap;grandTotal+=total;
+    html+=`<tr class="year-total"><td colspan="3">TOTAL DO ANO ${esc(year)}</td><td class="num">${esc(money(totalC))}</td><td class="num">${esc(money(totalCap))}</td><td class="num">${esc(money(total))}</td></tr>`;
+    for(const item of details){
+      html+=`<tr class="emp-detail"><td></td><td>${esc(item.empenho)}</td><td>${esc(item.source)}</td><td class="num">${esc(money(item.c))}</td><td class="num">${esc(money(item.cap))}</td><td class="num">${esc(money(item.total))}</td></tr>`;
+    }
+  }
+  html+='</tbody><tfoot><tr><td colspan="3">TOTAL GERAL</td><td class="num">'+esc(money(grandC))+'</td><td class="num">'+esc(money(grandCap))+'</td><td class="num">'+esc(money(grandTotal))+'</td></tr></tfoot></table>';
+  container.innerHTML=html;
+}
 function render(){
   const cv=$('conv').value;
   if(!cv){return;}
@@ -342,27 +408,7 @@ function render(){
   ],cad,'Não há valores cadastrados com fonte preenchida.');
   // Empenhos: one source row per record; no deduplication is applied.
   const emps=currentRows.filter(r=>String(get(r,'EMPENHO')).trim()!=='');
-  const empAgg=aggregate(emps,r=>`${String(get(r,'ANO')||'Não informado')}|${sourceLabel(get(r,'FONTE-NE'))}`,r=>{
-    const c=num(get(r,'VALOR CUSTEIO')),cap=num(get(r,'VALOR CAPITAL'));
-    return {c,cap,total:c+cap};
-  }).sort((a,b)=>a.key.localeCompare(b.key,'pt-BR'));
-  makeTable('empTable',[
-    {label:'Ano',get:r=>r.key.split('|')[0]},
-    {label:'Fonte',get:r=>r.key.split('|').slice(1).join('|')},
-    {label:'Custeio',num:true,get:r=>money(r.c)},
-    {label:'Capital',num:true,get:r=>money(r.cap)},
-    {label:'Total',num:true,get:r=>money(r.total)}
-  ],empAgg,'Nenhum empenho encontrado para este ajuste.');
-  // Linha de total da tabela de empenhos, somando exatamente os valores apresentados.
-  const empTableElement=$('empTable').querySelector('table');
-  if(empTableElement){
-    const totalEmpCusteio=empAgg.reduce((s,r)=>s+r.c,0);
-    const totalEmpCapital=empAgg.reduce((s,r)=>s+r.cap,0);
-    const totalEmpGeral=empAgg.reduce((s,r)=>s+r.total,0);
-    const tfoot=document.createElement('tfoot');
-    tfoot.innerHTML=`<tr><td colspan="2">TOTAL GERAL</td><td class="num">${esc(money(totalEmpCusteio))}</td><td class="num">${esc(money(totalEmpCapital))}</td><td class="num">${esc(money(totalEmpGeral))}</td></tr>`;
-    empTableElement.appendChild(tfoot);
-  }
+  renderEmpenhoTable(emps);
     // Payments, preserve every row, because OP duplication rule not yet confirmed.
   currentPayments=currentRows.filter(r=>String(get(r,'OP')).trim()!=='').map(r=>{
     const dt=dateParts(r,'pay');
@@ -451,6 +497,7 @@ function loadTextIntoPage(text, filename){
       const row=allRows.find(r=>String(r[convHeader]??'').trim()===cv);
       return {cv, ent:row?String(get(row,'ENTIDADE')||'').trim():''};
     });
+    renderOverview();
     $('status').hidden=true;
   }catch(err){
     $('status').hidden=false;
@@ -464,6 +511,73 @@ function paymentTotal(row){
   return num(get(row,'VALOR CUSTEIO_2'))+num(get(row,'VALOR CAPITAL_3'));
 }
 
+function summarizeAdjustment(rows){
+  const sourceTotals=new Map();
+  for(const row of rows){
+    const tpcad=norm(get(row,'TPCAD'));
+    const source=String(get(row,'TPFOTE')??'').trim();
+    if(source && (tpcad==='V'||tpcad==='A')){
+      if(!sourceTotals.has(source))sourceTotals.set(source,{initial:0,additions:0});
+      const totals=sourceTotals.get(source);
+      const value=num(get(row,'VL-CUSTEIO'))+num(get(row,'VL-REFORMA'))+num(get(row,'VL-BEM'));
+      if(tpcad==='V')totals.initial+=value;else totals.additions+=value;
+    }
+  }
+  const initial=[...sourceTotals.values()].reduce((s,x)=>s+x.initial,0);
+  const additions=[...sourceTotals.values()].reduce((s,x)=>s+x.additions,0);
+  const registered=initial+additions;
+  const commitments=rows.filter(r=>String(get(r,'EMPENHO')).trim()!=='');
+  const emp=commitments.reduce((s,r)=>s+num(get(r,'VALOR-NE')),0);
+  const payments=rows.filter(r=>String(get(r,'OP')).trim()!=='');
+  const paid=payments.reduce((s,r)=>s+paymentTotal(r),0);
+  const first=rows.find(r=>String(get(r,'ENTIDADE')||'').trim()!=='');
+  return {initial,additions,registered,emp,paid,balance:registered-emp,balancePay:emp-paid,entity:first?String(get(first,'ENTIDADE')).trim():'—'};
+}
+function renderOverview(){
+  if(!allRows.length){$('overviewTable').innerHTML='<div class="empty">Nenhum dado carregado.</div>';return;}
+  const grouped=new Map();
+  for(const row of allRows){
+    const code=String(get(row,'CONVENIO')||'').trim();
+    if(!code)continue;
+    if(!grouped.has(code))grouped.set(code,[]);
+    grouped.get(code).push(row);
+  }
+  const allAdjustments=[...grouped.entries()].map(([code,rows])=>({code,...summarizeAdjustment(rows)}));
+  allAdjustments.sort((a,b)=>{
+    const an=a.balance<0,bn=b.balance<0;
+    if(an!==bn)return an?-1:1;
+    if(an && a.balance!==b.balance)return a.balance-b.balance;
+    return formatAdjustmentNumber(a.code).localeCompare(formatAdjustmentNumber(b.code),'pt-BR');
+  });
+  const query=normalizeAdjustmentSearch($('overviewSearch').value);
+  const negativeOnly=$('overviewBalanceFilter').value==='negative';
+  const filtered=allAdjustments.filter(a=>{
+    if(negativeOnly && a.balance>=0)return false;
+    if(!query)return true;
+    return normalizeAdjustmentSearch(a.code+' '+formatAdjustmentNumber(a.code)+' '+a.entity).includes(query);
+  });
+  const negativeCount=allAdjustments.filter(a=>a.balance<0).length;
+  $('overviewCount').textContent=`${filtered.length.toLocaleString('pt-BR')} de ${allAdjustments.length.toLocaleString('pt-BR')} ajustes`;
+  $('overviewSummary').textContent=`${allAdjustments.length.toLocaleString('pt-BR')} ajustes na base · ${negativeCount.toLocaleString('pt-BR')} com saldo negativo · saldo negativo aparece em vermelho.`;
+  if(!filtered.length){$('overviewTable').innerHTML='<div class="empty">Nenhum ajuste encontrado para os filtros selecionados.</div>';return;}
+  let html='<table><thead><tr><th>Ajuste</th><th>Entidade</th><th>Total cadastrado inicial</th><th>Total cadastrado em aditamentos</th><th>Total cadastrado</th><th>Total empenhado</th><th>Saldo do ajuste</th><th>Total pago</th><th>Saldo total a pagar</th></tr></thead><tbody>';
+  for(const a of filtered){
+    const balanceClass=a.balance<0?'negative-value':'';
+    html+=`<tr><td><button type="button" class="overview-select" data-adjustment="${esc(a.code)}">${esc(formatAdjustmentNumber(a.code))}</button></td><td>${esc(a.entity)}</td><td class="num">${esc(money(a.initial))}</td><td class="num">${esc(money(a.additions))}</td><td class="num">${esc(money(a.registered))}</td><td class="num">${esc(money(a.emp))}</td><td class="num ${balanceClass}">${esc(money(a.balance))}</td><td class="num">${esc(money(a.paid))}</td><td class="num">${esc(money(a.balancePay))}</td></tr>`;
+  }
+  html+='</tbody></table>';$('overviewTable').innerHTML=html;
+  $('overviewTable').querySelectorAll('button[data-adjustment]').forEach(button=>button.addEventListener('click',()=>{showAppView('detail');chooseConv(button.getAttribute('data-adjustment'));window.scrollTo({top:0,behavior:'smooth'});}));
+}
+function showAppView(view){
+  const overview=view==='overview';
+  $('detailView').hidden=overview;
+  $('overviewView').hidden=!overview;
+  $('tabDetail').classList.toggle('active',!overview);
+  $('tabOverview').classList.toggle('active',overview);
+  $('tabDetail').setAttribute('aria-selected',String(!overview));
+  $('tabOverview').setAttribute('aria-selected',String(overview));
+  if(overview)renderOverview();
+}
 function chooseConv(value){
   const cv=String(value||'').trim();
   if(!cv)return;
@@ -480,6 +594,10 @@ function showSuggestions(){
   panel.querySelectorAll('button[data-cv]').forEach(btn=>btn.addEventListener('click',()=>chooseConv(btn.getAttribute('data-cv'))));
   panel.hidden=false;
 }
+$('tabDetail').addEventListener('click',()=>showAppView('detail'));
+$('tabOverview').addEventListener('click',()=>showAppView('overview'));
+$('overviewSearch').addEventListener('input',renderOverview);
+$('overviewBalanceFilter').addEventListener('change',renderOverview);
 $('conv').addEventListener('change',()=>{if($('conv').value){$('search').value=formatAdjustmentNumber($('conv').value);$('suggestions').hidden=true;}render();});
 $('search').addEventListener('input',()=>{
   const val=$('search').value.trim();

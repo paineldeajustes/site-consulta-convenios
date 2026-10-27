@@ -143,14 +143,32 @@ function mergeCadRecord(target: CadRecord, candidate: CadRecord): CadRecord {
   return target;
 }
 
+async function isAdminOrInternal(authorization: string): Promise<boolean> {
+  const expectedSecret = Deno.env.get("IMPORT_FUNCTION_SECRET");
+  if (expectedSecret && authorization === "Bearer " + expectedSecret) return true;
+  const token = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return false;
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceKey) return false;
+  const adminClient = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: userData, error: userError } = await adminClient.auth.getUser(token);
+  const email = userData?.user?.email?.toLowerCase();
+  if (userError || !email) return false;
+  const { data: profile, error: profileError } = await adminClient
+    .from("panel_users").select("email,is_admin,is_active").eq("email", email).maybeSingle();
+  return !profileError && profile?.is_admin === true && profile?.is_active === true;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ success: false, error: "Método não permitido." }, 405);
 
-  const expectedSecret = Deno.env.get("IMPORT_FUNCTION_SECRET") || "";
   const providedAuthorization = req.headers.get("Authorization") || "";
-  if (!expectedSecret || providedAuthorization !== "Bearer " + expectedSecret) {
-    return jsonResponse({ success: false, error: "Não autorizado." }, 401);
+  if (!(await isAdminOrInternal(providedAuthorization))) {
+    return jsonResponse({ success: false, error: "Não autorizado: somente o administrador pode executar a importação." }, 401);
   }
 
   const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON") || "";

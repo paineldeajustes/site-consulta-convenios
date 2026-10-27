@@ -119,9 +119,9 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
     <div class="section-head"><h2>2. Valores cadastrados por fonte e categoria econômica</h2><span class="pill">Termo inicial e aditamentos conforme registros do arquivo</span></div>
     <div id="cadTable" class="table-wrap"><div class="empty">Selecione um ajuste para visualizar os valores cadastrados.</div></div>
     <div class="detail-subsection">
-      <h3>Detalhamento dos aditamentos cadastrados</h3>
-      <p class="hint">Uma linha por aditamento, com os valores somados das fontes e categorias econômicas que o compõem.</p>
-      <div id="cadDetailTable" class="table-wrap"><div class="empty">Selecione um ajuste para visualizar os aditamentos.</div></div>
+      <h3>Detalhamento dos ajustes cadastrados</h3>
+      <p class="hint">Uma linha por cadastro, com os valores somados das fontes e categorias econômicas que o compõem.</p>
+      <div id="cadDetailTable" class="table-wrap"><div class="empty">Selecione um ajuste para visualizar os cadastros.</div></div>
     </div>
   </section>
 
@@ -299,34 +299,50 @@ function makeTable(container, cols, rows, empty){
   html+='</tbody></table>'; $(container).innerHTML=html;
 }
 function renderCadAmendments(rows){
+  // Cada registro com TPCAD=V compõe o ajuste inicial; totalizamos suas fontes em uma única linha.
+  const initialRows=rows.filter(row=>norm(get(row,'TPCAD'))==='V');
+  const initial={label:'Ajuste inicial',type:'Inicial (V)',sources:new Set(),c:0,cap:0,total:0};
+  for(const row of initialRows){
+    const source=String(get(row,'TPFOTE')??'').trim();
+    if(source)initial.sources.add(sourceLabel(source));
+    initial.c+=num(get(row,'VL-CUSTEIO'))+num(get(row,'VL-REFORMA'));
+    initial.cap+=num(get(row,'VL-BEM'));
+  }
+  initial.total=initial.c+initial.cap;
+
+  // Agrupa cada aditamento pelo tipo e número, somando todas as linhas de fonte/categoria que o compõem.
   const details=new Map();
   const amendments=rows.filter(row=>norm(get(row,'TPCAD'))==='A');
   for(const row of amendments){
     const type=String(get(row,'TIPOAD')??'').trim()||'Não informado';
     const number=String(get(row,'NUMEROAD')??'').trim()||'Não informado';
     const key=norm(type)+'\u241f'+norm(number);
-    if(!details.has(key))details.set(key,{type,number,sources:new Set(),c:0,cap:0,total:0});
+    if(!details.has(key))details.set(key,{label:`Aditamento ${number}`,type,number,sources:new Set(),c:0,cap:0,total:0,kind:'amendment'});
     const item=details.get(key);
     const source=String(get(row,'TPFOTE')??'').trim();
     if(source)item.sources.add(sourceLabel(source));
     item.c+=num(get(row,'VL-CUSTEIO'))+num(get(row,'VL-REFORMA'));
     item.cap+=num(get(row,'VL-BEM'));
-    item.total=item.c+item.cap;
   }
-  const ordered=[...details.values()].sort((a,b)=>{
+  const amendmentsOrdered=[...details.values()].sort((a,b)=>{
     const n=a.number.localeCompare(b.number,'pt-BR',{numeric:true});
     return n || a.type.localeCompare(b.type,'pt-BR');
   });
-  if(!ordered.length){$('cadDetailTable').innerHTML='<div class="empty">Nenhum aditamento identificado neste ajuste.</div>';return;}
-  let html='<table><thead><tr><th>Nº do aditamento</th><th>Tipo</th><th>Fonte(s)</th><th>Custeio</th><th>Capital</th><th>Total</th></tr></thead><tbody>';
+  for(const item of amendmentsOrdered)item.total=item.c+item.cap;
+  const ordered=[];
+  if(initialRows.length)ordered.push(initial);
+  ordered.push(...amendmentsOrdered);
+  if(!ordered.length){$('cadDetailTable').innerHTML='<div class="empty">Não há registros de ajuste inicial (TPCAD=V) nem aditamentos (TPCAD=A) para este ajuste.</div>';return;}
+  let html='<table><thead><tr><th>Cadastro</th><th>Tipo</th><th>Fonte(s)</th><th>Custeio</th><th>Capital</th><th>Total</th></tr></thead><tbody>';
   for(const item of ordered){
     const sources=[...item.sources].sort((a,b)=>a.localeCompare(b,'pt-BR')).join(', ')||'Não informada';
-    html+=`<tr><td>${esc(item.number)}</td><td>${esc(item.type)}</td><td>${esc(sources)}</td><td class="num">${esc(money(item.c))}</td><td class="num">${esc(money(item.cap))}</td><td class="num">${esc(money(item.total))}</td></tr>`;
+    html+=`<tr><td>${esc(item.label)}</td><td>${esc(item.type)}</td><td>${esc(sources)}</td><td class="num">${esc(money(item.c))}</td><td class="num">${esc(money(item.cap))}</td><td class="num">${esc(money(item.total))}</td></tr>`;
   }
   const totalC=ordered.reduce((s,item)=>s+item.c,0);
   const totalCap=ordered.reduce((s,item)=>s+item.cap,0);
   const total=ordered.reduce((s,item)=>s+item.total,0);
-  html+='</tbody><tfoot><tr><td colspan="3">TOTAL DOS ADITAMENTOS ('+ordered.length.toLocaleString('pt-BR')+' aditamentos)</td><td class="num">'+esc(money(totalC))+'</td><td class="num">'+esc(money(totalCap))+'</td><td class="num">'+esc(money(total))+'</td></tr></tfoot></table>';
+  const countLabel=initialRows.length?'cadastro(s)':'aditamento(s)';
+  html+='</tbody><tfoot><tr><td colspan="3">TOTAL DOS AJUSTES CADASTRADOS ('+ordered.length.toLocaleString('pt-BR')+' '+countLabel+')</td><td class="num">'+esc(money(totalC))+'</td><td class="num">'+esc(money(totalCap))+'</td><td class="num">'+esc(money(total))+'</td></tr></tfoot></table>';
   $('cadDetailTable').innerHTML=html;
 }
 function renderReconVertical(rows){

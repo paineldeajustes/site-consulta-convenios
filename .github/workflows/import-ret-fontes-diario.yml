@@ -37,3 +37,18 @@ jobs:
             --header "Authorization: Bearer ${IMPORT_FUNCTION_SECRET}" \
             --header 'Content-Type: application/json' \
             --data '{}'
+
+      # Esta etapa permanece desativada até a nova função import-cad-convenios ser publicada
+      # no Supabase, o segredo GOOGLE_DRIVE_CAD_FILE_ID estar configurado lá e a variável
+      # de repositório IMPORT_CAD_FUNCTION_ENABLED ser definida como true.
+      - name: Importar cadastro CadConvenios
+        if: ${{ vars.IMPORT_CAD_FUNCTION_ENABLED == 'true' }}
+        env:
+          IMPORT_FUNCTION_SECRET: ${{ secrets.IMPORT_FUNCTION_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --url 'https://qkjudfvlaatdcaosadun.supabase.co/functions/v1/import-cad-convenios' \
+            --header "Authorization: Bearer ${IMPORT_FUNCTION_SECRET}" \
+            --header 'Content-Type: application/json' \
+            --data '{}'

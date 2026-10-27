@@ -82,9 +82,13 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
     <div class="cards">
       <div class="metric"><span>Ajuste</span><strong id="mConv">—</strong></div>
       <div class="metric"><span>Entidade</span><strong id="mEnt" style="font-size:15px">—</strong></div>
+      <div class="metric"><span>Total cadastrado inicial</span><strong id="mCadInicial">—</strong></div>
+      <div class="metric"><span>Total cadastrado em aditamentos</span><strong id="mCadAditamentos">—</strong></div>
       <div class="metric"><span>Total empenhado</span><strong id="mEmp">—</strong></div>
-      <div class="metric"><span>Total pago</span><strong id="mPago">—</strong></div>
       <div class="metric"><span>Saldo do ajuste</span><strong id="mSaldo">—</strong></div>
+      <div class="metric"><span>Total pago</span><strong id="mPago">—</strong></div>
+      <div class="metric"><span>Saldo total a empenhar</span><strong id="mSaldoEmpenhar">—</strong></div>
+      <div class="metric"><span>Saldo total a pagar</span><strong id="mSaldoPagar">—</strong></div>
     </div>
   </section>
 
@@ -236,17 +240,19 @@ function formatAdjustmentNumber(value){
   const raw=String(value??'').trim();
   if(!raw)return raw;
 
-  // Formato antigo: número/ano + sufixo. Ex.: 85208/2021SAS.
-  const oldFormat=raw.match(/^(\d+)\s*\/\s*(\d{4})\s*-?\s*([A-Za-z].*)$/);
-  if(oldFormat){
-    return `${oldFormat[2]}${oldFormat[1].padStart(5,'0')}${oldFormat[3].trim()}`;
+  // Formato novo recebido no TXT: ano + número de cinco dígitos + sufixo.
+  // Exemplo: 202100001SAS -> 00001/2021-SAS.
+  const compact=raw.replace(/[^A-Za-z0-9]/g,'');
+  const compactMatch=compact.match(/^(\d{4})(\d{5})([A-Za-z].*)$/);
+  if(compactMatch){
+    return `${compactMatch[2]}/${compactMatch[1]}-${compactMatch[3].trim()}`;
   }
 
-  // Novo formato: ano (4 dígitos) + número (5 dígitos) + letra/sufixo.
-  // Aceita espaços, barras ou hífens entre os elementos e exibe o código compacto.
-  const compact=raw.replace(/[^A-Za-z0-9]/g,'');
-  const newFormat=compact.match(/^(\d{4})(\d{5})([A-Za-z].*)$/);
-  if(newFormat)return `${newFormat[1]}${newFormat[2]}${newFormat[3]}`;
+  // Também aceita o formato já separado: número/ano + sufixo.
+  const separatedMatch=raw.match(/^(\d{1,5})\s*\/\s*(\d{4})\s*-?\s*([A-Za-z].*)$/);
+  if(separatedMatch){
+    return `${separatedMatch[1].padStart(5,'0')}/${separatedMatch[2]}-${separatedMatch[3].trim()}`;
+  }
 
   return raw;
 }
@@ -355,10 +361,20 @@ function render(){
       cap:num(get(r,'VALOR CAPITAL_3')),total:paymentTotal(r)};
   }).sort((a,b)=>(b.dt?.getTime()||0)-(a.dt?.getTime()||0));
   const totalEmpenhado=emps.reduce((s,r)=>s+num(get(r,'VALOR-NE')),0);
-  const totalCadastrado=recon.reduce((s,r)=>s+r.registered,0);
+  const totalInicial=recon.reduce((s,r)=>s+r.initial,0);
+  const totalAditamentos=recon.reduce((s,r)=>s+r.additions,0);
+  const totalCadastrado=totalInicial+totalAditamentos;
+  const totalPago=currentPayments.reduce((s,r)=>s+r.total,0);
+  const saldoAEmpenhar=totalCadastrado-totalEmpenhado;
+  const saldoAPagar=totalEmpenhado-totalPago;
+
+  $('mCadInicial').textContent=money(totalInicial);
+  $('mCadAditamentos').textContent=money(totalAditamentos);
   $('mEmp').textContent=money(totalEmpenhado);
-  $('mPago').textContent=layoutInfo.hasPayments?money(currentPayments.reduce((s,r)=>s+r.total,0)):'Não disponível';
-  $('mSaldo').textContent=money(totalCadastrado-totalEmpenhado);
+  $('mSaldo').textContent=money(saldoAEmpenhar);
+  $('mPago').textContent=layoutInfo.hasPayments?money(totalPago):'Não disponível';
+  $('mSaldoEmpenhar').textContent=money(saldoAEmpenhar);
+  $('mSaldoPagar').textContent=layoutInfo.hasPayments?money(saldoAPagar):'Não disponível';
   $('dateFrom').value='';$('dateTo').value='';
   configurePaymentFilters();
   $('dateFrom').disabled=!layoutInfo.hasPayments;$('dateTo').disabled=!layoutInfo.hasPayments;$('clearDates').disabled=!layoutInfo.hasPayments;$('export').disabled=!layoutInfo.hasPayments;
@@ -416,7 +432,7 @@ function loadTextIntoPage(text, filename){
     $('conv').innerHTML='<option value="">Selecione um ajuste</option>'+convs.map(c=>`<option value="${esc(c)}">${esc(formatAdjustmentNumber(c))}</option>`).join('');
     $('conv').disabled=false;$('search').disabled=false;
         $('status').hidden=true;
-    $('conv').value='';$('search').value='';$('mConv').textContent='—';$('mEnt').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';$('mSaldo').textContent='—';
+    $('conv').value='';$('search').value='';$('mConv').textContent='—';$('mEnt').textContent='—';$('mCadInicial').textContent='—';$('mCadAditamentos').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';$('mSaldo').textContent='—';$('mSaldoEmpenhar').textContent='—';$('mSaldoPagar').textContent='—';
         ['reconTable','cadTable','empTable','payTable'].forEach(id=>$(id).innerHTML='<div class="empty">Selecione um ajuste para visualizar os dados.</div>');
     $('dateFrom').disabled=true;$('dateTo').disabled=true;$('clearDates').disabled=true;$('export').disabled=true;
     $('payCount').textContent='0 registros';
@@ -456,7 +472,8 @@ function showSuggestions(){
 $('conv').addEventListener('change',()=>{if($('conv').value){$('search').value=formatAdjustmentNumber($('conv').value);$('suggestions').hidden=true;}render();});
 $('search').addEventListener('input',()=>{
   const val=$('search').value.trim();
-  const exact=(window.CONVENIO_OPTIONS||[]).find(o=>normalizeAdjustmentSearch(o.cv)===normalizeAdjustmentSearch(val));
+  const normalizedVal=normalizeAdjustmentSearch(val);
+  const exact=(window.CONVENIO_OPTIONS||[]).find(o=>normalizeAdjustmentSearch(o.cv)===normalizedVal || normalizeAdjustmentSearch(formatAdjustmentNumber(o.cv))===normalizedVal);
   if(exact){$('conv').value=exact.cv;render();}
   showSuggestions();
 });

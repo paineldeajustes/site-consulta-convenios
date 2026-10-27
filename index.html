@@ -119,6 +119,47 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 <script>
 const $ = id => document.getElementById(id);
 
+// Use somente a chave pública sb_publishable_. Nunca use service_role ou chave secret.
+const SUPABASE_URL = 'https://qkjudfvlaatdcaosadun.supabase.co';
+const SUPABASE_PUBLIC_KEY = 'sb_publishable_B3A7uwmQWUs8oOivjgJ6Qw_6rqx4U0W';
+
+async function supabaseGet(path){
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: { apikey: SUPABASE_PUBLIC_KEY, Authorization: `Bearer ${SUPABASE_PUBLIC_KEY}`, Accept: 'application/json' }
+  });
+  if(!response.ok) throw new Error(`Supabase respondeu ${response.status}: ${await response.text()}`);
+  return response.json();
+}
+
+async function loadLatestFromSupabase(){
+  if(!SUPABASE_PUBLIC_KEY || SUPABASE_PUBLIC_KEY === 'COLE_SUA_CHAVE_PUBLICA_AQUI'){
+    $('status').textContent = 'Falta configurar a chave pública do Supabase no index.html. Você ainda pode carregar o TXT manualmente.';
+    return;
+  }
+  $('status').textContent = 'Conectando ao Supabase e buscando a última importação concluída…';
+  try{
+    const imports = await supabaseGet('ret_fontes_imports?select=id,file_name,status,row_count,finished_at&status=eq.success&order=finished_at.desc&limit=1');
+    if(!imports.length) throw new Error('Não há importação concluída disponível.');
+    const latest = imports[0];
+    const records = await supabaseGet(`ret_fontes_rows?select=row_number,fields&import_id=eq.${encodeURIComponent(latest.id)}&order=row_number.asc&limit=100000`);
+    if(!records.length) throw new Error('A importação mais recente não contém registros.');
+    const schema = ['CONVENIO','ENTIDADE','TIPOAD','NUMEROAD','TPCAD','TPFOTE','VL-BEM','VL-CUSTEIO','VL-REFORMA','EMPENHO','VALOR-NE','VALOR CUSTEIO','VALOR CAPITAL','FONTE-NE','ANO','MES','DIA','OP','EMPENHO_1','VALOR-OP','VALOR CUSTEIO_2','VALOR CAPITAL_3','FONTE-NE_4','ANO_5','MES_6','DIA_7','Column1'];
+    const quoteField = value => '"' + String(value ?? '').replace(/"/g, '""') + '"';
+    const lines = [schema.map(quoteField).join(';')];
+    for(const record of records){
+      let fields = record.fields;
+      if(typeof fields === 'string') fields = JSON.parse(fields);
+      if(!Array.isArray(fields)) throw new Error(`Formato inesperado na linha ${record.row_number}.`);
+      lines.push(fields.map(quoteField).join(';'));
+    }
+    loadTextIntoPage(lines.join('\n'), `Supabase · ${latest.file_name || 'RET_FONTES.txt'}`);
+    $('fileMeta').textContent = `Supabase · ${records.length.toLocaleString('pt-BR')} registros · importado em ${latest.finished_at ? new Date(latest.finished_at).toLocaleString('pt-BR') : 'data não informada'}`;
+  }catch(err){
+    $('status').textContent = 'Não foi possível carregar os dados do Supabase: ' + (err?.message || String(err)) + '. Você ainda pode selecionar o TXT manualmente.';
+    console.error('Falha ao carregar dados do Supabase', err);
+  }
+}
+
 let allRows=[], headers=[], currentRows=[], currentPayments=[], layoutInfo={hasPayments:false,maxFields:0};
 const money = n => (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 function norm(s){return String(s??'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
@@ -416,6 +457,8 @@ $('export').addEventListener('click',()=>{
  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);
  const a=document.createElement('a');a.href=url;a.download='pagamentos_'+$('conv').value.replace(/[^\w.-]+/g,'_')+'.csv';a.click();URL.revokeObjectURL(url);
 });
+// Carrega automaticamente os dados publicados no Supabase ao abrir a página.
+loadLatestFromSupabase();
 </script>
 </body>
 </html>

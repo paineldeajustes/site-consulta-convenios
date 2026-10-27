@@ -62,6 +62,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 .emp-detail td{background:#fff!important;font-weight:400}
 .emp-detail td:nth-child(2){padding-left:24px;color:#344054}
 .negative-value{background:#fff1f0!important;color:#b91c1c!important;font-weight:800!important}
+.detail-subsection{margin-top:20px}.detail-subsection h3{margin-bottom:6px}
 .overview-select{background:transparent;color:#164e87;text-decoration:underline;padding:0;border-radius:0;font-weight:650}
 .overview-select:hover{background:transparent;color:#12345a}
 #overviewSearch{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px}
@@ -116,7 +117,12 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 
   <section class="panel">
     <div class="section-head"><h2>2. Valores cadastrados por fonte e categoria econômica</h2><span class="pill">Termo inicial e aditamentos conforme registros do arquivo</span></div>
-    <div id="cadTable" class="table-wrap"><div class="empty">Carregue um arquivo e selecione um ajuste.</div></div>
+    <div id="cadTable" class="table-wrap"><div class="empty">Selecione um ajuste para visualizar os valores cadastrados.</div></div>
+    <div class="detail-subsection">
+      <h3>Detalhamento dos aditamentos cadastrados</h3>
+      <p class="hint">Uma linha por aditamento, com os valores somados das fontes e categorias econômicas que o compõem.</p>
+      <div id="cadDetailTable" class="table-wrap"><div class="empty">Selecione um ajuste para visualizar os aditamentos.</div></div>
+    </div>
   </section>
 
   <section class="panel">
@@ -292,6 +298,37 @@ function makeTable(container, cols, rows, empty){
   for(const row of rows){html+='<tr>'+cols.map(c=>{const v=c.get(row);return `<td class="${c.num?'num':''}">${esc(v??'')}</td>`}).join('')+'</tr>';}
   html+='</tbody></table>'; $(container).innerHTML=html;
 }
+function renderCadAmendments(rows){
+  const details=new Map();
+  const amendments=rows.filter(row=>norm(get(row,'TPCAD'))==='A');
+  for(const row of amendments){
+    const type=String(get(row,'TIPOAD')??'').trim()||'Não informado';
+    const number=String(get(row,'NUMEROAD')??'').trim()||'Não informado';
+    const key=norm(type)+'\u241f'+norm(number);
+    if(!details.has(key))details.set(key,{type,number,sources:new Set(),c:0,cap:0,total:0});
+    const item=details.get(key);
+    const source=String(get(row,'TPFOTE')??'').trim();
+    if(source)item.sources.add(sourceLabel(source));
+    item.c+=num(get(row,'VL-CUSTEIO'))+num(get(row,'VL-REFORMA'));
+    item.cap+=num(get(row,'VL-BEM'));
+    item.total=item.c+item.cap;
+  }
+  const ordered=[...details.values()].sort((a,b)=>{
+    const n=a.number.localeCompare(b.number,'pt-BR',{numeric:true});
+    return n || a.type.localeCompare(b.type,'pt-BR');
+  });
+  if(!ordered.length){$('cadDetailTable').innerHTML='<div class="empty">Nenhum aditamento identificado neste ajuste.</div>';return;}
+  let html='<table><thead><tr><th>Nº do aditamento</th><th>Tipo</th><th>Fonte(s)</th><th>Custeio</th><th>Capital</th><th>Total</th></tr></thead><tbody>';
+  for(const item of ordered){
+    const sources=[...item.sources].sort((a,b)=>a.localeCompare(b,'pt-BR')).join(', ')||'Não informada';
+    html+=`<tr><td>${esc(item.number)}</td><td>${esc(item.type)}</td><td>${esc(sources)}</td><td class="num">${esc(money(item.c))}</td><td class="num">${esc(money(item.cap))}</td><td class="num">${esc(money(item.total))}</td></tr>`;
+  }
+  const totalC=ordered.reduce((s,item)=>s+item.c,0);
+  const totalCap=ordered.reduce((s,item)=>s+item.cap,0);
+  const total=ordered.reduce((s,item)=>s+item.total,0);
+  html+='</tbody><tfoot><tr><td colspan="3">TOTAL DOS ADITAMENTOS ('+ordered.length.toLocaleString('pt-BR')+' aditamentos)</td><td class="num">'+esc(money(totalC))+'</td><td class="num">'+esc(money(totalCap))+'</td><td class="num">'+esc(money(total))+'</td></tr></tfoot></table>';
+  $('cadDetailTable').innerHTML=html;
+}
 function renderReconVertical(rows){
   const el=$('reconTable');
   if(!rows.length){el.innerHTML='<div class="empty">Não há valores de cadastro, empenhos ou pagamentos para este ajuste.</div>';return;}
@@ -406,6 +443,7 @@ function render(){
     {label:'Fonte',get:r=>r.key},{label:'Custeio',num:true,get:r=>money(r.c)},
     {label:'Capital',num:true,get:r=>money(r.cap)},{label:'Total',num:true,get:r=>money(r.total)}
   ],cad,'Não há valores cadastrados com fonte preenchida.');
+  renderCadAmendments(currentRows);
   // Empenhos: one source row per record; no deduplication is applied.
   const emps=currentRows.filter(r=>String(get(r,'EMPENHO')).trim()!=='');
   renderEmpenhoTable(emps);
@@ -490,7 +528,7 @@ function loadTextIntoPage(text, filename){
     $('conv').disabled=false;$('search').disabled=false;
         $('status').hidden=true;
     $('conv').value='';$('search').value='';$('mConv').textContent='—';$('mEnt').textContent='—';$('mCadInicial').textContent='—';$('mCadAditamentos').textContent='—';$('mTotalCadastrado').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';$('mSaldo').textContent='—';$('saldoAjusteCard').classList.remove('negative-balance');$('mSaldoPagar').textContent='—';
-        ['reconTable','cadTable','empTable','payTable'].forEach(id=>$(id).innerHTML='<div class="empty">Selecione um ajuste para visualizar os dados.</div>');
+        ['reconTable','cadTable','cadDetailTable','empTable','payTable'].forEach(id=>$(id).innerHTML='<div class="empty">Selecione um ajuste para visualizar os dados.</div>');
     $('dateFrom').disabled=true;$('dateTo').disabled=true;$('clearDates').disabled=true;$('export').disabled=true;
     $('payCount').textContent='0 registros';
     window.CONVENIO_OPTIONS=convs.map(cv=>{

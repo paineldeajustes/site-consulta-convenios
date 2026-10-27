@@ -62,20 +62,15 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 </header>
 <main>
   <section class="panel">
-    <h2>Consulta diária</h2>
-    <div class="drop-zone" id="dropZone">
-      <strong>Carregue o arquivo diário para iniciar</strong>
-      <span class="hint">Escolha o TXT ou arraste-o para esta área. O arquivo é processado somente no seu navegador.</span>
-      <input id="fileInput" type="file" accept=".txt,text/plain">
-      <div id="fileMeta" class="file-meta">Nenhum arquivo carregado.</div>
+    <div class="section-head">
+      <h2>Consulta diária</h2>
+      <span id="fileMeta" class="pill">Conectando ao Supabase…</span>
     </div>
-    <div class="controls" style="margin-top:14px">
-      <div><label for="conv">Número do convênio</label><select id="conv" disabled><option value="">Carregue um arquivo primeiro</option></select></div>
+    <div class="controls" style="margin-top:14px;grid-template-columns:repeat(2,minmax(180px,1fr))">
+      <div><label for="conv">Número do convênio</label><select id="conv" disabled><option value="">Carregando convênios…</option></select></div>
       <div class="search-wrap"><label for="search">Localizar convênio</label><input id="search" type="search" placeholder="Digite o número ou nome da entidade" autocomplete="off" disabled><div id="suggestions" class="suggestions" hidden></div></div>
-      <div><label>Origem dos dados</label><div class="status" style="margin-top:0">Arquivo selecionado pelo usuário</div></div>
     </div>
-    <div id="status" class="status">Aguardando o carregamento do arquivo diário.</div>
-    <p class="hint">Os dados não são enviados à internet. Para um uso compartilhado, publique este site em um servidor interno e mantenha o arquivo de origem sob controle da equipe responsável.</p>
+    <div id="status" class="status">Conectando ao Supabase e carregando a base mais recente…</div>
   </section>
 
   <section class="panel">
@@ -114,7 +109,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
     </div>
     <div id="payTable" class="table-wrap"><div class="empty">Sem dados para exibir.</div></div>
   </section>
-  <div class="footer">Protótipo local. Não substitui a validação dos dados de origem nem a conferência contábil. A página não grava nem transmite os dados carregados.</div>
+  <div class="footer">Consulte os dados da última importação concluída. As informações devem ser conferidas com os registros oficiais antes de uso administrativo.</div>
 </main>
 <script>
 const $ = id => document.getElementById(id);
@@ -132,8 +127,8 @@ async function supabaseGet(path){
 }
 
 async function loadLatestFromSupabase(){
-  if(!SUPABASE_PUBLIC_KEY || SUPABASE_PUBLIC_KEY === 'COLE_SUA_CHAVE_PUBLICA_AQUI'){
-    $('status').textContent = 'Falta configurar a chave pública do Supabase no index.html. Você ainda pode carregar o TXT manualmente.';
+  if(!SUPABASE_PUBLIC_KEY || SUPABASE_PUBLIC_KEY === 'sb_publishable_B3A7uwmQWUs8oOivjgJ6Qw_6rqx4U0W'){
+    $('status').textContent = 'Falta configurar a chave pública do Supabase no index.html.';
     return;
   }
   $('status').textContent = 'Conectando ao Supabase e buscando a última importação concluída…';
@@ -155,7 +150,7 @@ async function loadLatestFromSupabase(){
     loadTextIntoPage(lines.join('\n'), `Supabase · ${latest.file_name || 'RET_FONTES.txt'}`);
     $('fileMeta').textContent = `Supabase · ${records.length.toLocaleString('pt-BR')} registros · importado em ${latest.finished_at ? new Date(latest.finished_at).toLocaleString('pt-BR') : 'data não informada'}`;
   }catch(err){
-    $('status').textContent = 'Não foi possível carregar os dados do Supabase: ' + (err?.message || String(err)) + '. Você ainda pode selecionar o TXT manualmente.';
+    $('status').textContent = 'Não foi possível carregar os dados do Supabase: ' + (err?.message || String(err)) + '.';
     console.error('Falha ao carregar dados do Supabase', err);
   }
 }
@@ -374,7 +369,7 @@ function loadTextIntoPage(text, filename){
     $('conv').innerHTML='<option value="">Selecione um convênio</option>'+convs.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
     $('conv').disabled=false;$('search').disabled=false;
     const paymentStatus=parsed.hasPayments?'bloco de pagamentos identificado':'sem bloco de pagamentos (OP/VALOR-OP)';
-    $('status').textContent=`Arquivo carregado: ${filename} · ${allRows.length.toLocaleString('pt-BR')} linhas · ${convs.length.toLocaleString('pt-BR')} convênios · ${paymentStatus} · separador: ${parsed.delimiter==='\t'?'TAB':JSON.stringify(parsed.delimiter)}`;
+    $('status').textContent=`Dados carregados · ${allRows.length.toLocaleString('pt-BR')} linhas · ${convs.length.toLocaleString('pt-BR')} convênios · ${paymentStatus}`;
     $('conv').value='';$('search').value='';$('mConv').textContent='—';$('mEnt').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';
     $('recordCount').textContent='Nenhum convênio selecionado';
     ['reconTable','cadTable','empTable','payTable'].forEach(id=>$(id).innerHTML='<div class="empty">Selecione um convênio para visualizar os dados.</div>');
@@ -411,23 +406,6 @@ function showSuggestions(){
   panel.querySelectorAll('button[data-cv]').forEach(btn=>btn.addEventListener('click',()=>chooseConv(btn.getAttribute('data-cv'))));
   panel.hidden=false;
 }
-async function loadSelectedFile(file){
-  if(!file)return;
-  try{
-    const bytes=await file.arrayBuffer();
-    let text=new TextDecoder('utf-8').decode(bytes);
-    if((text.match(/\uFFFD/g)||[]).length>3) text=new TextDecoder('windows-1252').decode(bytes);
-    loadTextIntoPage(text,file.name);
-    $('fileMeta').textContent=`${file.name} · ${file.size.toLocaleString('pt-BR')} bytes`;
-  }catch(err){
-    $('status').textContent='Não foi possível ler o arquivo: '+(err&&err.message?err.message:String(err));
-  }
-}
-const dropZone=$('dropZone');
-$('fileInput').addEventListener('change',e=>loadSelectedFile(e.target.files[0]));
-dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag');});
-dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag'));
-dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('drag');loadSelectedFile(e.dataTransfer.files[0]);});
 $('conv').addEventListener('change',()=>{if($('conv').value){$('search').value=$('conv').value;$('suggestions').hidden=true;}render();});
 $('search').addEventListener('input',()=>{
   const val=$('search').value.trim();

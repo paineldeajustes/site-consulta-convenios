@@ -17,7 +17,7 @@ input,select,button{font:inherit}input[type=file],input[type=date],select,input[
 button{background:#164e87;color:white;border:0;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:600}
 button:disabled{opacity:.45;cursor:not-allowed}.hint{font-size:12px;color:#667085;line-height:1.5}
 .status{padding:10px 12px;background:#eef5fc;border-radius:8px;font-size:13px;margin-top:12px}
-.cards{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px}
+.cards{display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:12px}
 .metric{border:1px solid #e1e7ef;border-radius:12px;padding:15px;background:linear-gradient(180deg,#fff,#fbfcfe)}.metric span{font-size:12px;color:#667085;display:block}.metric strong{font-size:20px;display:block;margin-top:7px;overflow-wrap:anywhere;color:#12345a}
 .table-wrap{overflow-x:auto;overflow-y:visible;max-height:none;border:1px solid #cbd7e6;border-radius:10px;background:#fff}
 table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px;white-space:nowrap}
@@ -33,6 +33,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 .empty{color:#667085;text-align:center;padding:22px}.pill{display:inline-block;background:#edf2f7;padding:4px 8px;border-radius:20px;font-size:11px;color:#344054}
 .footer{font-size:11px;color:#667085;padding:8px 2px 24px}
 .search-wrap{position:relative}.suggestions{position:absolute;left:0;right:0;top:100%;z-index:20;background:#fff;border:1px solid #cbd5e1;border-radius:9px;box-shadow:0 8px 24px #10203020;max-height:280px;overflow:auto;margin-top:4px}.suggestions[hidden]{display:none}.suggestion{display:block;width:100%;text-align:left;background:#fff;color:#172b4d;border-radius:0;padding:10px 12px;border-bottom:1px solid #eef2f6;font-weight:500}.suggestion:hover,.suggestion:focus{background:#edf6f7}.suggestion strong{display:block;font-size:13px}.suggestion span{display:block;font-size:11px;color:#667085;margin-top:3px}
+@media(max-width:1100px){.cards{grid-template-columns:repeat(3,minmax(140px,1fr))}}
 @media(max-width:760px){.controls,.cards{grid-template-columns:1fr 1fr}header{padding:18px}.section-head{align-items:flex-start;flex-direction:column}}
 
 .recon-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
@@ -83,6 +84,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
       <div class="metric"><span>Entidade</span><strong id="mEnt" style="font-size:15px">—</strong></div>
       <div class="metric"><span>Total empenhado</span><strong id="mEmp">—</strong></div>
       <div class="metric"><span>Total pago</span><strong id="mPago">—</strong></div>
+      <div class="metric"><span>Saldo do ajuste</span><strong id="mSaldo">—</strong></div>
     </div>
   </section>
 
@@ -232,11 +234,23 @@ function sourceLabel(v){
 }
 function formatAdjustmentNumber(value){
   const raw=String(value??'').trim();
-  const match=raw.match(/^(\d+)\s*\/\s*(\d{4})\s*-?\s*([A-Za-z].*)$/);
-  if(!match)return raw;
-  return `${match[1].padStart(5,'0')}/${match[2]}-${match[3].trim()}`;
+  if(!raw)return raw;
+
+  // Formato antigo: número/ano + sufixo. Ex.: 85208/2021SAS.
+  const oldFormat=raw.match(/^(\d+)\s*\/\s*(\d{4})\s*-?\s*([A-Za-z].*)$/);
+  if(oldFormat){
+    return `${oldFormat[2]}${oldFormat[1].padStart(5,'0')}${oldFormat[3].trim()}`;
+  }
+
+  // Novo formato: ano (4 dígitos) + número (5 dígitos) + letra/sufixo.
+  // Aceita espaços, barras ou hífens entre os elementos e exibe o código compacto.
+  const compact=raw.replace(/[^A-Za-z0-9]/g,'');
+  const newFormat=compact.match(/^(\d{4})(\d{5})([A-Za-z].*)$/);
+  if(newFormat)return `${newFormat[1]}${newFormat[2]}${newFormat[3]}`;
+
+  return raw;
 }
-function normalizeAdjustmentSearch(value){return norm(value).replace(/[\s-]+/g,'');}
+function normalizeAdjustmentSearch(value){return norm(value).replace(/[^A-Z0-9]/g,'');}
 function makeTable(container, cols, rows, empty){
   if(!rows.length){$(container).innerHTML=`<div class="empty">${empty||'Nenhum registro encontrado.'}</div>`;return;}
   let html='<table><thead><tr>'+cols.map(c=>`<th>${esc(c.label)}</th>`).join('')+'</tr></thead><tbody>';
@@ -340,8 +354,11 @@ function render(){
       source:sourceLabel(get(r,'FONTE-NE_4')||get(r,'FONTE-NE')),c:num(get(r,'VALOR CUSTEIO_2')),
       cap:num(get(r,'VALOR CAPITAL_3')),total:paymentTotal(r)};
   }).sort((a,b)=>(b.dt?.getTime()||0)-(a.dt?.getTime()||0));
-  $('mEmp').textContent=money(emps.reduce((s,r)=>s+num(get(r,'VALOR-NE')),0));
+  const totalEmpenhado=emps.reduce((s,r)=>s+num(get(r,'VALOR-NE')),0);
+  const totalCadastrado=recon.reduce((s,r)=>s+r.registered,0);
+  $('mEmp').textContent=money(totalEmpenhado);
   $('mPago').textContent=layoutInfo.hasPayments?money(currentPayments.reduce((s,r)=>s+r.total,0)):'Não disponível';
+  $('mSaldo').textContent=money(totalCadastrado-totalEmpenhado);
   $('dateFrom').value='';$('dateTo').value='';
   configurePaymentFilters();
   $('dateFrom').disabled=!layoutInfo.hasPayments;$('dateTo').disabled=!layoutInfo.hasPayments;$('clearDates').disabled=!layoutInfo.hasPayments;$('export').disabled=!layoutInfo.hasPayments;
@@ -399,7 +416,7 @@ function loadTextIntoPage(text, filename){
     $('conv').innerHTML='<option value="">Selecione um ajuste</option>'+convs.map(c=>`<option value="${esc(c)}">${esc(formatAdjustmentNumber(c))}</option>`).join('');
     $('conv').disabled=false;$('search').disabled=false;
         $('status').hidden=true;
-    $('conv').value='';$('search').value='';$('mConv').textContent='—';$('mEnt').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';
+    $('conv').value='';$('search').value='';$('mConv').textContent='—';$('mEnt').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';$('mSaldo').textContent='—';
         ['reconTable','cadTable','empTable','payTable'].forEach(id=>$(id).innerHTML='<div class="empty">Selecione um ajuste para visualizar os dados.</div>');
     $('dateFrom').disabled=true;$('dateTo').disabled=true;$('clearDates').disabled=true;$('export').disabled=true;
     $('payCount').textContent='0 registros';

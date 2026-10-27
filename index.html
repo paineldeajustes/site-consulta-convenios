@@ -62,6 +62,14 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 .emp-detail td{background:#fff!important;font-weight:400}
 .emp-detail td:nth-child(2){padding-left:24px;color:#344054}
 .negative-value{background:#fff1f0!important;color:#b91c1c!important;font-weight:800!important}
+.cad-meta-grid{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px}
+.cad-meta-item{border:1px solid #e1e7ef;background:#fbfcfe;border-radius:10px;padding:12px;min-width:0}
+.cad-meta-item span,.cad-meta-object>span{font-size:12px;color:#667085;display:block;margin-bottom:6px}
+.cad-meta-item strong{font-size:14px;color:#12345a;overflow-wrap:anywhere}
+.cad-meta-object{margin-top:12px;border:1px solid #e1e7ef;border-radius:10px;padding:12px;background:#fff}
+.cad-meta-object p{margin:0;font-size:13px;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
+.object-cell{white-space:normal!important;min-width:260px;max-width:420px;line-height:1.4;overflow-wrap:anywhere}
+@media(max-width:850px){.cad-meta-grid{grid-template-columns:repeat(2,minmax(140px,1fr))}}
 .detail-subsection{margin-top:20px}.detail-subsection h3{margin-bottom:6px}
 .overview-select{background:transparent;color:#164e87;text-decoration:underline;padding:0;border-radius:0;font-weight:650}
 .overview-select:hover{background:transparent;color:#12345a}
@@ -107,6 +115,17 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
       <div class="metric"><span>Total pago</span><strong id="mPago">—</strong></div>
       <div class="metric"><span>Saldo total a pagar</span><strong id="mSaldoPagar">—</strong></div>
     </div>
+  </section>
+
+  <section class="panel" id="cadMetadataPanel">
+    <div class="section-head"><h2>Dados cadastrais do ajuste</h2><span id="cadMetaStatus" class="pill">Cadastro complementar ainda não importado</span></div>
+    <div class="cad-meta-grid">
+      <div class="cad-meta-item"><span>Tipo do ajuste</span><strong id="cadMetaType">—</strong></div>
+      <div class="cad-meta-item"><span>Processo administrativo</span><strong id="cadMetaProcess">—</strong></div>
+      <div class="cad-meta-item"><span>Data de assinatura</span><strong id="cadMetaSigned">—</strong></div>
+      <div class="cad-meta-item"><span>Última vigência</span><strong id="cadMetaValidity">—</strong></div>
+    </div>
+    <div class="cad-meta-object"><span>Objeto</span><p id="cadMetaObject">Selecione um ajuste para consultar o objeto cadastrado.</p></div>
   </section>
 
   <section class="panel">
@@ -171,6 +190,58 @@ async function supabaseGet(path){
   return response.json();
 }
 
+const CAD_TYPE_LABELS={
+  '1':'AUXÍLIO-CONCESSÃO','2':'SUBVENÇÃO-CONCESSÃO','3':'CONTRIBUIÇÃO-CONCESSÃO',
+  '4':'AUXÍLIO-RECEBIDO','5':'SUBVENÇÃO-RECEBIDO','6':'CONTRIBUIÇÃO-RECEBIDO',
+  '7':'TERMO DE COLABORAÇÃO','8':'TERMO DE FOMENTO','9':'OUTROS',
+  '10':'ACORDO DE COOPERAÇÃO','11':'CONTRATO DE GESTÃO','12':'TERMO DE PARCERIA','13':'CONVÊNIO'
+};
+function cadTypeLabel(code){
+  const raw=String(code??'').trim();
+  const key=raw.replace(/^0+/,'')||raw;
+  return CAD_TYPE_LABELS[key]|| (raw?'Código '+raw:'Não informado');
+}
+function formatCadDate(value){
+  const raw=String(value??'').trim();
+  if(!/^\d{8}$/.test(raw)||raw==='00000000')return 'Não informado';
+  const year=Number(raw.slice(0,4)),month=Number(raw.slice(4,6)),day=Number(raw.slice(6,8));
+  const date=new Date(year,month-1,day);
+  if(date.getFullYear()!==year||date.getMonth()!==month-1||date.getDate()!==day)return 'Não informado';
+  return String(day).padStart(2,'0')+'/'+String(month).padStart(2,'0')+'/'+String(year);
+}
+function cadMetadataFor(code){
+  const key=normalizeAdjustmentSearch(formatAdjustmentNumber(code));
+  return cadMetadataByKey.get(key)||null;
+}
+function renderCadMetadata(code){
+  const metadata=code?cadMetadataFor(code):null;
+  $('cadMetaStatus').textContent=metadata?'Cadastro encontrado':(cadMetadataLoaded?'Ajuste não encontrado no cadastro complementar':'Cadastro complementar ainda não importado');
+  $('cadMetaType').textContent=metadata?cadTypeLabel(metadata.type_code):'—';
+  $('cadMetaProcess').textContent=metadata?(metadata.process||'Não informado'):'—';
+  $('cadMetaSigned').textContent=metadata?formatCadDate(metadata.signed_date):'—';
+  $('cadMetaValidity').textContent=metadata?formatCadDate(metadata.last_validity):'—';
+  $('cadMetaObject').textContent=metadata?(metadata.object_full||metadata.object||'Não informado'):(code?'Não há dados cadastrais carregados para este ajuste.':'Selecione um ajuste para consultar o objeto cadastrado.');
+}
+async function loadCadMetadataFromSupabase(){
+  cadMetadataByKey=new Map();cadMetadataLoaded=false;cadMetadataFinishedAt='';
+  try{
+    const imports=await supabaseGet('ret_fontes_imports?select=id,file_name,status,row_count,finished_at&file_name=eq.CadConvenios.txt&status=eq.success&order=finished_at.desc&limit=1');
+    if(!imports.length){renderCadMetadata($('conv').value);renderOverview();return;}
+    const latest=imports[0];
+    const records=await supabaseGet(`ret_fontes_rows?select=fields&import_id=eq.${encodeURIComponent(latest.id)}&order=row_number.asc&limit=20000`);
+    for(const record of records){
+      let metadata=record.fields;
+      if(typeof metadata==='string'){try{metadata=JSON.parse(metadata);}catch{continue;}}
+      if(!metadata||typeof metadata!=='object'||Array.isArray(metadata)||!metadata.join_key)continue;
+      cadMetadataByKey.set(normalizeAdjustmentSearch(metadata.join_key),metadata);
+    }
+    cadMetadataLoaded=true;cadMetadataFinishedAt=latest.finished_at||'';
+  }catch(error){
+    console.warn('Não foi possível carregar o cadastro complementar CadConvenios.txt.',error);
+  }
+  renderCadMetadata($('conv').value);
+  renderOverview();
+}
 async function loadLatestFromSupabase(){
   if(!SUPABASE_PUBLIC_KEY || SUPABASE_PUBLIC_KEY === 'COLE_SUA_CHAVE_PUBLICA_AQUI'){
     $('status').hidden=false;
@@ -179,7 +250,7 @@ async function loadLatestFromSupabase(){
   }
   $('status').textContent = 'Conectando ao Supabase e buscando a última importação concluída…';
   try{
-    const imports = await supabaseGet('ret_fontes_imports?select=id,file_name,status,row_count,finished_at&status=eq.success&order=finished_at.desc&limit=1');
+    const imports = await supabaseGet('ret_fontes_imports?select=id,file_name,status,row_count,finished_at&file_name=eq.RET_FONTES.txt&status=eq.success&order=finished_at.desc&limit=1');
     if(!imports.length) throw new Error('Não há importação concluída disponível.');
     const latest = imports[0];
     const records = await supabaseGet(`ret_fontes_rows?select=row_number,fields&import_id=eq.${encodeURIComponent(latest.id)}&order=row_number.asc&limit=100000`);
@@ -195,6 +266,7 @@ async function loadLatestFromSupabase(){
     }
     loadTextIntoPage(lines.join('\n'), `Supabase · ${latest.file_name || 'RET_FONTES.txt'}`);
     $('fileMeta').textContent = `Supabase · atualizado em ${latest.finished_at ? new Date(latest.finished_at).toLocaleString('pt-BR') : 'data não informada'}`;
+    await loadCadMetadataFromSupabase();
   }catch(err){
     $('status').hidden=false;
     $('status').textContent = 'Não foi possível carregar os dados do Supabase: ' + (err?.message || String(err)) + '.';
@@ -203,6 +275,7 @@ async function loadLatestFromSupabase(){
 }
 
 let allRows=[], headers=[], currentRows=[], currentPayments=[], layoutInfo={hasPayments:false,maxFields:0};
+let cadMetadataByKey=new Map(),cadMetadataLoaded=false,cadMetadataFinishedAt='';
 const money = n => (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 function norm(s){return String(s??'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
 function num(v){
@@ -275,18 +348,19 @@ function formatAdjustmentNumber(value){
   const raw=String(value??'').trim();
   if(!raw)return raw;
 
-  // Formato novo recebido no TXT: ano + número de cinco dígitos + sufixo.
-  // Exemplo: 202100001SAS -> 00001/2021-SAS.
-  const compact=raw.replace(/[^A-Za-z0-9]/g,'');
-  const compactMatch=compact.match(/^(\d{4})(\d{5})([A-Za-z].*)$/);
-  if(compactMatch){
-    return `${compactMatch[2]}/${compactMatch[1]}-${compactMatch[3].trim()}`;
+  // Formato separado antigo/legível precisa ser verificado antes de remover barras.
+  const separatedMatch=raw.match(/^(\d{1,5})\s*\/\s*(\d{4})\s*-?\s*([A-Za-z0-9].*)?$/);
+  if(separatedMatch){
+    const suffix=String(separatedMatch[3]??'').trim();
+    return `${separatedMatch[1].padStart(5,'0')}/${separatedMatch[2]}${suffix?'-'+suffix:''}`;
   }
 
-  // Também aceita o formato já separado: número/ano + sufixo.
-  const separatedMatch=raw.match(/^(\d{1,5})\s*\/\s*(\d{4})\s*-?\s*([A-Za-z].*)$/);
-  if(separatedMatch){
-    return `${separatedMatch[1].padStart(5,'0')}/${separatedMatch[2]}-${separatedMatch[3].trim()}`;
+  // Formato compacto do RET_FONTES: ano + número de cinco dígitos + sufixo opcional.
+  const compact=raw.replace(/[^A-Za-z0-9]/g,'');
+  const compactMatch=compact.match(/^(\d{4})(\d{5})([A-Za-z0-9].*)?$/);
+  if(compactMatch){
+    const suffix=String(compactMatch[3]??'').trim();
+    return `${compactMatch[2].padStart(5,'0')}/${compactMatch[1]}${suffix?'-'+suffix:''}`;
   }
 
   return raw;
@@ -418,6 +492,7 @@ function render(){
   currentRows=allRows.filter(r=>String(get(r,'CONVENIO')).trim()===cv);
   const ent=currentRows.map(r=>String(get(r,'ENTIDADE')).trim()).find(Boolean)||'—';
   $('mConv').textContent=formatAdjustmentNumber(cv); $('mEnt').textContent=ent;
+  renderCadMetadata(cv);
     // Conciliação consolidada somente por fonte: soma custeio e capital para facilitar a leitura.
   const recMap = new Map();
   function recAdd(source, field, value){
@@ -543,7 +618,7 @@ function loadTextIntoPage(text, filename){
     $('conv').innerHTML='<option value="">Selecione um ajuste</option>'+convs.map(c=>`<option value="${esc(c)}">${esc(formatAdjustmentNumber(c))}</option>`).join('');
     $('conv').disabled=false;$('search').disabled=false;
         $('status').hidden=true;
-    $('conv').value='';$('search').value='';$('mConv').textContent='—';$('mEnt').textContent='—';$('mCadInicial').textContent='—';$('mCadAditamentos').textContent='—';$('mTotalCadastrado').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';$('mSaldo').textContent='—';$('saldoAjusteCard').classList.remove('negative-balance');$('mSaldoPagar').textContent='—';
+    $('conv').value='';$('search').value='';$('mConv').textContent='—';$('mEnt').textContent='—';renderCadMetadata('');$('mCadInicial').textContent='—';$('mCadAditamentos').textContent='—';$('mTotalCadastrado').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';$('mSaldo').textContent='—';$('saldoAjusteCard').classList.remove('negative-balance');$('mSaldoPagar').textContent='—';
         ['reconTable','cadTable','cadDetailTable','empTable','payTable'].forEach(id=>$(id).innerHTML='<div class="empty">Selecione um ajuste para visualizar os dados.</div>');
     $('dateFrom').disabled=true;$('dateTo').disabled=true;$('clearDates').disabled=true;$('export').disabled=true;
     $('payCount').textContent='0 registros';
@@ -596,7 +671,10 @@ function renderOverview(){
     if(!grouped.has(code))grouped.set(code,[]);
     grouped.get(code).push(row);
   }
-  const allAdjustments=[...grouped.entries()].map(([code,rows])=>({code,...summarizeAdjustment(rows)}));
+  const allAdjustments=[...grouped.entries()].map(([code,rows])=>{
+    const metadata=cadMetadataFor(code);
+    return {code,...summarizeAdjustment(rows),cadType:metadata?cadTypeLabel(metadata.type_code):'—',process:metadata?(metadata.process||'—'):'—',signedDate:metadata?formatCadDate(metadata.signed_date):'—',lastValidity:metadata?formatCadDate(metadata.last_validity):'—',object:metadata?(metadata.object_full||metadata.object||'—'):'—'};
+  });
   allAdjustments.sort((a,b)=>{
     const an=a.balance<0,bn=b.balance<0;
     if(an!==bn)return an?-1:1;
@@ -608,16 +686,16 @@ function renderOverview(){
   const filtered=allAdjustments.filter(a=>{
     if(negativeOnly && a.balance>=0)return false;
     if(!query)return true;
-    return normalizeAdjustmentSearch(a.code+' '+formatAdjustmentNumber(a.code)+' '+a.entity).includes(query);
+    return normalizeAdjustmentSearch(a.code+' '+formatAdjustmentNumber(a.code)+' '+a.entity+' '+a.cadType+' '+a.process+' '+a.object).includes(query);
   });
   const negativeCount=allAdjustments.filter(a=>a.balance<0).length;
   $('overviewCount').textContent=`${filtered.length.toLocaleString('pt-BR')} de ${allAdjustments.length.toLocaleString('pt-BR')} ajustes`;
   $('overviewSummary').textContent=`${allAdjustments.length.toLocaleString('pt-BR')} ajustes na base · ${negativeCount.toLocaleString('pt-BR')} com saldo negativo · saldo negativo aparece em vermelho.`;
   if(!filtered.length){$('overviewTable').innerHTML='<div class="empty">Nenhum ajuste encontrado para os filtros selecionados.</div>';return;}
-  let html='<table><thead><tr><th>Ajuste</th><th>Entidade</th><th>Total cadastrado inicial</th><th>Total cadastrado em aditamentos</th><th>Total cadastrado</th><th>Total empenhado</th><th>Saldo do ajuste</th><th>Total pago</th><th>Saldo total a pagar</th></tr></thead><tbody>';
+  let html='<table><thead><tr><th>Ajuste</th><th>Entidade</th><th>Tipo</th><th>Processo</th><th>Data de assinatura</th><th>Última vigência</th><th>Objeto</th><th>Total cadastrado inicial</th><th>Total cadastrado em aditamentos</th><th>Total cadastrado</th><th>Total empenhado</th><th>Saldo do ajuste</th><th>Total pago</th><th>Saldo total a pagar</th></tr></thead><tbody>';
   for(const a of filtered){
     const balanceClass=a.balance<0?'negative-value':'';
-    html+=`<tr><td><button type="button" class="overview-select" data-adjustment="${esc(a.code)}">${esc(formatAdjustmentNumber(a.code))}</button></td><td>${esc(a.entity)}</td><td class="num">${esc(money(a.initial))}</td><td class="num">${esc(money(a.additions))}</td><td class="num">${esc(money(a.registered))}</td><td class="num">${esc(money(a.emp))}</td><td class="num ${balanceClass}">${esc(money(a.balance))}</td><td class="num">${esc(money(a.paid))}</td><td class="num">${esc(money(a.balancePay))}</td></tr>`;
+    html+=`<tr><td><button type="button" class="overview-select" data-adjustment="${esc(a.code)}">${esc(formatAdjustmentNumber(a.code))}</button></td><td>${esc(a.entity)}</td><td>${esc(a.cadType)}</td><td>${esc(a.process)}</td><td>${esc(a.signedDate)}</td><td>${esc(a.lastValidity)}</td><td class="object-cell" title="${esc(a.object)}">${esc(a.object)}</td><td class="num">${esc(money(a.initial))}</td><td class="num">${esc(money(a.additions))}</td><td class="num">${esc(money(a.registered))}</td><td class="num">${esc(money(a.emp))}</td><td class="num ${balanceClass}">${esc(money(a.balance))}</td><td class="num">${esc(money(a.paid))}</td><td class="num">${esc(money(a.balancePay))}</td></tr>`;
   }
   html+='</tbody></table>';$('overviewTable').innerHTML=html;
   $('overviewTable').querySelectorAll('button[data-adjustment]').forEach(button=>button.addEventListener('click',()=>{showAppView('detail');chooseConv(button.getAttribute('data-adjustment'));window.scrollTo({top:0,behavior:'smooth'});}));

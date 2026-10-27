@@ -154,13 +154,14 @@ Deno.serve(async (req) => {
   }
 
   const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON") || "";
-  const fileId = Deno.env.get("GOOGLE_DRIVE_CAD_FILE_ID") || "";
+  // ID do arquivo CadConvenios.txt no Drive. O ID identifica o arquivo, mas não concede acesso sem a conta de serviço.
+  const fileId = "1x0SlFbGrQTBBO3LjBkGweXcaRpbqKFCz";
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  if (!serviceAccountJson || !fileId || !supabaseUrl || !serviceRoleKey) {
+  if (!serviceAccountJson || !supabaseUrl || !serviceRoleKey) {
     return jsonResponse({
       success: false,
-      error: "Faltam segredos necessários: GOOGLE_SERVICE_ACCOUNT_JSON, GOOGLE_DRIVE_CAD_FILE_ID, SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY.",
+      error: "Faltam segredos necessários: GOOGLE_SERVICE_ACCOUNT_JSON, SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY.",
     }, 500);
   }
 

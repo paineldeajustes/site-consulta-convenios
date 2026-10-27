@@ -263,7 +263,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
   <div class="footer">Consulte os dados da última importação concluída. As informações devem ser conferidas com os registros oficiais antes de uso administrativo.</div>
   </div>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const $ = id => document.getElementById(id);
 
@@ -1054,6 +1054,7 @@ async function callImportFunction(name,token){
 $('manualRefreshButton').addEventListener('click',async()=>{
   if(!currentProfile?.is_admin||manualRefreshBusy)return;
   manualRefreshBusy=true;
+  const selectedAdjustment=$('conv').value;
   const button=$('manualRefreshButton');
   button.disabled=true;button.textContent='Atualizando…';
   $('status').hidden=false;
@@ -1070,6 +1071,7 @@ $('manualRefreshButton').addEventListener('click',async()=>{
       }catch(error){results.push({label,ok:false,error:error.message||String(error)});}
     }
     await loadLatestFromSupabase();
+    if(selectedAdjustment)chooseConv(selectedAdjustment);
     const failed=results.filter(result=>!result.ok);
     $('status').hidden=false;
     if(failed.length){

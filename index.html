@@ -127,7 +127,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
         <div><strong>Painel de Ajustes</strong><span>Secretaria da Fazenda · SEFAZ-4</span></div>
       </div>
       <h2 id="loginTitle">Bem-vindo de volta</h2>
-      <p class="auth-subtitle">Entre com seu e-mail e senha para acessar as informações dos ajustes e suas ferramentas autorizadas.</p>
+      <p id="loginSubtitle" class="auth-subtitle">Entre com seu e-mail e senha para acessar as informações dos ajustes e suas ferramentas autorizadas.</p>
       <form id="loginForm">
         <div class="auth-field">
           <label for="loginEmail">E-mail</label>
@@ -140,9 +140,28 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
             <button id="togglePassword" type="button" aria-label="Mostrar senha">Mostrar</button>
           </div>
         </div>
-        <div class="auth-actions"><button id="forgotPassword" class="auth-link" type="button">Esqueci minha senha</button></div>
+        <div id="confirmPasswordField" class="auth-field" hidden>
+          <label for="confirmPassword">Confirmar senha</label>
+          <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" placeholder="Repita a senha" minlength="8">
+        </div>
+        <div class="auth-actions">
+          <button id="forgotPassword" class="auth-link" type="button">Esqueci minha senha</button>
+        </div>
         <button id="loginButton" class="auth-submit" type="submit">Entrar no sistema</button>
+        <p style="text-align:center;font-size:12px;color:#78859a;margin:17px 0 0">
+          <span id="accountModeHint">Primeiro acesso?</span>
+          <button id="accountModeToggle" class="auth-link" type="button" style="margin-left:4px">Criar minha senha</button>
+        </p>
       </form>
+            <section id="resetPasswordPanel" hidden>
+        <h2>Definir nova senha</h2>
+        <p class="auth-subtitle">Escolha uma nova senha para sua conta.</p>
+        <form id="resetPasswordForm">
+          <div class="auth-field"><label for="newPassword">Nova senha</label><input id="newPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Use pelo menos 8 caracteres"></div>
+          <div class="auth-field"><label for="newPasswordConfirm">Confirmar nova senha</label><input id="newPasswordConfirm" type="password" autocomplete="new-password" minlength="8" required placeholder="Repita a nova senha"></div>
+          <button class="auth-submit" id="saveNewPassword" type="submit">Salvar nova senha</button>
+        </form>
+      </section>
       <div id="authMessage" class="auth-message" role="status" aria-live="polite" hidden></div>
       <p class="auth-note">O acesso é individual e liberado pela administração do sistema. Não compartilhe sua senha.</p>
     </div>
@@ -895,23 +914,62 @@ async function activateSession(session){
   await loadLatestFromSupabase();
   return true;
 }
+let accountMode='login';
+let recoveryMode=false;
+function setAccountMode(mode){
+  accountMode=mode;
+  const creating=mode==='signup';
+  $('loginTitle').textContent=creating?'Criar acesso':'Bem-vindo de volta';
+  $('loginSubtitle').textContent=creating?'Crie uma senha para o e-mail autorizado pela administração. Somente contas previamente liberadas terão acesso aos dados.':'Entre com seu e-mail e senha para acessar as informações dos ajustes e suas ferramentas autorizadas.';
+  $('confirmPasswordField').hidden=!creating;
+  $('confirmPassword').required=creating;
+  $('loginPassword').autocomplete=creating?'new-password':'current-password';
+  $('forgotPassword').hidden=creating;
+  $('loginButton').textContent=creating?'Criar acesso':'Entrar no sistema';
+  $('accountModeHint').textContent=creating?'Já possui conta?':'Primeiro acesso?';
+  $('accountModeToggle').textContent=creating?'Voltar para entrar':'Criar minha senha';
+  $('loginPassword').value='';
+  $('confirmPassword').value='';
+  showAuthMessage('');
+}
+$('accountModeToggle').addEventListener('click',()=>setAccountMode(accountMode==='login'?'signup':'login'));
 $('loginForm').addEventListener('submit',async event=>{
   event.preventDefault();
   const button=$('loginButton');
   const email=$('loginEmail').value.trim().toLowerCase();
   const password=$('loginPassword').value;
-  button.disabled=true;button.textContent='Validando acesso…';
+  button.disabled=true;button.textContent=accountMode==='signup'?'Criando acesso…':'Validando acesso…';
   showAuthMessage('');
   try{
-    const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
-    if(error)throw error;
-    const allowed=await activateSession(data.session);
-    if(allowed)showAuthMessage('');
+    if(accountMode==='signup'){
+      if(password.length<8)throw new Error('A senha precisa ter pelo menos 8 caracteres.');
+      if(password!==$('confirmPassword').value)throw new Error('As senhas informadas não são iguais.');
+      const {data,error}=await supabaseClient.auth.signUp({
+        email,password,
+        options:{emailRedirectTo:window.location.origin+window.location.pathname}
+      });
+      if(error)throw error;
+      if(data.session){
+        const allowed=await activateSession(data.session);
+        if(allowed)showAuthMessage('Seu acesso foi criado com sucesso.','success');
+      }else{
+        setAccountMode('login');
+        $('loginEmail').value=email;
+        showAuthMessage('Solicitação recebida. Confira a caixa de entrada do e-mail para confirmar a conta e depois entre no sistema. Se o e-mail não chegar, verifique a configuração de e-mail do Supabase.','success');
+      }
+    }else{
+      const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+      if(error)throw error;
+      const allowed=await activateSession(data.session);
+      if(allowed)showAuthMessage('');
+    }
   }catch(error){
-    showLogin('Não foi possível entrar. Confira o e-mail e a senha ou use “Esqueci minha senha”.','error');
-    console.warn('Falha no login do painel',error);
+    const creating=accountMode==='signup';
+    showLogin(creating?(error.message||'Não foi possível criar o acesso. Verifique o e-mail e tente novamente.'):'Não foi possível entrar. Confira o e-mail e a senha ou use “Esqueci minha senha”.','error');
+    console.warn('Falha na autenticação do painel',error);
   }finally{
-    button.disabled=false;button.textContent='Entrar no sistema';
+    button.disabled=false;
+    button.textContent=accountMode==='signup'?'Criar acesso':'Entrar no sistema';
   }
 });
 $('togglePassword').addEventListener('click',()=>{
@@ -939,6 +997,37 @@ $('forgotPassword').addEventListener('click',async()=>{
     showAuthMessage('Não foi possível solicitar a redefinição. Verifique a configuração de URLs de autenticação e tente novamente.','error');
     console.warn('Falha ao solicitar redefinição de senha',error);
   }finally{button.disabled=false;}
+});
+$('resetPasswordForm').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const password=$('newPassword').value;
+  const confirmation=$('newPasswordConfirm').value;
+  if(password.length<8){showAuthMessage('A senha precisa ter pelo menos 8 caracteres.','error');return;}
+  if(password!==confirmation){showAuthMessage('As senhas informadas não são iguais.','error');return;}
+  const button=$('saveNewPassword');button.disabled=true;button.textContent='Salvando…';
+  try{
+    const {error}=await supabaseClient.auth.updateUser({password});
+    if(error)throw error;
+    recoveryMode=false;
+    $('resetPasswordPanel').hidden=true;
+    $('loginForm').hidden=false;
+    showLogin('Senha atualizada. Entre com a nova senha.','success');
+    await supabaseClient.auth.signOut();
+    $('newPassword').value='';$('newPasswordConfirm').value='';
+  }catch(error){
+    showAuthMessage('Não foi possível salvar a nova senha. Abra novamente o link mais recente de recuperação e tente de novo.','error');
+    console.warn('Falha ao atualizar senha',error);
+  }finally{button.disabled=false;button.textContent='Salvar nova senha';}
+});
+supabaseClient.auth.onAuthStateChange((event,session)=>{
+  if(event==='PASSWORD_RECOVERY'){
+    recoveryMode=true;
+    $('appShell').hidden=true;$('loginScreen').hidden=false;
+    $('loginForm').hidden=true;$('resetPasswordPanel').hidden=false;
+    showAuthMessage('Link de recuperação validado. Defina sua nova senha abaixo.','info');
+  }else if(event==='SIGNED_OUT'&&!recoveryMode){
+    currentSession=null;currentProfile=null;
+  }
 });
 $('logoutButton').addEventListener('click',async()=>{
   $('logoutButton').disabled=true;

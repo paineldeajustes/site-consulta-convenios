@@ -15,6 +15,7 @@ import os
 import re
 import sys
 import time
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -144,56 +145,99 @@ def row_period_code(row):
             return value
     return None
 
-def sidra_latest(variable: int, category: str):
-    url = f"https://apisidra.ibge.gov.br/values/t/7060/n1/1/v/{variable}/p/last%201/c315/{category}"
-    payload = fetch_json(url)
-    if not isinstance(payload, list):
+def normalize_sidra_category(value: str) -> str:
+    value=str(value or "").strip()
+    value=re.sub(r"^\s*\d+(?:\.\d+)*\.?\s*", "", value)
+    value=unicodedata.normalize("NFKD",value).encode("ascii","ignore").decode("ascii")
+    return re.sub(r"\s+"," ",value).strip().lower()
+
+def sidra_all_categories(variable: int):
+    # Use the classification's actual category labels; its codes are not assumed
+    # to follow a simple numeric sequence for all major groups.
+    url = f"https://apisidra.ibge.gov.br/values/t/7060/n1/1/v/{variable}/p/last%201/c315/all"
+    payload=fetch_json(url)
+    if not isinstance(payload,list):
         raise ValueError("Resposta SIDRA inesperada")
-    for row in reversed(payload):
-        if not isinstance(row, dict):
+    target={normalize_sidra_category(group["name"]):group["key"] for group in GROUPS}
+    found={}
+    examples=[]
+    for row in payload:
+        if not isinstance(row,dict):
             continue
-        value = pick_value(row)
-        if value is not None:
-            return {"value": round(value, 4), "period_label": row_period(row), "row": row}
-    raise ValueError(f"Sem valor numérico SIDRA para variável {variable}, grupo {category}")
+        category=row.get("D4N") or row.get("D4") or ""
+        normalized=normalize_sidra_category(category)
+        if normalized and len(examples)<20 and normalized not in examples:
+            examples.append(normalized)
+        key=target.get(normalized)
+        if key is None:
+            continue
+        value=pick_value(row)
+        if value is None:
+            continue
+        # Preserve the latest row found for this exact top-level category.
+        found[key]={"value":round(value,4),"period_label":row_period(row),"period":row_period_code(row),"row":row}
+    return found,examples
 
 def try_fetch_ipca(previous: dict, warnings: list[str]) -> dict:
     new = dict(previous.get("ipca") or {})
-    groups_out = []
+    groups_out=[]
     try:
+        variables=[
+            (63,"monthly"),
+            (69,"year_to_date"),
+            (2265,"last12"),
+            (66,"weight"),
+        ]
+        results={}
+        category_examples=[]
+        for var,field in variables:
+            try:
+                results[var], examples=sidra_all_categories(var)
+                if not category_examples:
+                    category_examples=examples
+            except Exception as exc:
+                results[var]={}
+                warnings.append(f"SIDRA variável {var}/{field}: {str(exc)[:160]}")
         for group in GROUPS:
-            record = dict(group)
-            for var, field in ((63,"monthly"),(69,"year_to_date"),(2265,"last12"),(66,"weight")):
-                try:
-                    got = sidra_latest(var, group["id"])
-                    record[field] = got["value"]
-                    record["period_label"] = record.get("period_label") or got["period_label"]
-                    record["period"] = record.get("period") or (row_period_code(got["row"]) if isinstance(got.get("row"), dict) else None)
-                except Exception as exc:
-                    record[field] = None
-                    warnings.append(f"SIDRA {field}/{group['key']}: {str(exc)[:160]}")
+            record=dict(group)
+            for var,field in variables:
+                rowdata=results.get(var,{}).get(group["key"])
+                if rowdata is None:
+                    record[field]=None
+                    warnings.append(f"SIDRA {field}/{group['key']}: grupo não localizado pelo nome na variável {var}")
+                    continue
+                record[field]=rowdata["value"]
+                if rowdata.get("period"):
+                    record["period"]=rowdata["period"]
+                if rowdata.get("period_label"):
+                    record["period_label"]=rowdata["period_label"]
+                actual_category=rowdata.get("row",{}).get("D4C")
+                if actual_category:
+                    record["id"]=str(actual_category)
             groups_out.append(record)
-        overall = next((g for g in groups_out if g["key"]=="general"), None)
+        overall=next((g for g in groups_out if g["key"]=="general"),None)
         if overall and overall["monthly"] is not None:
-            new = {
-                "period": overall.get("period"),
-                "period_label": overall.get("period_label"),
-                "monthly": overall.get("monthly"),
-                "year_to_date": overall.get("year_to_date"),
-                "last12": overall.get("last12"),
-                "source_url": IPCA_TABLE,
-                "source_name": "IBGE/SIDRA — tabela 7060",
-                "series": "IPCA, variável mensal, acumulado no ano e acumulado em 12 meses",
+            new={
+                "period":overall.get("period") or new.get("period"),
+                "period_label":overall.get("period_label") or new.get("period_label"),
+                "monthly":overall.get("monthly"),
+                "year_to_date":overall.get("year_to_date"),
+                "last12":overall.get("last12"),
+                "source_url":IPCA_TABLE,
+                "source_name":"IBGE/SIDRA — tabela 7060",
+                "series":"IPCA geral, variação mensal, acumulada no ano e acumulada em 12 meses",
             }
-        actual_periods = [g.get("period") for g in groups_out if g.get("monthly") is not None]
-        if actual_periods and len(set(actual_periods)) == 1:
-            group_period_label = overall.get("period_label") if overall else None
+        actual_periods=[g.get("period") for g in groups_out if g.get("monthly") is not None]
+        if actual_periods and len(set(actual_periods))==1:
+            group_period_label=overall.get("period_label") if overall else None
         else:
-            group_period_label = "Dados por grupo com competência individual indicada"
-        return {"ipca": new, "groups": [g for g in groups_out if g["key"]!="general"], "groups_period_label": group_period_label}
+            group_period_label="Dados por grupo com competência individual indicada"
+        if not results.get(63):
+            warnings.append("SIDRA retornou zero categorias reconhecidas; exemplos: "+", ".join(category_examples[:12]))
+        return {"ipca":new,"groups":[g for g in groups_out if g["key"]!="general"],"groups_period_label":group_period_label}
     except Exception as exc:
         warnings.append(f"IBGE/SIDRA indisponível: {str(exc)[:180]}")
-        return {"ipca": new, "groups": previous.get("groups", []), "groups_period_label": previous.get("groups_period_label")}
+        return {"ipca":new,"groups":previous.get("groups",[]),"groups_period_label":previous.get("groups_period_label")}
 
 def pof_core_weights(income: float) -> dict:
     def blend(a, b, t):
@@ -530,7 +574,7 @@ def main():
             "name":"Cesta ponderada por faixa de renda",
             "pof_reference":"POF 2017–2018",
             "pof_url":POF_SOURCE,
-            "calculation":"Variação ponderada por grupo de consumo; alimentação, habitação e transporte usam participações da POF por classe de rendimento; os demais grupos são repartidos segundo os pesos mensais do IPCA.",
+            "calculation":"Variação ponderada por grupo de consumo; extremos publicados da POF normalizados pelo subtotal de consumo; faixa nacional como ponto de ancoragem e faixas intermediárias interpoladas por log-renda; demais grupos distribuídos pelos pesos mensais do IPCA.",
             "limitation":"Não é um IPCA individual oficial. A estrutura da POF é histórica e as proporções não incorporam toda a composição de cada família. O efeito de uma política exige análise causal independente.",
             "weights_are_official_reference":True,
         },

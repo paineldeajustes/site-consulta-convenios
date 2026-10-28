@@ -1,10 +1,10 @@
 {
   "schema_version": "0.2",
-  "updated_at": "2026-10-28T13:25:30+00:00",
+  "updated_at": "2026-10-28T13:27:07+00:00",
   "status_label": "Dados oficiais coletados automaticamente",
   "ipca": {
     "period": "202609",
-    "period_label": null,
+    "period_label": "setembro de 2026",
     "monthly": 0.82,
     "year_to_date": 3.95,
     "last12": 4.58,
@@ -19,6 +19,7 @@
       "name": "Alimentação e bebidas",
       "monthly": 0.83,
       "period": "202609",
+      "period_label": "setembro de 2026",
       "year_to_date": 4.37,
       "last12": 4.66,
       "weight": 21.509
@@ -29,6 +30,7 @@
       "name": "Habitação",
       "monthly": 2.31,
       "period": "202609",
+      "period_label": "setembro de 2026",
       "year_to_date": 4.35,
       "last12": 4.22,
       "weight": 15.2611
@@ -39,6 +41,7 @@
       "name": "Artigos de residência",
       "monthly": 0.27,
       "period": "202609",
+      "period_label": "setembro de 2026",
       "year_to_date": 2.81,
       "last12": 2.08,
       "weight": 3.4843
@@ -49,6 +52,7 @@
       "name": "Vestuário",
       "monthly": 0.71,
       "period": "202609",
+      "period_label": "setembro de 2026",
       "year_to_date": 1.85,
       "last12": 3.34,
       "weight": 4.6171
@@ -59,6 +63,7 @@
       "name": "Transportes",
       "monthly": 0.89,
       "period": "202609",
+      "period_label": "setembro de 2026",
       "year_to_date": 2.84,
       "last12": 3.94,
       "weight": 20.1607
@@ -69,6 +74,7 @@
       "name": "Saúde e cuidados pessoais",
       "monthly": 0.08,
       "period": "202609",
+      "period_label": "setembro de 2026",
       "year_to_date": 4.82,
       "last12": 5.75,
       "weight": 13.8408
@@ -79,6 +85,7 @@
       "name": "Despesas pessoais",
       "monthly": 0.26,
       "period": "202609",
+      "period_label": "setembro de 2026",
       "year_to_date": 4.24,
       "last12": 5.9,
       "weight": 10.4075
@@ -89,6 +96,7 @@
       "name": "Educação",
       "monthly": 0.04,
       "period": "202609",
+      "period_label": "setembro de 2026",
       "year_to_date": 5.8,
       "last12": 5.95,
       "weight": 6.2085
@@ -99,18 +107,19 @@
       "name": "Comunicação",
       "monthly": 0.64,
       "period": "202609",
+      "period_label": "setembro de 2026",
       "year_to_date": 2.77,
       "last12": 2.79,
       "weight": 4.5111
     }
   ],
-  "groups_period_label": "%",
+  "groups_period_label": "setembro de 2026",
   "profile_baskets": {
     "low": {
       "label": "Até R$ 1.908",
       "monthly": 1.327,
       "last12": 4.469,
-      "period_label": null,
+      "period_label": "setembro de 2026",
       "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
       "weights": {
         "food": 23.76,
@@ -129,7 +138,7 @@
       "label": "Mais de R$ 1.908 a R$ 2.862",
       "monthly": 1.311,
       "last12": 4.466,
-      "period_label": null,
+      "period_label": "setembro de 2026",
       "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
       "weights": {
         "food": 22.77,
@@ -148,7 +157,7 @@
       "label": "Mais de R$ 2.862 a R$ 5.724",
       "monthly": 1.254,
       "last12": 4.455,
-      "period_label": null,
+      "period_label": "setembro de 2026",
       "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
       "weights": {
         "food": 19.33,
@@ -167,7 +176,7 @@
       "label": "Mais de R$ 5.724 a R$ 9.540",
       "monthly": 1.217,
       "last12": 4.447,
-      "period_label": null,
+      "period_label": "setembro de 2026",
       "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
       "weights": {
         "food": 16.76,
@@ -186,7 +195,7 @@
       "label": "Mais de R$ 9.540 a R$ 14.310",
       "monthly": 1.198,
       "last12": 4.442,
-      "period_label": null,
+      "period_label": "setembro de 2026",
       "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
       "weights": {
         "food": 14.62,
@@ -205,7 +214,7 @@
       "label": "Mais de R$ 14.310 a R$ 23.850",
       "monthly": 1.18,
       "last12": 4.438,
-      "period_label": null,
+      "period_label": "setembro de 2026",
       "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
       "weights": {
         "food": 12.61,
@@ -224,7 +233,7 @@
       "label": "Mais de R$ 23.850",
       "monthly": 1.169,
       "last12": 4.435,
-      "period_label": null,
+      "period_label": "setembro de 2026",
       "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
       "weights": {
         "food": 11.46,
@@ -243,7 +252,7 @@
       "label": "Média nacional das despesas de consumo (POF)",
       "monthly": 1.224,
       "last12": 4.449,
-      "period_label": null,
+      "period_label": "setembro de 2026",
       "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
       "weights": {
         "food": 17.5,
@@ -268,10 +277,10 @@
     "weights_are_official_reference": true
   },
   "selic": {
-    "date": "04/11/2026",
+    "date": "28/10/2026",
     "value": 13.75,
-    "source_url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json",
-    "source_name": "Banco Central — SGS série 432 (meta Selic)",
+    "source_url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json&dataInicial=13%2F09%2F2026&dataFinal=28%2F10%2F2026",
+    "source_name": "Banco Central — SGS série 432 (meta Selic; última observação até a data atual)",
     "unit": "% a.a."
   },
   "anp": {
@@ -320,8 +329,8 @@
       "url": "https://agenciabrasil.ebc.com.br/economia/noticia/2026-10/dolar-cai-quase-1-e-ibovespa-recua-apos-tombo-eleitoral",
       "published": "Tue, 27 Oct 2026 18:51:00 -0300",
       "source": "Agência Brasil — Economia",
-      "topic": "combustíveis e transporte",
-      "topic_label": "Combustíveis E Transporte",
+      "topic": "mercados e câmbio",
+      "topic_label": "Mercados E Câmbio",
       "summary": "O mercado financeiro apresentou movimentos de acomodação nesta terça-feira (27), após a forte reação da véspera à reeleição do presidente Luiz Inácio Lula da Silva. O dólar fechou em queda próxima de 1% e ficou abaixo de R$ 5,35. A bolsa recuou cerca de 0,5%. A sessão foi marcada pela correção cambial após a disparada da véspera e pela continuidade das perdas na bolsa, em meio às incertezas sobre a política econômica do próximo mandato, como a falta de definição do próximo ministro da Fazenda. Notícias relacionadas: Governo buscará cumprir meta fiscal com diálogo, diz Durigan. Dólar sobe 8,21%, e bolsa cai 13,88% após reeleição de Lula. Principais números Dólar: R$ 5,349 (-1,07%); Mínima do ",
       "description": "O mercado financeiro apresentou movimentos de acomodação nesta terça-feira (27), após a forte reação da véspera à reeleição do presidente Luiz Inácio Lula da Silva. O dólar fechou em queda próxima de 1% e ficou abaixo de R$ 5,35. A bolsa recuou cerca de 0,5%. A sessão foi marcada pela correção cambial após a disparada da véspera e pela continuidade das perdas na bolsa, em meio às incertezas sobre a política econômica do próximo mandato, como a falta de definição do próximo ministro da Fazenda. N",
       "stage_label": "Triagem temática",
@@ -340,6 +349,22 @@
       "topic_label": "Juros E Crédito",
       "summary": "O número de brasileiros em situação de endividamento de risco chegou a 20,3 milhões em junho de 2026, alta de 75% em cinco anos, informou nesta terça-feira (27) o Relatório de Estabiliadde Financeira do Banco Central (BC) . O contingente representa 17% dos devedores do Sistema Financeiro Nacional. Diante do avanço do problema, o presidente do BC, Gabriel Galípolo, afirmou que a instituição pretende anunciar novas medidas para conter ofertas agressivas de crédito ainda este ano. Notícias relacionadas: Sancionada lei que perdoa dívida e aumenta limite de MEI. BC reforça regras de proteção ao consumidor nas ofertas de crédito. Banco Central diz que estabilidade financeira não está em risco. Pri",
       "description": "O número de brasileiros em situação de endividamento de risco chegou a 20,3 milhões em junho de 2026, alta de 75% em cinco anos, informou nesta terça-feira (27) o Relatório de Estabiliadde Financeira do Banco Central (BC) . O contingente representa 17% dos devedores do Sistema Financeiro Nacional. Diante do avanço do problema, o presidente do BC, Gabriel Galípolo, afirmou que a instituição pretende anunciar novas medidas para conter ofertas agressivas de crédito ainda este ano. Notícias relacion",
+      "stage_label": "Triagem temática",
+      "impact_label": "misto ou não determinado; sem quantificação causal",
+      "impact_direction": "unknown",
+      "causal_status": "evidência necessária",
+      "confidence": "baixa",
+      "classification": "rule-based"
+    },
+    {
+      "title": "Governo buscará cumprir meta fiscal com diálogo, diz Durigan",
+      "url": "https://agenciabrasil.ebc.com.br/economia/noticia/2026-10/governo-buscara-cumprir-meta-fiscal-com-dialogo-diz-durigan",
+      "published": "Tue, 27 Oct 2026 13:04:00 -0300",
+      "source": "Agência Brasil — Economia",
+      "topic": "mercados e câmbio",
+      "topic_label": "Mercados E Câmbio",
+      "summary": "O ministro da Fazenda, Dario Durigan, assegurou, nesta terça-feira (27), em Brasília, que o governo federal vai discutir com agentes do mercado financeiro e do setor privado em geral medidas de ajuste que favoreçam o cumprimento da meta fiscal. “Nosso compromisso é com a responsabilidade fiscal, com a estabilidade fiscal e isso vai ser buscado com diálogo”, disse o ministro a jornalistas ao chegar, nesta manhã, ao Ministério da Fazenda. Notícias relacionadas: Governo enviará dois projetos de lei alternativos à MP do IOF. Banco Central diz que estabilidade financeira não está em risco. Para conter oscilações, Tesouro anuncia nova recompra de títulos. O ministro revelou que, na segunda-feira (",
+      "description": "O ministro da Fazenda, Dario Durigan, assegurou, nesta terça-feira (27), em Brasília, que o governo federal vai discutir com agentes do mercado financeiro e do setor privado em geral medidas de ajuste que favoreçam o cumprimento da meta fiscal. “Nosso compromisso é com a responsabilidade fiscal, com a estabilidade fiscal e isso vai ser buscado com diálogo”, disse o ministro a jornalistas ao chegar, nesta manhã, ao Ministério da Fazenda. Notícias relacionadas: Governo enviará dois projetos de lei",
       "stage_label": "Triagem temática",
       "impact_label": "misto ou não determinado; sem quantificação causal",
       "impact_direction": "unknown",
@@ -368,8 +393,8 @@
       "url": "https://agenciabrasil.ebc.com.br/economia/noticia/2026-10/para-conter-oscilacoes-tesouro-anuncia-nova-recompra-de-titulos",
       "published": "Tue, 27 Oct 2026 12:36:00 -0300",
       "source": "Agência Brasil — Economia",
-      "topic": "combustíveis e transporte",
-      "topic_label": "Combustíveis E Transporte",
+      "topic": "mercados e câmbio",
+      "topic_label": "Mercados E Câmbio",
       "summary": "O Tesouro Nacional anunciou nesta terça-feira (27) que vai recomprar Notas do Tesouro Nacional Série B (NTN-B) com vencimentos em 15/08/2030, 15/05/2035, 15/08/2040 e 15/05/2045. O edital com as condições do leilão de recompra será divulgado no site da instituição. A medida foi autorizada pelo ministro da Fazenda, Dario Durigan, que disse a jornalistas, em Brasília, que a recompra dos títulos seria anunciada “na medida em que estivessem colocadas as condições e a necessidade [do governo federal] de fazer uma intervenção”. Notícias relacionadas: Governo vai enviar MP do Imposto Seletivo e renova subvenção ao diesel. Banco Central diz que estabilidade financeira não está em risco. Ao comunicar",
       "description": "O Tesouro Nacional anunciou nesta terça-feira (27) que vai recomprar Notas do Tesouro Nacional Série B (NTN-B) com vencimentos em 15/08/2030, 15/05/2035, 15/08/2040 e 15/05/2045. O edital com as condições do leilão de recompra será divulgado no site da instituição. A medida foi autorizada pelo ministro da Fazenda, Dario Durigan, que disse a jornalistas, em Brasília, que a recompra dos títulos seria anunciada “na medida em que estivessem colocadas as condições e a necessidade [do governo federal]",
       "stage_label": "Triagem temática",
@@ -384,8 +409,8 @@
       "url": "https://agenciabrasil.ebc.com.br/economia/noticia/2026-10/governo-enviara-mp-do-imposto-seletivo-e-renova-subvencao-ao-diesel",
       "published": "Tue, 27 Oct 2026 11:33:00 -0300",
       "source": "Agência Brasil — Economia",
-      "topic": "combustíveis e transporte",
-      "topic_label": "Combustíveis E Transporte",
+      "topic": "mercados e câmbio",
+      "topic_label": "Mercados E Câmbio",
       "summary": "O ministro da Fazenda, Dario Durigan, afirmou que o governo federal deve enviar ao Congresso Nacional, nos próximos dias, uma Medida Provisória (MP) estabelecendo as alíquotas do chamado Imposto Seletivo (IS). Também conhecido como Imposto do Pecado, o tributo foi aprovado junto com a reforma tributária e será cobrado a partir de 2027, com a justificativa de desestimular o consumo de produtos e atividades consideradas prejudiciais à saúde ou ao meio ambiente , como cigarros, bebidas alcoólicas, refrigerantes, alguns tipos de veículos, além da extração de bens minerais, loterias, apostas e jogos de fantasy sports (jogos online). Notícias relacionadas: Dólar sobe 8,21%, e bolsa cai 13,88% após",
       "description": "O ministro da Fazenda, Dario Durigan, afirmou que o governo federal deve enviar ao Congresso Nacional, nos próximos dias, uma Medida Provisória (MP) estabelecendo as alíquotas do chamado Imposto Seletivo (IS). Também conhecido como Imposto do Pecado, o tributo foi aprovado junto com a reforma tributária e será cobrado a partir de 2027, com a justificativa de desestimular o consumo de produtos e atividades consideradas prejudiciais à saúde ou ao meio ambiente , como cigarros, bebidas alcoólicas, ",
       "stage_label": "Triagem temática",
@@ -404,6 +429,22 @@
       "topic_label": "Juros E Crédito",
       "summary": "O Banco Central (BC) informou nesta terça-feira (27) que \"não vê risco relevante\" para a estabilidade financeira do país, apesar da piora dos indicadores de crédito das famílias. Segundo o Relatório de Estabilidade Financeira referente ao primeiro semestre de 2026, o sistema financeiro continua com níveis confortáveis de capitalização e liquidez, além de capacidade de resistir a cenários adversos. Notícias relacionadas: IBC-Br recuou 0,6% em junho, diz Banco Central. Banco Central estuda interligar Pix com sistemas de outros países. O documento mostra que os ativos problemáticos das famílias, indicador que reúne operações com atraso ou sinais de dificuldade de pagamento, aumentaram e atingir",
       "description": "O Banco Central (BC) informou nesta terça-feira (27) que \"não vê risco relevante\" para a estabilidade financeira do país, apesar da piora dos indicadores de crédito das famílias. Segundo o Relatório de Estabilidade Financeira referente ao primeiro semestre de 2026, o sistema financeiro continua com níveis confortáveis de capitalização e liquidez, além de capacidade de resistir a cenários adversos. Notícias relacionadas: IBC-Br recuou 0,6% em junho, diz Banco Central. Banco Central estuda interli",
+      "stage_label": "Triagem temática",
+      "impact_label": "misto ou não determinado; sem quantificação causal",
+      "impact_direction": "unknown",
+      "causal_status": "evidência necessária",
+      "confidence": "baixa",
+      "classification": "rule-based"
+    },
+    {
+      "title": "Dólar sobe 8,21%, e bolsa cai 13,88% após reeleição de Lula",
+      "url": "https://agenciabrasil.ebc.com.br/economia/noticia/2026-10/dolar-sobe-821-e-bolsa-cai-1388-apos-reeleicao-de-lula",
+      "published": "Mon, 26 Oct 2026 19:07:00 -0300",
+      "source": "Agência Brasil — Economia",
+      "topic": "mercados e câmbio",
+      "topic_label": "Mercados E Câmbio",
+      "summary": "O mercado financeiro brasileiro teve um dia de forte turbulência nesta segunda-feira (26), após a reeleição do presidente Luiz Inácio Lula da Silva no segundo turno das eleições presidenciais. O dólar fechou em alta de 8,21%, a R$ 5,403. O Ibovespa, principal índice da Bolsa de Valores brasileira, recuou 13,88% e atingiu os 176.608,23 pontos. Durante a manhã, a bolsa acionou o mecanismo de circuit breaker , que interrompe temporariamente as negociações diante de quedas acentuadas. Notícias relacionadas: Líderes estrangeiros reconhecem vitória e parabenizam Lula. Nas redes sociais, líderes latino-americanos saúdam Lula pela vitória. Imprensa internacional destaca vitória histórica de Lula. Pr",
+      "description": "O mercado financeiro brasileiro teve um dia de forte turbulência nesta segunda-feira (26), após a reeleição do presidente Luiz Inácio Lula da Silva no segundo turno das eleições presidenciais. O dólar fechou em alta de 8,21%, a R$ 5,403. O Ibovespa, principal índice da Bolsa de Valores brasileira, recuou 13,88% e atingiu os 176.608,23 pontos. Durante a manhã, a bolsa acionou o mecanismo de circuit breaker , que interrompe temporariamente as negociações diante de quedas acentuadas. Notícias relac",
       "stage_label": "Triagem temática",
       "impact_label": "misto ou não determinado; sem quantificação causal",
       "impact_direction": "unknown",
@@ -468,6 +509,22 @@
       "topic_label": "Tributos E Preços",
       "summary": "Novas medidas simplificam obrigações da Reforma Tributária para nanoempreendedores e MEIs",
       "description": "Novas medidas simplificam obrigações da Reforma Tributária para nanoempreendedores e MEIs",
+      "stage_label": "Triagem temática",
+      "impact_label": "misto ou não determinado; sem quantificação causal",
+      "impact_direction": "unknown",
+      "causal_status": "evidência necessária",
+      "confidence": "baixa",
+      "classification": "rule-based"
+    },
+    {
+      "title": "Tesouro honra em setembro R$ 244,01 milhões em dívidas garantidas pela União",
+      "url": "https://www.gov.br/fazenda/pt-br/assuntos/noticias/2026/outubro/tesouro-honra-em-setembro-r-244-01-milhoes-em-dividas-garantidas-pela-uniao",
+      "published": "",
+      "source": "Ministério da Fazenda",
+      "topic": "mercados e câmbio",
+      "topic_label": "Mercados E Câmbio",
+      "summary": "Tesouro honra em setembro R$ 244,01 milhões em dívidas garantidas pela União",
+      "description": "Tesouro honra em setembro R$ 244,01 milhões em dívidas garantidas pela União",
       "stage_label": "Triagem temática",
       "impact_label": "misto ou não determinado; sem quantificação causal",
       "impact_direction": "unknown",
@@ -572,7 +629,7 @@
       "classification": "rule-based"
     }
   ],
-  "news_checked_at": "2026-10-28T13:25:30+00:00",
+  "news_checked_at": "2026-10-28T13:27:07+00:00",
   "news_engine": {
     "mode": "rule-based",
     "label": "Coleta automática; triagem temática por regras (IA generativa não configurada)",
@@ -608,16 +665,7 @@
       "name": "Agência Brasil — Economia",
       "url": "https://agenciabrasil.ebc.com.br/rss/economia/feed.xml",
       "type": "news-feed"
-    },
-    {
-      "name": "IBGE — Agência de Notícias",
-      "url": "https://agenciadenoticias.ibge.gov.br/agencia-noticias.rss",
-      "type": "news-feed"
     }
   ],
-  "warnings": [
-    "BCB/SGS indisponível: HTTP Error 400: Bad Request",
-    "Feed IBGE — Agência de Notícias sem resposta: HTTP Error 403: Forbidden",
-    "Página oficial IBGE sem resposta: HTTP Error 403: Forbidden"
-  ]
+  "warnings": []
 }

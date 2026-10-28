@@ -80,7 +80,7 @@ TOPICS = {
     "alimentação": ["alimentação","alimenta","supermercado","cesta básica","cesta basica","arroz","feijão","feijao","preço da carne","precos da carne","preço dos alimentos","precos dos alimentos","conab","safra","abastecimento","preço dos alimentos"],
     "combustíveis e transporte": ["combustível","combustivel","gasolina","etanol","diesel","glp","petróleo","petroleo","frete","transporte público","transporte publico","tarifa de transporte","passagem de ônibus","passagem de onibus","pedágio","pedagio","preço do transporte","preco do transporte"],
     "tributos e preços": ["imposto","tribut","icms","ipi","pis/cofins","cofins","alíquota","aliquota","isenção","isencao","reforma tributária","reforma tributaria","irpf","cide"],
-    "renda e benefícios": ["salário mínimo","salario minimo","bolsa família","bolsa familia","bpc","benefício","beneficio","auxílio","auxilio","abono","seguro-desemprego","aposentadoria","pensão","pensao"],
+    "renda e benefícios": ["assistência social","assistencia social","salário mínimo","salario minimo","bolsa família","bolsa familia","bpc","benefício","beneficio","auxílio","auxilio","abono","seguro-desemprego","aposentadoria","pensão","pensao"],
     "juros e crédito": ["selic","juros","crédito","credito","endividamento","inadimplência","inadimplencia","financiamento","consignado","taxa de juros"],
     "moradia e contas": ["energia elétrica","energia eletrica","conta de luz","bandeira tarifária","bandeira tarifaria","habitação","habitacao","aluguel","gás de cozinha","gas de cozinha","preço da água","preco da agua","tarifa de energia","conta de água","conta de agua"],
     "emprego e renda": ["desemprego","emprego formal","rendimento do trabalho","renda do trabalho","salário médio","salario medio","informalidade","mercado de trabalho","taxa de desocupação","taxa de desocupacao"],
@@ -426,15 +426,21 @@ def child_text(node, names):
     return ""
 
 def classify_topic(combined: str, title: str = ""):
-    # Classify by the headline first so "related news" in an RSS excerpt does
-    # not hijack the subject of the article itself.
+    # Classify by headline first. If the headline is generic, inspect only the
+    # lead sentence; related-story snippets and page furniture must not define
+    # the subject of an article.
     head=(title or "").lower().strip()
     text=combined.lower()
     for label, terms in TOPICS.items():
         if head and any(term in head for term in terms):
             return label
+    lead=text
+    if head and head in lead:
+        lead=lead.replace(head," ",1)
+    lead=re.split(r"notícias relacionadas|leia também|leia mais|veja também|mais notícias",lead,flags=re.I)[0]
+    lead=re.sub(r"\s+"," ",lead).strip()[:320]
     for label, terms in TOPICS.items():
-        if any(term in text for term in terms):
+        if any(term in lead for term in terms):
             return label
     return None
 
@@ -474,7 +480,7 @@ def feed_items(feed_name: str, url: str, warnings: list[str]) -> list[dict]:
             if not title or not link: continue
             plain=html.unescape(re.sub(r"<[^>]+>"," ",description))
             plain=re.sub(r"\s+"," ",plain).strip()
-            plain=re.split(r"notícias relacionadas\s*:",plain,flags=re.I)[0].strip()
+            plain=re.split(r"notícias relacionadas|leia também|leia mais|veja também|mais notícias",plain,flags=re.I)[0].strip()
             topic=classify_topic((title+" "+plain).lower(),title=title)
             if topic is None: continue
             out.append(make_news_item(feed_name,title,link,published,plain,topic))

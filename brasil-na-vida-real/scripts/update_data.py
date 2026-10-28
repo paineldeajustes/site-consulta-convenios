@@ -64,22 +64,26 @@ POF_AVG_INCOME = 5426.70
 POF_SOURCE = "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao"
 
 FEEDS = [
-    ("Planalto", "https://www.gov.br/planalto/pt-br/acompanhe-o-planalto/noticias/@@rss"),
-    ("Ministério da Fazenda", "https://www.gov.br/fazenda/pt-br/assuntos/noticias/@@rss"),
-    ("Ministério de Minas e Energia", "https://www.gov.br/mme/pt-br/assuntos/noticias/@@rss"),
-    ("Ministério dos Transportes", "https://www.gov.br/transportes/pt-br/assuntos/noticias/@@rss"),
     ("Agência SP", "https://www.agenciasp.sp.gov.br/feed/"),
     ("Agência Brasil — Economia", "https://agenciabrasil.ebc.com.br/rss/economia/feed.xml"),
+    ("IBGE — Agência de Notícias", "https://agenciadenoticias.ibge.gov.br/agencia-noticias.rss"),
+]
+OFFICIAL_PAGES = [
+    ("Planalto", "https://www.gov.br/planalto/pt-br/acompanhe-o-planalto/noticias"),
+    ("Ministério da Fazenda", "https://www.gov.br/fazenda/pt-br/assuntos/noticias"),
+    ("Ministério de Minas e Energia", "https://www.gov.br/mme/pt-br/assuntos/noticias"),
+    ("Ministério dos Transportes", "https://www.gov.br/transportes/pt-br/assuntos/noticias"),
+    ("IBGE", "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases"),
 ]
 
 TOPICS = {
-    "alimentação": ["alimenta","supermercado","cesta básica","cesta basica","arroz","feijão","feijao","carne","leite","cesta de alimentos","preço dos alimentos","precos dos alimentos","conab","safra","abastecimento"],
-    "combustíveis e transporte": ["combustível","combustivel","gasolina","etanol","diesel","glp","petróleo","petroleo","frete","transporte público","transporte publico","ônibus","onibus","tarifa","pedágio","pedagio"],
+    "alimentação": ["alimentação","alimenta","supermercado","cesta básica","cesta basica","arroz","feijão","feijao","preço da carne","precos da carne","preço dos alimentos","precos dos alimentos","conab","safra","abastecimento","preço dos alimentos"],
+    "combustíveis e transporte": ["combustível","combustivel","gasolina","etanol","diesel","glp","petróleo","petroleo","frete","transporte público","transporte publico","tarifa de transporte","passagem de ônibus","passagem de onibus","pedágio","pedagio","preço do transporte","preco do transporte"],
     "tributos e preços": ["imposto","tribut","icms","ipi","pis/cofins","cofins","alíquota","aliquota","isenção","isencao","reforma tributária","reforma tributaria","irpf","cide"],
     "renda e benefícios": ["salário mínimo","salario minimo","bolsa família","bolsa familia","bpc","benefício","beneficio","auxílio","auxilio","abono","seguro-desemprego","aposentadoria","pensão","pensao"],
     "juros e crédito": ["selic","juros","crédito","credito","endividamento","inadimplência","inadimplencia","financiamento","consignado","taxa de juros"],
-    "moradia e contas": ["energia elétrica","energia eletrica","conta de luz","habitação","habitacao","aluguel","gás de cozinha","gas de cozinha","saneamento","água","agua","tarifa de energia"],
-    "emprego e renda": ["desemprego","emprego","rendimento","renda do trabalho","salário","salario","informalidade","mercado de trabalho"],
+    "moradia e contas": ["energia elétrica","energia eletrica","conta de luz","bandeira tarifária","bandeira tarifaria","habitação","habitacao","aluguel","gás de cozinha","gas de cozinha","preço da água","preco da agua","tarifa de energia","conta de água","conta de agua"],
+    "emprego e renda": ["desemprego","emprego formal","rendimento do trabalho","renda do trabalho","salário médio","salario medio","informalidade","mercado de trabalho","taxa de desocupação","taxa de desocupacao"],
 }
 RELIEF_TERMS = ["reduz","redução","reducao","queda","caiu","isenção","isencao","desconto","gratuidade","amplia benefício","amplia beneficio","reajuste acima","valorização","valorizacao","aumenta o benefício","aumenta o beneficio"]
 PRESSURE_TERMS = ["aumenta","aumento","alta","eleva","elevação","elevacao","reajuste de tarifa","corte de benefício","corte de beneficio","elevação de imposto","elevacao de imposto","eleva imposto","encarece","inflação","inflacao","tributação","tributacao"]
@@ -339,6 +343,46 @@ def child_text(node, names):
             return " ".join("".join(child.itertext()).split())
     return ""
 
+def classify_topic(combined: str):
+    text=combined.lower()
+    topic=None
+    for label, terms in TOPICS.items():
+        if any(term in text for term in terms):
+            topic=label
+            break
+    if topic is None:
+        return None
+    # Require at least one economics/policy signal; avoids tagging crime, sport or
+    # general infrastructure news as a household cost impact without context.
+    economic_signals=[
+        "preço","precos","preço","custo","tarifa","imposto","tribut","renda","salário","salario",
+        "benefício","beneficio","auxílio","auxilio","juros","inflação","inflacao","mercado",
+        "abastecimento","produção","producao","safra","reajuste","bpc","bolsa família","bolsa familia",
+        "desemprego","rendimento","selic","crédito","credito","gasolina","diesel","combustível",
+        "combustivel","energia elétrica","energia eletrica","conta de luz","cesta básica","cesta basica",
+        "câmbio","cambio","exportação","exportacao","importação","importacao","reforma tributária",
+        "reforma tributaria","isenção","isencao","desconto","poder de compra","inflação"
+    ]
+    if not any(term in text for term in economic_signals):
+        return None
+    return topic
+
+def make_news_item(feed_name: str, title: str, link: str, published: str, summary: str, topic: str):
+    low=(title+" "+summary).lower()
+    direction="misto ou não determinado"
+    if any(term in low for term in RELIEF_TERMS) and not any(term in low for term in PRESSURE_TERMS):
+        direction="possível alívio; verificar efeitos"
+    elif any(term in low for term in PRESSURE_TERMS) and not any(term in low for term in RELIEF_TERMS):
+        direction="possível pressão; verificar efeitos"
+    return {
+        "title":title[:260],"url":link,"published":published[:80],"source":feed_name,
+        "topic":topic,"topic_label":topic.title(),"summary":summary[:700],
+        "description":summary[:500],"stage_label":"Triagem temática",
+        "impact_label":direction+"; sem quantificação causal",
+        "impact_direction":"unknown","causal_status":"evidência necessária",
+        "confidence":"baixa","classification":"rule-based",
+    }
+
 def feed_items(feed_name: str, url: str, warnings: list[str]) -> list[dict]:
     try:
         content=get_bytes(url, timeout=20)
@@ -359,36 +403,53 @@ def feed_items(feed_name: str, url: str, warnings: list[str]) -> list[dict]:
             if not title or not link: continue
             plain=html.unescape(re.sub(r"<[^>]+>"," ",description))
             plain=re.sub(r"\s+"," ",plain).strip()
-            combined=(title+" "+plain).lower()
-            topic=None
-            for label, terms in TOPICS.items():
-                if any(term in combined for term in terms):
-                    topic=label
-                    break
+            topic=classify_topic((title+" "+plain).lower())
             if topic is None: continue
-            low=combined
-            direction="misto ou não determinado"
-            if any(term in low for term in RELIEF_TERMS) and not any(term in low for term in PRESSURE_TERMS):
-                direction="possível alívio; verificar efeitos"
-            elif any(term in low for term in PRESSURE_TERMS) and not any(term in low for term in RELIEF_TERMS):
-                direction="possível pressão; verificar efeitos"
-            out.append({
-                "title":title[:260],"url":link,"published":published[:80],"source":feed_name,
-                "topic":topic,"topic_label":topic.title(),"summary":plain[:700],
-                "description":plain[:500],"stage_label":"Triagem temática",
-                "impact_label":direction+"; sem quantificação causal",
-                "impact_direction":"unknown","causal_status":"evidência necessária",
-                "confidence":"baixa","classification":"rule-based",
-            })
+            out.append(make_news_item(feed_name,title,link,published,plain,topic))
         return out
     except Exception as exc:
         warnings.append(f"Feed {feed_name} sem resposta: {str(exc)[:120]}")
+        return []
+
+def official_page_items(page_name: str, url: str, warnings: list[str]) -> list[dict]:
+    try:
+        page=get_bytes(url,timeout=20).decode("utf-8","replace")
+        parser=AnchorParser()
+        parser.feed(page)
+        out=[]
+        seen=set()
+        base_host=urllib.parse.urlparse(url).netloc
+        for anchor in parser.anchors:
+            title=html.unescape(re.sub(r"\s+"," ",anchor.get("text",""))).strip()
+            href=urllib.parse.urljoin(url,anchor.get("href",""))
+            parsed=urllib.parse.urlparse(href)
+            path=parsed.path.lower()
+            if parsed.netloc!=base_host or not title or len(title)<24 or len(title)>220:
+                continue
+            if "@@rss" in path or "javascript:" in href or href in seen:
+                continue
+            if not any(part in path for part in ("/noticias/","/releases/","/agencia-noticias/")):
+                continue
+            if path.rstrip("/") in {urllib.parse.urlparse(url).path.rstrip("/"),""}:
+                continue
+            topic=classify_topic(title.lower())
+            if topic is None:
+                continue
+            seen.add(href)
+            out.append(make_news_item(page_name,title,href,"",title,topic))
+            if len(out)>=24:
+                break
+        return out
+    except Exception as exc:
+        warnings.append(f"Página oficial {page_name} sem resposta: {str(exc)[:120]}")
         return []
 
 def collect_news(previous: dict, warnings: list[str]) -> tuple[list[dict], dict]:
     found=[]
     for name,url in FEEDS:
         found.extend(feed_items(name,url,warnings))
+    for name,url in OFFICIAL_PAGES:
+        found.extend(official_page_items(name,url,warnings))
     by_url={}
     for item in found:
         old=by_url.get(item["url"])
@@ -406,9 +467,9 @@ def collect_news(previous: dict, warnings: list[str]) -> tuple[list[dict], dict]
             except Exception: return 0
     items.sort(key=sort_key,reverse=True)
     items=items[:36]
-    engine={"mode":"rule-based","label":"Coleta e triagem temática automáticas; IA generativa ainda não conectada","openai_enabled":False}
+    engine={"mode":"rule-based","label":"Coleta automática; triagem temática por regras (IA generativa não configurada)","openai_enabled":False}
     key=os.getenv("OPENAI_API_KEY")
-    if key and items:
+    if key and key.strip() and items:
         try:
             import requests
             subset=items[:18]
@@ -435,7 +496,7 @@ def collect_news(previous: dict, warnings: list[str]) -> tuple[list[dict], dict]
                     "causal_status":str(ann.get("causal_status","evidência necessária"))[:200],
                     "classification":"openai-assisted",
                 })
-            engine={"mode":"openai-assisted","label":"IA generativa analisou as notícias; impactos numéricos só com evidência","openai_enabled":True}
+            engine={"mode":"openai-assisted","label":"IA generativa classificou notícias; impactos numéricos só com evidência","openai_enabled":True}
         except Exception as exc:
             warnings.append("Classificação por IA falhou nesta execução; usada triagem por regras: "+str(exc)[:130])
     return items,engine

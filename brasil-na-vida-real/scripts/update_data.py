@@ -44,15 +44,23 @@ GROUPS = [
 # Participação das despesas de consumo por classes de rendimento, POF 2017–2018.
 # Alimentação, habitação e transporte são exibidos diretamente. O restante é repartido
 # entre os demais grupos segundo os pesos mensais oficiais do IPCA.
+# POF 2017–2018: official endpoint classes are available from IBGE's published
+# distribution table. Shares for the lowest and highest income groups are normalized
+# by the consumption-expense subtotal; middle bands are transparent log-income
+# interpolations between those published endpoints and the all-family composition.
 POF = [
-    {"key":"low","label":"Até R$ 1.908","food":23.8,"housing":38.5,"transport":10.2},
-    {"key":"lower_mid","label":"Mais de R$ 1.908 a R$ 2.862","food":21.3,"housing":36.6,"transport":12.6},
-    {"key":"middle","label":"Mais de R$ 2.862 a R$ 5.724","food":19.7,"housing":32.8,"transport":16.3},
-    {"key":"upper_mid","label":"Mais de R$ 5.724 a R$ 9.540","food":16.6,"housing":29.4,"transport":20.5},
-    {"key":"high","label":"Mais de R$ 9.540 a R$ 14.310","food":15.6,"housing":30.3,"transport":20.3},
-    {"key":"upper","label":"Mais de R$ 14.310 a R$ 23.850","food":13.7,"housing":30.6,"transport":22.1},
-    {"key":"very_high","label":"Mais de R$ 23.850","food":11.5,"housing":30.8,"transport":22.5},
+    {"key":"low","label":"Até R$ 1.908","representative_income":1500},
+    {"key":"lower_mid","label":"Mais de R$ 1.908 a R$ 2.862","representative_income":2250},
+    {"key":"middle","label":"Mais de R$ 2.862 a R$ 5.724","representative_income":4000},
+    {"key":"upper_mid","label":"Mais de R$ 5.724 a R$ 9.540","representative_income":6500},
+    {"key":"high","label":"Mais de R$ 9.540 a R$ 14.310","representative_income":11000},
+    {"key":"upper","label":"Mais de R$ 14.310 a R$ 23.850","representative_income":18000},
+    {"key":"very_high","label":"Mais de R$ 23.850","representative_income":30000},
 ]
+POF_LOW = {"food": 22.0/92.6*100, "housing":39.2/92.6*100, "transport":9.4/92.6*100}
+POF_ALL = {"food":17.5, "housing":36.6, "transport":18.1}
+POF_HIGH = {"food":7.6/66.3*100, "housing":22.6/66.3*100, "transport":15.3/66.3*100}
+POF_AVG_INCOME = 5426.70
 POF_SOURCE = "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao"
 
 FEEDS = [
@@ -111,13 +119,22 @@ def pick_value(row):
     return None
 
 def row_period(row):
-    for key in ("MN", "Mês", "Mês (Código)", "Período", "Periodo", "D2N", "D3N", "D4N", "D5N"):
-        if key in row and row[key] and str(row[key]) not in {"Mês", "Período"}:
+    # In table 7060, D2 is unit of measurement ("%"); D3 is the reference month.
+    for key in ("D3N", "D4N", "D5N", "D2N", "Mês", "Período", "Periodo"):
+        if key in row and row[key] and str(row[key]) not in {"Mês", "Período", "%"}:
             return str(row[key])
     for key, value in row.items():
         if ("mês" in key.lower() or "periodo" in key.lower() or "período" in key.lower()) and "código" not in key.lower():
-            if value and str(value) not in {"Mês", "Período"}:
+            if value and str(value) not in {"Mês", "Período", "%"}:
                 return str(value)
+    return None
+
+def row_period_code(row):
+    # Do not use MC: for this SIDRA table it can describe the unit code, not the month.
+    for key in ("D3C", "D4C", "D5C", "D2C"):
+        value = str(row.get(key) or "").strip()
+        if re.fullmatch(r"\d{6}", value) and value.startswith(("19", "20")):
+            return value
     return None
 
 def sidra_latest(variable: int, category: str):
@@ -139,12 +156,12 @@ def try_fetch_ipca(previous: dict, warnings: list[str]) -> dict:
     try:
         for group in GROUPS:
             record = dict(group)
-            for var, field in ((63,"monthly"),(64,"year_to_date"),(65,"last12"),(66,"weight")):
+            for var, field in ((63,"monthly"),(69,"year_to_date"),(2265,"last12"),(66,"weight")):
                 try:
                     got = sidra_latest(var, group["id"])
                     record[field] = got["value"]
                     record["period_label"] = record.get("period_label") or got["period_label"]
-                    record["period"] = record.get("period") or (got["row"].get("MC") if isinstance(got.get("row"), dict) else None)
+                    record["period"] = record.get("period") or (row_period_code(got["row"]) if isinstance(got.get("row"), dict) else None)
                 except Exception as exc:
                     record[field] = None
                     warnings.append(f"SIDRA {field}/{group['key']}: {str(exc)[:160]}")
@@ -171,6 +188,20 @@ def try_fetch_ipca(previous: dict, warnings: list[str]) -> dict:
         warnings.append(f"IBGE/SIDRA indisponível: {str(exc)[:180]}")
         return {"ipca": new, "groups": previous.get("groups", []), "groups_period_label": previous.get("groups_period_label")}
 
+def pof_core_weights(income: float) -> dict:
+    def blend(a, b, t):
+        t=max(0.0,min(1.0,t))
+        return {k:float(a[k])+(float(b[k])-float(a[k]))*t for k in ("food","housing","transport")}
+    if income <= 1908:
+        return dict(POF_LOW)
+    if income >= 23850:
+        return dict(POF_HIGH)
+    if income <= POF_AVG_INCOME:
+        t=(__import__("math").log(max(income,1))-__import__("math").log(1908))/( __import__("math").log(POF_AVG_INCOME)-__import__("math").log(1908))
+        return blend(POF_LOW, POF_ALL, t)
+    t=(__import__("math").log(income)-__import__("math").log(POF_AVG_INCOME))/( __import__("math").log(23850)-__import__("math").log(POF_AVG_INCOME))
+    return blend(POF_ALL, POF_HIGH, t)
+
 def calculate_profile_baskets(groups: list[dict]) -> dict:
     by_key = {g["key"]: g for g in groups}
     core = {"food", "housing", "transport"}
@@ -182,11 +213,8 @@ def calculate_profile_baskets(groups: list[dict]) -> dict:
         return {}
     out = {}
     for profile in POF:
-        food = profile["food"]
-        housing = profile["housing"]
-        transport = profile["transport"]
-        residual = max(0, 100 - food - housing - transport)
-        weights = {"food":food, "housing":housing, "transport":transport}
+        weights = pof_core_weights(profile["representative_income"])
+        residual = max(0, 100 - sum(weights.values()))
         for group in others:
             weights[group["key"]] = residual * max(float(group.get("weight") or 0),0) / other_weight_total
         monthly = sum((by_key[k]["monthly"] * weights[k] / 100) for k in weights if k in by_key)
@@ -198,22 +226,20 @@ def calculate_profile_baskets(groups: list[dict]) -> dict:
             "period_label": by_key["food"].get("period_label"),
             "pof_source": POF_SOURCE,
             "weights": {k: round(v, 2) for k,v in weights.items()},
-            "method": "POF 2017–2018 shares for food/housing/transport by income class; remaining consumption share distributed by official monthly IPCA group weights.",
+            "method": "Published POF 2017–2018 distribution for lowest/highest income classes, normalized to consumption expenditure; national all-family distribution for the anchor; intermediate income ranges interpolated by log income. Remaining weight distributed using official IPCA group weights.",
         }
-    avg = {key:sum(float(p[key]) for p in POF)/len(POF) for key in ("food","housing","transport")}
-    average_profile = {"key":"average","label":"Média das faixas POF","food":avg["food"],"housing":avg["housing"],"transport":avg["transport"]}
-    residual = 100 - avg["food"] - avg["housing"] - avg["transport"]
-    weights = {"food":avg["food"],"housing":avg["housing"],"transport":avg["transport"]}
+    avg_weights = dict(POF_ALL)
+    residual = max(0,100-sum(avg_weights.values()))
     for group in others:
-        weights[group["key"]] = residual * max(float(group.get("weight") or 0),0)/other_weight_total
+        avg_weights[group["key"]] = residual * max(float(group.get("weight") or 0),0)/other_weight_total
     out["average"] = {
-        "label":"Média das faixas POF",
-        "monthly":round(sum(by_key[k]["monthly"]*v/100 for k,v in weights.items() if k in by_key),3),
-        "last12":round(sum(by_key[k]["last12"]*v/100 for k,v in weights.items() if k in by_key),3),
+        "label":"Média nacional das despesas de consumo (POF)",
+        "monthly":round(sum(by_key[k]["monthly"]*v/100 for k,v in avg_weights.items() if k in by_key),3),
+        "last12":round(sum(by_key[k]["last12"]*v/100 for k,v in avg_weights.items() if k in by_key),3),
         "period_label":by_key["food"].get("period_label"),
         "pof_source":POF_SOURCE,
-        "weights":{k:round(v,2) for k,v in weights.items()},
-        "method":"Média simples das faixas de renda da POF 2017–2018; estimativa experimental.",
+        "weights":{k:round(v,2) for k,v in avg_weights.items()},
+        "method":"Distribuição nacional das despesas de consumo publicada pelo IBGE; restante ponderado pelos pesos oficiais dos grupos IPCA.",
     }
     return out
 
@@ -284,10 +310,22 @@ def try_fetch_anp(previous: dict, warnings: list[str]) -> dict:
 
 def bcb_selic(previous: dict, warnings: list[str]) -> dict | None:
     try:
-        rows=fetch_json("https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json")
-        if not rows: return previous.get("selic")
-        row=rows[-1]
-        return {"date":row.get("data"),"value":parse_number(row.get("valor")),"source_url":"https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json","source_name":"Banco Central — SGS série 432 (meta Selic)","unit":"% a.a."}
+        rows=fetch_json("https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/30?formato=json")
+        today=dt.datetime.now(dt.timezone.utc).date()
+        parsed=[]
+        for row in rows or []:
+            try:
+                day=dt.datetime.strptime(row.get("data",""),"%d/%m/%Y").date()
+                value=parse_number(row.get("valor"))
+                if value is not None and day <= today:
+                    parsed.append((day,value))
+            except Exception:
+                continue
+        if not parsed:
+            warnings.append("BCB/SGS: nenhuma observação com data até hoje; preservado o valor anterior.")
+            return previous.get("selic")
+        day,value=max(parsed,key=lambda x:x[0])
+        return {"date":day.strftime("%d/%m/%Y"),"value":value,"source_url":"https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/30?formato=json","source_name":"Banco Central — SGS série 432 (meta Selic; última observação até a data atual)","unit":"% a.a."}
     except Exception as exc:
         warnings.append(f"BCB/SGS indisponível: {str(exc)[:120]}")
         return previous.get("selic")
@@ -446,7 +484,7 @@ def main():
         "warnings":warnings[-25:],
     }
     DATA_FILE.write_text(json.dumps(payload,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-    print(json.dumps({"ipca":payload["ipca"],"groups":len(payload["groups"]),"profiles":len(payload["profile_baskets"]),"news":len(payload["news"]),"warnings":payload["warnings"][-5:],"news_engine":engine},ensure_ascii=False,indent=2))
+    print(json.dumps({"ipca":payload["ipca"],"groups":len(payload["groups"]),"profiles":len(payload["profile_baskets"]),"news":len(payload["news"]),"warning_count":len(payload["warnings"]),"warnings":payload["warnings"][-25:],"news_engine":engine},ensure_ascii=False,indent=2))
 
 if __name__=="__main__":
     main()

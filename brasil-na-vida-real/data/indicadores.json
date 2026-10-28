@@ -1,6 +1,6 @@
 {
   "schema_version": "0.2",
-  "updated_at": "2026-10-28T13:29:48+00:00",
+  "updated_at": "2026-10-28T13:30:59+00:00",
   "status_label": "Dados oficiais coletados automaticamente",
   "ipca": {
     "period": "202609",
@@ -297,8 +297,8 @@
       "url": "https://agenciabrasil.ebc.com.br/economia/noticia/2026-10/governo-libera-r-52-bilhoes-para-reforcar-assistencia-social-e-saude",
       "published": "Wed, 28 Oct 2026 09:50:00 -0300",
       "source": "Agência Brasil — Economia",
-      "topic": "juros e crédito",
-      "topic_label": "Juros E Crédito",
+      "topic": "renda e benefícios",
+      "topic_label": "Renda E Benefícios",
       "summary": "O Ministério do Planejamento e Orçamento autorizou nesta quarta-feira (27) a liberação de crédito suplementar de R$ 5,166 bilhões nos orçamentos fiscal e da Seguridade Social para reforçar despesas de diversos órgãos do Executivo. De acordo com a Portaria nº 485/2026 , os recursos serão remanejados por meio da anulação de dotações orçamentárias já existentes.",
       "description": "O Ministério do Planejamento e Orçamento autorizou nesta quarta-feira (27) a liberação de crédito suplementar de R$ 5,166 bilhões nos orçamentos fiscal e da Seguridade Social para reforçar despesas de diversos órgãos do Executivo. De acordo com a Portaria nº 485/2026 , os recursos serão remanejados por meio da anulação de dotações orçamentárias já existentes.",
       "stage_label": "Triagem temática",
@@ -461,6 +461,22 @@
       "topic_label": "Mercados E Câmbio",
       "summary": "O mercado financeiro brasileiro teve um dia de forte turbulência nesta segunda-feira (26), após a reeleição do presidente Luiz Inácio Lula da Silva no segundo turno das eleições presidenciais. O dólar fechou em alta de 8,21%, a R$ 5,403. O Ibovespa, principal índice da Bolsa de Valores brasileira, recuou 13,88% e atingiu os 176.608,23 pontos. Durante a manhã, a bolsa acionou o mecanismo de circuit breaker , que interrompe temporariamente as negociações diante de quedas acentuadas.",
       "description": "O mercado financeiro brasileiro teve um dia de forte turbulência nesta segunda-feira (26), após a reeleição do presidente Luiz Inácio Lula da Silva no segundo turno das eleições presidenciais. O dólar fechou em alta de 8,21%, a R$ 5,403. O Ibovespa, principal índice da Bolsa de Valores brasileira, recuou 13,88% e atingiu os 176.608,23 pontos. Durante a manhã, a bolsa acionou o mecanismo de circuit breaker , que interrompe temporariamente as negociações diante de quedas acentuadas.",
+      "stage_label": "Triagem temática",
+      "impact_label": "misto ou não determinado; sem quantificação causal",
+      "impact_direction": "unknown",
+      "causal_status": "evidência necessária",
+      "confidence": "baixa",
+      "classification": "rule-based"
+    },
+    {
+      "title": "Cidadania e Assistência Social",
+      "url": "https://www.gov.br/pt-br/noticias/assistencia-social",
+      "published": "",
+      "source": "Planalto",
+      "topic": "renda e benefícios",
+      "topic_label": "Renda E Benefícios",
+      "summary": "Cidadania e Assistência Social",
+      "description": "Cidadania e Assistência Social",
       "stage_label": "Triagem temática",
       "impact_label": "misto ou não determinado; sem quantificação causal",
       "impact_direction": "unknown",
@@ -693,7 +709,7 @@
       "classification": "rule-based"
     }
   ],
-  "news_checked_at": "2026-10-28T13:29:48+00:00",
+  "news_checked_at": "2026-10-28T13:30:59+00:00",
   "news_engine": {
     "mode": "rule-based",
     "label": "Coleta automática; triagem temática por regras (IA generativa não configurada)",

@@ -123,10 +123,13 @@ def pick_value(row):
     return None
 
 def row_period(row):
-    # In table 7060, D2 is unit of measurement ("%"); D3 is the reference month.
-    for key in ("D3N", "D4N", "D5N", "D2N", "Mês", "Período", "Periodo"):
+    # In table 7060, D2 is the month, D3 is the selected variable,
+    # and MC/MN describe the unit of measurement (e.g. 2 / %).
+    for key in ("D2N", "D1N", "D4N", "D5N", "Mês", "Período", "Periodo"):
         if key in row and row[key] and str(row[key]) not in {"Mês", "Período", "%"}:
-            return str(row[key])
+            value=str(row[key]).strip()
+            if re.search(r"\b(?:19|20)\d{2}\b", value) or re.fullmatch(r"\d{6}",value):
+                return value
     for key, value in row.items():
         if ("mês" in key.lower() or "periodo" in key.lower() or "período" in key.lower()) and "código" not in key.lower():
             if value and str(value) not in {"Mês", "Período", "%"}:
@@ -134,8 +137,8 @@ def row_period(row):
     return None
 
 def row_period_code(row):
-    # Do not use MC: for this SIDRA table it can describe the unit code, not the month.
-    for key in ("D3C", "D4C", "D5C", "D2C"):
+    # Prefer D2C: it is the month code in SIDRA table 7060.
+    for key in ("D2C", "D3C", "D4C", "D5C"):
         value = str(row.get(key) or "").strip()
         if re.fullmatch(r"\d{6}", value) and value.startswith(("19", "20")):
             return value

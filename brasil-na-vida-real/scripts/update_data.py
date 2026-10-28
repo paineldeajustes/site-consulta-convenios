@@ -425,29 +425,18 @@ def child_text(node, names):
             return " ".join("".join(child.itertext()).split())
     return ""
 
-def classify_topic(combined: str):
+def classify_topic(combined: str, title: str = ""):
+    # Classify by the headline first so "related news" in an RSS excerpt does
+    # not hijack the subject of the article itself.
+    head=(title or "").lower().strip()
     text=combined.lower()
-    topic=None
+    for label, terms in TOPICS.items():
+        if head and any(term in head for term in terms):
+            return label
     for label, terms in TOPICS.items():
         if any(term in text for term in terms):
-            topic=label
-            break
-    if topic is None:
-        return None
-    # Require at least one economics/policy signal; avoids tagging crime, sport or
-    # general infrastructure news as a household cost impact without context.
-    economic_signals=[
-        "preço","precos","preço","custo","tarifa","imposto","tribut","renda","salário","salario",
-        "benefício","beneficio","auxílio","auxilio","juros","inflação","inflacao","mercado",
-        "abastecimento","produção","producao","safra","reajuste","bpc","bolsa família","bolsa familia",
-        "desemprego","rendimento","selic","crédito","credito","gasolina","diesel","combustível",
-        "combustivel","energia elétrica","energia eletrica","conta de luz","cesta básica","cesta basica",
-        "câmbio","cambio","dólar","dolar","ibovespa","tesouro","títulos públicos","titulos publicos","mercado financeiro","bolsa de valores","exportação","exportacao","importação","importacao","reforma tributária",
-        "reforma tributaria","isenção","isencao","desconto","poder de compra","inflação"
-    ]
-    if not any(term in text for term in economic_signals):
-        return None
-    return topic
+            return label
+    return None
 
 def make_news_item(feed_name: str, title: str, link: str, published: str, summary: str, topic: str):
     low=(title+" "+summary).lower()
@@ -485,7 +474,8 @@ def feed_items(feed_name: str, url: str, warnings: list[str]) -> list[dict]:
             if not title or not link: continue
             plain=html.unescape(re.sub(r"<[^>]+>"," ",description))
             plain=re.sub(r"\s+"," ",plain).strip()
-            topic=classify_topic((title+" "+plain).lower())
+            plain=re.split(r"notícias relacionadas\s*:",plain,flags=re.I)[0].strip()
+            topic=classify_topic((title+" "+plain).lower(),title=title)
             if topic is None: continue
             out.append(make_news_item(feed_name,title,link,published,plain,topic))
         return out
@@ -514,7 +504,7 @@ def official_page_items(page_name: str, url: str, warnings: list[str]) -> list[d
                 continue
             if path.rstrip("/") in {urllib.parse.urlparse(url).path.rstrip("/"),""}:
                 continue
-            topic=classify_topic(title.lower())
+            topic=classify_topic(title.lower(),title=title)
             if topic is None:
                 continue
             seen.add(href)

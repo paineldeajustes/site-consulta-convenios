@@ -67,17 +67,16 @@ POF_SOURCE = "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/201
 FEEDS = [
     ("Agência SP", "https://www.agenciasp.sp.gov.br/feed/"),
     ("Agência Brasil — Economia", "https://agenciabrasil.ebc.com.br/rss/economia/feed.xml"),
-    ("IBGE — Agência de Notícias", "https://agenciadenoticias.ibge.gov.br/agencia-noticias.rss"),
 ]
 OFFICIAL_PAGES = [
     ("Planalto", "https://www.gov.br/planalto/pt-br/acompanhe-o-planalto/noticias"),
     ("Ministério da Fazenda", "https://www.gov.br/fazenda/pt-br/assuntos/noticias"),
     ("Ministério de Minas e Energia", "https://www.gov.br/mme/pt-br/assuntos/noticias"),
     ("Ministério dos Transportes", "https://www.gov.br/transportes/pt-br/assuntos/noticias"),
-    ("IBGE", "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases"),
 ]
 
 TOPICS = {
+    "mercados e câmbio": ["dólar","dolar","ibovespa","tesouro","títulos públicos","titulos publicos","mercado financeiro","bolsa de valores","câmbio","cambio","mercado de ações","mercado de acoes"],
     "alimentação": ["alimentação","alimenta","supermercado","cesta básica","cesta basica","arroz","feijão","feijao","preço da carne","precos da carne","preço dos alimentos","precos dos alimentos","conab","safra","abastecimento","preço dos alimentos"],
     "combustíveis e transporte": ["combustível","combustivel","gasolina","etanol","diesel","glp","petróleo","petroleo","frete","transporte público","transporte publico","tarifa de transporte","passagem de ônibus","passagem de onibus","pedágio","pedagio","preço do transporte","preco do transporte"],
     "tributos e preços": ["imposto","tribut","icms","ipi","pis/cofins","cofins","alíquota","aliquota","isenção","isencao","reforma tributária","reforma tributaria","irpf","cide"],
@@ -121,6 +120,16 @@ def pick_value(row):
             parsed = parse_number(row[key])
             if parsed is not None:
                 return parsed
+    return None
+
+def period_label_from_code(code):
+    months=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"]
+    match=re.fullmatch(r"(\d{4})(\d{2})",str(code or ""))
+    if not match:
+        return None
+    year,month=int(match.group(1)),int(match.group(2))
+    if 1 <= month <= 12:
+        return f"{months[month-1]} de {year}"
     return None
 
 def row_period(row):
@@ -175,7 +184,7 @@ def sidra_all_categories(variable: int):
         if value is None:
             continue
         # Preserve the latest row found for this exact top-level category.
-        found[key]={"value":round(value,4),"period_label":row_period(row),"period":row_period_code(row),"row":row}
+        found[key]={"value":round(value,4),"period_label":row_period(row) or period_label_from_code(row_period_code(row)),"period":row_period_code(row),"row":row}
     return found,examples
 
 def try_fetch_ipca(previous: dict, warnings: list[str]) -> dict:
@@ -368,7 +377,13 @@ def bcb_selic(previous: dict, warnings: list[str]) -> dict | None:
         "dataFinal":today.strftime("%d/%m/%Y"),
     })
     try:
-        rows=fetch_json(url)
+        try:
+            rows=fetch_json(url)
+        except Exception as ranged_exc:
+            # The SGS endpoint sometimes rejects a date-range query; use the last 30
+            # published observations and still filter future-effective rows.
+            warnings.append(f"BCB/SGS consulta por período falhou; tentando últimas 30 observações: {str(ranged_exc)[:80]}")
+            rows=fetch_json("https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/30?formato=json")
         parsed=[]
         for row in rows or []:
             try:
@@ -427,7 +442,7 @@ def classify_topic(combined: str):
         "abastecimento","produção","producao","safra","reajuste","bpc","bolsa família","bolsa familia",
         "desemprego","rendimento","selic","crédito","credito","gasolina","diesel","combustível",
         "combustivel","energia elétrica","energia eletrica","conta de luz","cesta básica","cesta basica",
-        "câmbio","cambio","exportação","exportacao","importação","importacao","reforma tributária",
+        "câmbio","cambio","dólar","dolar","ibovespa","tesouro","títulos públicos","titulos publicos","mercado financeiro","bolsa de valores","exportação","exportacao","importação","importacao","reforma tributária",
         "reforma tributaria","isenção","isencao","desconto","poder de compra","inflação"
     ]
     if not any(term in text for term in economic_signals):

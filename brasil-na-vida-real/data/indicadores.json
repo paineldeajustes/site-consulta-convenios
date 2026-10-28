@@ -1,6 +1,6 @@
 {
   "schema_version": "0.2",
-  "updated_at": "2026-10-28T13:23:51+00:00",
+  "updated_at": "2026-10-28T13:25:30+00:00",
   "status_label": "Dados oficiais coletados automaticamente",
   "ipca": {
     "period": "202609",
@@ -10,7 +10,7 @@
     "last12": 4.58,
     "source_url": "https://sidra.ibge.gov.br/tabela/7060",
     "source_name": "IBGE/SIDRA — tabela 7060",
-    "series": "IPCA, variável mensal, acumulado no ano e acumulado em 12 meses"
+    "series": "IPCA geral, variação mensal, acumulada no ano e acumulada em 12 meses"
   },
   "groups": [
     {
@@ -18,7 +18,6 @@
       "id": "7170",
       "name": "Alimentação e bebidas",
       "monthly": 0.83,
-      "period_label": null,
       "period": "202609",
       "year_to_date": 4.37,
       "last12": 4.66,
@@ -26,94 +25,245 @@
     },
     {
       "key": "housing",
-      "id": "7171",
+      "id": "7445",
       "name": "Habitação",
-      "monthly": 0.96,
-      "period_label": null,
+      "monthly": 2.31,
       "period": "202609",
-      "year_to_date": 4.44,
-      "last12": 4.21,
-      "weight": 15.3802
+      "year_to_date": 4.35,
+      "last12": 4.22,
+      "weight": 15.2611
     },
     {
       "key": "household",
-      "id": "7172",
+      "id": "7486",
       "name": "Artigos de residência",
-      "monthly": 2.53,
-      "period_label": null,
+      "monthly": 0.27,
       "period": "202609",
-      "year_to_date": 10.74,
-      "last12": 4.54,
-      "weight": 0.7331
+      "year_to_date": 2.81,
+      "last12": 2.08,
+      "weight": 3.4843
     },
     {
       "key": "clothing",
-      "id": "7173",
+      "id": "7558",
       "name": "Vestuário",
-      "monthly": 4.56,
-      "period_label": null,
+      "monthly": 0.71,
       "period": "202609",
-      "year_to_date": 4.96,
-      "last12": -2.61,
-      "weight": 0.5101
+      "year_to_date": 1.85,
+      "last12": 3.34,
+      "weight": 4.6171
     },
     {
       "key": "transport",
-      "id": "7174",
+      "id": "7626",
       "name": "Transportes",
-      "monthly": null,
-      "year_to_date": null,
-      "last12": null,
-      "weight": null
+      "monthly": 0.89,
+      "period": "202609",
+      "year_to_date": 2.84,
+      "last12": 3.94,
+      "weight": 20.1607
     },
     {
       "key": "health",
-      "id": "7175",
+      "id": "7660",
       "name": "Saúde e cuidados pessoais",
-      "monthly": -0.02,
-      "period_label": null,
+      "monthly": 0.08,
       "period": "202609",
-      "year_to_date": 18.44,
-      "last12": 8.48,
-      "weight": 0.0136
+      "year_to_date": 4.82,
+      "last12": 5.75,
+      "weight": 13.8408
     },
     {
       "key": "personal",
-      "id": "7176",
+      "id": "7712",
       "name": "Despesas pessoais",
-      "monthly": 1.53,
-      "period_label": null,
+      "monthly": 0.26,
       "period": "202609",
-      "year_to_date": 27.77,
-      "last12": 25.68,
-      "weight": 0.0433
+      "year_to_date": 4.24,
+      "last12": 5.9,
+      "weight": 10.4075
     },
     {
       "key": "education",
-      "id": "7177",
+      "id": "7766",
       "name": "Educação",
-      "monthly": null,
-      "year_to_date": null,
-      "last12": null,
-      "weight": null
+      "monthly": 0.04,
+      "period": "202609",
+      "year_to_date": 5.8,
+      "last12": 5.95,
+      "weight": 6.2085
     },
     {
       "key": "communication",
-      "id": "7178",
+      "id": "7788",
       "name": "Comunicação",
-      "monthly": null,
-      "year_to_date": null,
-      "last12": null,
-      "weight": null
+      "monthly": 0.64,
+      "period": "202609",
+      "year_to_date": 2.77,
+      "last12": 2.79,
+      "weight": 4.5111
     }
   ],
   "groups_period_label": "%",
-  "profile_baskets": {},
+  "profile_baskets": {
+    "low": {
+      "label": "Até R$ 1.908",
+      "monthly": 1.327,
+      "last12": 4.469,
+      "period_label": null,
+      "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
+      "weights": {
+        "food": 23.76,
+        "housing": 42.33,
+        "transport": 10.15,
+        "household": 1.92,
+        "clothing": 2.55,
+        "health": 7.63,
+        "personal": 5.74,
+        "education": 3.42,
+        "communication": 2.49
+      },
+      "method": "Published POF 2017–2018 distribution for lowest/highest income classes, normalized to consumption expenditure; national all-family distribution for the anchor; intermediate income ranges interpolated by log income. Remaining weight distributed using official IPCA group weights."
+    },
+    "lower_mid": {
+      "label": "Mais de R$ 1.908 a R$ 2.862",
+      "monthly": 1.311,
+      "last12": 4.466,
+      "period_label": null,
+      "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
+      "weights": {
+        "food": 22.77,
+        "housing": 41.43,
+        "transport": 11.4,
+        "household": 1.97,
+        "clothing": 2.62,
+        "health": 7.84,
+        "personal": 5.9,
+        "education": 3.52,
+        "communication": 2.56
+      },
+      "method": "Published POF 2017–2018 distribution for lowest/highest income classes, normalized to consumption expenditure; national all-family distribution for the anchor; intermediate income ranges interpolated by log income. Remaining weight distributed using official IPCA group weights."
+    },
+    "middle": {
+      "label": "Mais de R$ 2.862 a R$ 5.724",
+      "monthly": 1.254,
+      "last12": 4.455,
+      "period_label": null,
+      "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
+      "weights": {
+        "food": 19.33,
+        "housing": 38.27,
+        "transport": 15.78,
+        "household": 2.15,
+        "clothing": 2.85,
+        "health": 8.55,
+        "personal": 6.43,
+        "education": 3.84,
+        "communication": 2.79
+      },
+      "method": "Published POF 2017–2018 distribution for lowest/highest income classes, normalized to consumption expenditure; national all-family distribution for the anchor; intermediate income ranges interpolated by log income. Remaining weight distributed using official IPCA group weights."
+    },
+    "upper_mid": {
+      "label": "Mais de R$ 5.724 a R$ 9.540",
+      "monthly": 1.217,
+      "last12": 4.447,
+      "period_label": null,
+      "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
+      "weights": {
+        "food": 16.76,
+        "housing": 36.29,
+        "transport": 18.71,
+        "household": 2.28,
+        "clothing": 3.03,
+        "health": 9.07,
+        "personal": 6.82,
+        "education": 4.07,
+        "communication": 2.96
+      },
+      "method": "Published POF 2017–2018 distribution for lowest/highest income classes, normalized to consumption expenditure; national all-family distribution for the anchor; intermediate income ranges interpolated by log income. Remaining weight distributed using official IPCA group weights."
+    },
+    "high": {
+      "label": "Mais de R$ 9.540 a R$ 14.310",
+      "monthly": 1.198,
+      "last12": 4.442,
+      "period_label": null,
+      "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
+      "weights": {
+        "food": 14.62,
+        "housing": 35.4,
+        "transport": 20.48,
+        "household": 2.39,
+        "clothing": 3.16,
+        "health": 9.48,
+        "personal": 7.13,
+        "education": 4.25,
+        "communication": 3.09
+      },
+      "method": "Published POF 2017–2018 distribution for lowest/highest income classes, normalized to consumption expenditure; national all-family distribution for the anchor; intermediate income ranges interpolated by log income. Remaining weight distributed using official IPCA group weights."
+    },
+    "upper": {
+      "label": "Mais de R$ 14.310 a R$ 23.850",
+      "monthly": 1.18,
+      "last12": 4.438,
+      "period_label": null,
+      "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
+      "weights": {
+        "food": 12.61,
+        "housing": 34.57,
+        "transport": 22.13,
+        "household": 2.48,
+        "clothing": 3.29,
+        "health": 9.86,
+        "personal": 7.42,
+        "education": 4.42,
+        "communication": 3.21
+      },
+      "method": "Published POF 2017–2018 distribution for lowest/highest income classes, normalized to consumption expenditure; national all-family distribution for the anchor; intermediate income ranges interpolated by log income. Remaining weight distributed using official IPCA group weights."
+    },
+    "very_high": {
+      "label": "Mais de R$ 23.850",
+      "monthly": 1.169,
+      "last12": 4.435,
+      "period_label": null,
+      "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
+      "weights": {
+        "food": 11.46,
+        "housing": 34.09,
+        "transport": 23.08,
+        "household": 2.54,
+        "clothing": 3.36,
+        "health": 10.08,
+        "personal": 7.58,
+        "education": 4.52,
+        "communication": 3.29
+      },
+      "method": "Published POF 2017–2018 distribution for lowest/highest income classes, normalized to consumption expenditure; national all-family distribution for the anchor; intermediate income ranges interpolated by log income. Remaining weight distributed using official IPCA group weights."
+    },
+    "average": {
+      "label": "Média nacional das despesas de consumo (POF)",
+      "monthly": 1.224,
+      "last12": 4.449,
+      "period_label": null,
+      "pof_source": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
+      "weights": {
+        "food": 17.5,
+        "housing": 36.6,
+        "transport": 18.1,
+        "household": 2.25,
+        "clothing": 2.98,
+        "health": 8.93,
+        "personal": 6.72,
+        "education": 4.01,
+        "communication": 2.91
+      },
+      "method": "Distribuição nacional das despesas de consumo publicada pelo IBGE; restante ponderado pelos pesos oficiais dos grupos IPCA."
+    }
+  },
   "profile_method": {
     "name": "Cesta ponderada por faixa de renda",
     "pof_reference": "POF 2017–2018",
     "pof_url": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
-    "calculation": "Variação ponderada por grupo de consumo; alimentação, habitação e transporte usam participações da POF por classe de rendimento; os demais grupos são repartidos segundo os pesos mensais do IPCA.",
+    "calculation": "Variação ponderada por grupo de consumo; extremos publicados da POF normalizados pelo subtotal de consumo; faixa nacional como ponto de ancoragem e faixas intermediárias interpoladas por log-renda; demais grupos distribuídos pelos pesos mensais do IPCA.",
     "limitation": "Não é um IPCA individual oficial. A estrutura da POF é histórica e as proporções não incorporam toda a composição de cada família. O efeito de uma política exige análise causal independente.",
     "weights_are_official_reference": true
   },
@@ -422,7 +572,7 @@
       "classification": "rule-based"
     }
   ],
-  "news_checked_at": "2026-10-28T13:23:51+00:00",
+  "news_checked_at": "2026-10-28T13:25:30+00:00",
   "news_engine": {
     "mode": "rule-based",
     "label": "Coleta automática; triagem temática por regras (IA generativa não configurada)",
@@ -466,19 +616,7 @@
     }
   ],
   "warnings": [
-    "SIDRA monthly/transport: Sem valor numérico SIDRA para variável 63, grupo 7174",
-    "SIDRA year_to_date/transport: Sem valor numérico SIDRA para variável 69, grupo 7174",
-    "SIDRA last12/transport: Sem valor numérico SIDRA para variável 2265, grupo 7174",
-    "SIDRA weight/transport: Sem valor numérico SIDRA para variável 66, grupo 7174",
-    "SIDRA monthly/education: Sem valor numérico SIDRA para variável 63, grupo 7177",
-    "SIDRA year_to_date/education: Sem valor numérico SIDRA para variável 69, grupo 7177",
-    "SIDRA last12/education: Sem valor numérico SIDRA para variável 2265, grupo 7177",
-    "SIDRA weight/education: Sem valor numérico SIDRA para variável 66, grupo 7177",
-    "SIDRA monthly/communication: Sem valor numérico SIDRA para variável 63, grupo 7178",
-    "SIDRA year_to_date/communication: Sem valor numérico SIDRA para variável 69, grupo 7178",
-    "SIDRA last12/communication: Sem valor numérico SIDRA para variável 2265, grupo 7178",
-    "SIDRA weight/communication: Sem valor numérico SIDRA para variável 66, grupo 7178",
-    "BCB/SGS indisponível: The read operation timed out",
+    "BCB/SGS indisponível: HTTP Error 400: Bad Request",
     "Feed IBGE — Agência de Notícias sem resposta: HTTP Error 403: Forbidden",
     "Página oficial IBGE sem resposta: HTTP Error 403: Forbidden"
   ]

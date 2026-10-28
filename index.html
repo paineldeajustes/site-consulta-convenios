@@ -1149,8 +1149,8 @@ function readTableForPDF(containerId){
       const colCount=Math.max(...body.map(row=>row.length));
       head=Array.from({length:colCount},(_,i)=>'Campo '+(i+1));
     }
-    return {head,body:[...body,...foot]}.filter(tableData=>tableData.head.length&&tableData.body.length);
-  });
+    return {head,body:[...body,...foot]};
+  }).filter(tableData=>tableData.head.length&&tableData.body.length);
 }
 
 function loadCrestForPDF(){

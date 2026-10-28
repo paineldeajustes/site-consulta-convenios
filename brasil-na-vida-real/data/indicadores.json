@@ -1,0 +1,63 @@
+{
+  "schema_version": "0.2",
+  "updated_at": "2026-10-28T13:10:00+00:00",
+  "status_label": "Dados-base verificados; aguardando primeiro ciclo de sincronização automática",
+  "ipca": {
+    "period": "202609",
+    "period_label": "Setembro de 2026",
+    "monthly": 0.82,
+    "year_to_date": 3.95,
+    "last12": 4.58,
+    "source_url": "https://sidra.ibge.gov.br/tabela/7060",
+    "source_name": "IBGE/SIDRA — tabela 7060",
+    "series": "IPCA geral; os próximos ciclos consultam a API oficial do SIDRA."
+  },
+  "groups": [],
+  "groups_period_label": "Aguardando primeiro ciclo da API do SIDRA",
+  "profile_baskets": {},
+  "profile_method": {
+    "name": "Cesta ponderada por faixa de renda",
+    "pof_reference": "POF 2017–2018",
+    "pof_url": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
+    "calculation": "Será calculada após obter os dados por grupo de consumo do mesmo período.",
+    "limitation": "Não é um IPCA individual oficial. A estrutura da POF é histórica e as proporções não incorporam toda a composição de cada família. O efeito de uma política exige análise causal independente.",
+    "weights_are_official_reference": true
+  },
+  "selic": null,
+  "anp": {
+    "period": "18/10/2026 a 24/10/2026",
+    "source_url": "https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/levantamento-de-precos-de-combustiveis-ultimas-semanas-pesquisadas",
+    "price_gasoline": null,
+    "source_name": "ANP — Levantamento de Preços de Combustíveis"
+  },
+  "news": [],
+  "news_checked_at": null,
+  "news_engine": {
+    "mode": "rule-based",
+    "label": "A coleta automática será ativada na primeira execução; classificação generativa depende de uma chave de API.",
+    "openai_enabled": false
+  },
+  "sources": [
+    {
+      "name": "IBGE/SIDRA — IPCA tabela 7060",
+      "url": "https://sidra.ibge.gov.br/tabela/7060",
+      "type": "official-statistics"
+    },
+    {
+      "name": "IBGE — POF 2017–2018",
+      "url": "https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/25598-pof-2017-2018-familias-com-ate-r-1-9-mil-destinam-61-2-de-seus-gastos-a-alimentacao-e-habitacao",
+      "type": "official-survey"
+    },
+    {
+      "name": "Banco Central — SGS série 432",
+      "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json",
+      "type": "official-statistics"
+    },
+    {
+      "name": "ANP — preços de combustíveis",
+      "url": "https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/levantamento-de-precos-de-combustiveis-ultimas-semanas-pesquisadas",
+      "type": "official-price-survey"
+    }
+  ],
+  "warnings": []
+}

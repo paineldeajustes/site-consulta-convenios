@@ -360,9 +360,15 @@ def try_fetch_anp(previous: dict, warnings: list[str]) -> dict:
         return old or {"source_url":ANP_PAGE,"price_gasoline":None}
 
 def bcb_selic(previous: dict, warnings: list[str]) -> dict | None:
+    today=dt.datetime.now(dt.timezone.utc).date()
+    start=today-dt.timedelta(days=45)
+    url="https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?"+urllib.parse.urlencode({
+        "formato":"json",
+        "dataInicial":start.strftime("%d/%m/%Y"),
+        "dataFinal":today.strftime("%d/%m/%Y"),
+    })
     try:
-        rows=fetch_json("https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/30?formato=json")
-        today=dt.datetime.now(dt.timezone.utc).date()
+        rows=fetch_json(url)
         parsed=[]
         for row in rows or []:
             try:
@@ -373,13 +379,27 @@ def bcb_selic(previous: dict, warnings: list[str]) -> dict | None:
             except Exception:
                 continue
         if not parsed:
-            warnings.append("BCB/SGS: nenhuma observação com data até hoje; preservado o valor anterior.")
-            return previous.get("selic")
-        day,value=max(parsed,key=lambda x:x[0])
-        return {"date":day.strftime("%d/%m/%Y"),"value":value,"source_url":"https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/30?formato=json","source_name":"Banco Central — SGS série 432 (meta Selic; última observação até a data atual)","unit":"% a.a."}
+            warnings.append("BCB/SGS: não houve observação válida até a data atual.")
+        else:
+            day,value=max(parsed,key=lambda x:x[0])
+            return {
+                "date":day.strftime("%d/%m/%Y"),
+                "value":value,
+                "source_url":url,
+                "source_name":"Banco Central — SGS série 432 (meta Selic; última observação até a data atual)",
+                "unit":"% a.a."
+            }
     except Exception as exc:
         warnings.append(f"BCB/SGS indisponível: {str(exc)[:120]}")
-        return previous.get("selic")
+    old=previous.get("selic")
+    # Never preserve a value dated in the future or a non-parsable observation.
+    try:
+        old_day=dt.datetime.strptime(old.get("date",""),"%d/%m/%Y").date()
+        if old_day <= today and parse_number(old.get("value")) is not None:
+            return old
+    except Exception:
+        pass
+    return None
 
 def local_name(tag: str) -> str:
     return tag.split("}")[-1].lower()

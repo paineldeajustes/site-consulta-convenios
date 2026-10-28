@@ -111,20 +111,39 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 .account-button.admin-action[hidden]{display:none!important}
 @media(max-width:520px){.auth-wrap{padding:16px 0 36px}.auth-card{padding:24px 20px;border-radius:17px}.account-bar{justify-content:flex-start}.account-email{width:100%;margin-bottom:4px}}
 
+
+.site-header{display:flex;align-items:center;gap:22px}
+.municipal-crest{width:76px;height:88px;object-fit:contain;flex:0 0 auto;background:#fff;border-radius:10px;padding:5px}
+.site-header-copy h1{font-size:24px;letter-spacing:-.4px;margin:0 0 7px}
+.site-header-copy p{margin:3px 0;color:#dbe7f5;font-size:13px}
+.site-header-copy .municipal-name{font-weight:800;letter-spacing:.45px;color:#fff;font-size:14px}
+.site-header-copy .agency-name{font-weight:800;letter-spacing:.3px;color:#fff;font-size:14px}
+.auth-crest{width:48px;height:58px;object-fit:contain;background:#fff;padding:3px;border-radius:8px;flex:0 0 auto}
+.auth-brand{align-items:center}
+.auth-brand>div:last-child{display:flex;flex-direction:column;gap:3px}
+.ficha-pdf-fab{position:fixed;z-index:999;right:22px;bottom:22px;display:inline-flex;align-items:center;gap:8px;box-shadow:0 8px 24px #102a4340;border:1px solid #ffffff75;background:linear-gradient(135deg,#12345a,#176b75);color:#fff;border-radius:999px;padding:15px 21px;font-weight:800;letter-spacing:.1px}
+.ficha-pdf-fab:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.ficha-pdf-fab:disabled{opacity:.72;transform:none}
+@media(max-width:520px){.site-header{gap:12px;padding:18px 16px}.municipal-crest{width:54px;height:64px}.site-header-copy h1{font-size:20px}.site-header-copy p,.site-header-copy .municipal-name,.site-header-copy .agency-name{font-size:11px}.auth-crest{width:40px;height:48px}.ficha-pdf-fab{right:12px;bottom:12px;padding:12px 15px;font-size:12px;max-width:calc(100vw - 24px)}}
+
 </style>
 </head>
 <body>
-<header>
-  <h1>Consulta de Ajustes</h1>
-  <p>Sefaz - Secretaria da Fazenda</p>
-  <p>Departamento de Orçamento e Gestão - SEFAZ-4</p>
+<header class="site-header">
+  <img class="municipal-crest" alt="Brasão do Município de São Bernardo do Campo">
+  <div class="site-header-copy">
+    <h1>Consulta de Ajustes</h1>
+    <p class="municipal-name">MUNICÍPIO DE SÃO BERNARDO DO CAMPO</p>
+    <p class="agency-name">SEFAZ - SECRETARIA DA FAZENDA</p>
+    <p>DEPARTAMENTO DE ORÇAMENTO E GESTÃO - SEFAZ-4</p>
+  </div>
 </header>
 <main>
   <section id="loginScreen" class="auth-wrap" aria-labelledby="loginTitle">
     <div class="auth-card">
       <div class="auth-brand">
-        <div class="auth-mark" aria-hidden="true">A</div>
-        <div><strong>Painel de Ajustes</strong><span>Secretaria da Fazenda · SEFAZ-4</span></div>
+        <img class="auth-crest" alt="Brasão do Município de São Bernardo do Campo">
+        <div><strong>Painel de Ajustes</strong><span>MUNICÍPIO DE SÃO BERNARDO DO CAMPO</span><span>SEFAZ - SECRETARIA DA FAZENDA · SEFAZ-4</span></div>
       </div>
       <h2 id="loginTitle">Bem-vindo de volta</h2>
       <p id="loginSubtitle" class="auth-subtitle">Entre com seu e-mail e senha para acessar as informações dos ajustes e suas ferramentas autorizadas.</p>
@@ -172,6 +191,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
       <button id="manualRefreshButton" class="account-button admin-action" type="button" hidden>Atualizar dados agora</button>
       <button id="logoutButton" class="account-button" type="button">Sair da conta</button>
     </div>
+    <button id="generateFichaButton" class="ficha-pdf-fab" type="button" hidden title="Gerar ficha profissional do convênio em PDF">▤ Gerar Ficha de Convênio (PDF)</button>
   <nav class="view-tabs" aria-label="Telas do Painel de Ajustes">
     <button type="button" id="tabDetail" class="view-tab active" aria-selected="true">Consulta do ajuste</button>
     <button type="button" id="tabOverview" class="view-tab" aria-selected="false">Visão geral dos ajustes</button>
@@ -266,6 +286,10 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const $ = id => document.getElementById(id);
+
+const BRASAO_DATA_URI = 'data:image/png;base64,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';
+document.querySelectorAll('.municipal-crest,.auth-crest').forEach(img=>{img.src=BRASAO_DATA_URI;});
+
 
 // Use somente a chave pública sb_publishable_. Nunca use service_role ou chave secret.
 const SUPABASE_URL = 'https://qkjudfvlaatdcaosadun.supabase.co';
@@ -599,6 +623,7 @@ function renderEmpenhoTable(rows){
 }
 function render(){
   const cv=$('conv').value;
+  updateFichaButtonVisibility();
   if(!cv){return;}
   currentRows=allRows.filter(r=>String(get(r,'CONVENIO')).trim()===cv);
   const ent=currentRows.map(r=>String(get(r,'ENTIDADE')).trim()).find(Boolean)||'—';
@@ -825,7 +850,7 @@ function chooseConv(value){
   const cv=String(value||'').trim();
   if(!cv)return;
   const found=(window.CONVENIO_OPTIONS||[]).find(o=>o.cv===cv || norm(o.cv)===norm(cv));
-  if(found){$('conv').value=found.cv;$('search').value=formatAdjustmentNumber(found.cv);$('suggestions').hidden=true;render();}
+  if(found){$('conv').value=found.cv;$('search').value=formatAdjustmentNumber(found.cv);$('suggestions').hidden=true;render();updateFichaButtonVisibility();}
 }
 function showSuggestions(){
   const panel=$('suggestions');
@@ -1087,6 +1112,163 @@ $('manualRefreshButton').addEventListener('click',async()=>{
     manualRefreshBusy=false;button.disabled=false;button.textContent='Atualizar dados agora';
   }
 });
+
+function updateFichaButtonVisibility(){
+  const button=$('generateFichaButton');
+  if(!button)return;
+  button.hidden=!(currentProfile?.is_admin===true && $('conv')?.value);
+}
+function loadScriptOnce(src, test){
+  if(test())return Promise.resolve();
+  return new Promise((resolve,reject)=>{
+    const existing=[...document.scripts].find(script=>script.src===src);
+    if(existing){
+      existing.addEventListener('load',()=>test()?resolve():reject(new Error('A biblioteca do PDF não foi carregada.')),{once:true});
+      existing.addEventListener('error',()=>reject(new Error('Não foi possível carregar a biblioteca do PDF.')),{once:true});
+      return;
+    }
+    const script=document.createElement('script');
+    script.src=src;script.async=true;
+    script.onload=()=>test()?resolve():reject(new Error('A biblioteca do PDF foi carregada, mas não ficou disponível.'));
+    script.onerror=()=>reject(new Error('Não foi possível carregar a biblioteca do PDF. Verifique a conexão com a internet.'));
+    document.head.appendChild(script);
+  });
+}
+function readTableForPDF(containerId){
+  const container=$(containerId);
+  if(!container)return [];
+  return [...container.querySelectorAll('table')].map(table=>{
+    let head=[...table.querySelectorAll('thead tr:first-child th')].map(cell=>cell.innerText.trim());
+    const body=[...table.querySelectorAll('tbody tr')].map(row=>[...row.querySelectorAll(':scope > td,:scope > th')].map(cell=>cell.innerText.trim()));
+    const foot=[...table.querySelectorAll('tfoot tr')].map(row=>[...row.querySelectorAll(':scope > td,:scope > th')].map(cell=>cell.innerText.trim()));
+    if(!head.length && body.length){
+      const colCount=Math.max(...body.map(row=>row.length));
+      head=Array.from({length:colCount},(_,i)=>'Campo '+(i+1));
+    }
+    return {head,body:[...body,...foot]}.filter(tableData=>tableData.head.length&&tableData.body.length);
+  });
+}
+function drawFichaPageChrome(doc){
+  const pageWidth=doc.internal.pageSize.getWidth();
+  const pageHeight=doc.internal.pageSize.getHeight();
+  doc.setFillColor(18,52,90);doc.rect(0,0,pageWidth,36,'F');
+  try{doc.addImage(BRASAO_DATA_URI,'PNG',12,5,17,23);}catch(error){console.warn('Não foi possível inserir o brasão no PDF.',error);}
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(10);
+  doc.text('MUNICÍPIO DE SÃO BERNARDO DO CAMPO',34,11);
+  doc.setFontSize(9);doc.text('SEFAZ - SECRETARIA DA FAZENDA',34,17);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('DEPARTAMENTO DE ORÇAMENTO E GESTÃO - SEFAZ-4',34,22);
+  doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('FICHA DE CONVÊNIO',34,30);
+  doc.setDrawColor(22,107,117);doc.setLineWidth(.65);doc.line(12,38,pageWidth-12,38);
+  doc.setDrawColor(218,226,236);doc.setLineWidth(.25);doc.line(12,pageHeight-13,pageWidth-12,pageHeight-13);
+  doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(96,109,126);
+  doc.text('Documento gerado pelo Painel de Ajustes para consulta e conferência administrativa.',12,pageHeight-8);
+  doc.text('Página '+doc.internal.getCurrentPageInfo().pageNumber,pageWidth-12,pageHeight-8,{align:'right'});
+}
+function addFichaSectionTitle(doc,title,y){
+  const pageHeight=doc.internal.pageSize.getHeight();
+  if(y>pageHeight-27){doc.addPage();drawFichaPageChrome(doc);y=46;}
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(18,52,90);
+  doc.text(title,14,y);
+  doc.setDrawColor(22,107,117);doc.setLineWidth(.4);doc.line(14,y+2,pageWidthSafe(doc)-14,y+2);
+  return y+5;
+}
+function pageWidthSafe(doc){return doc.internal.pageSize.getWidth();}
+function pdfTable(doc,head,body,y){
+  if(!body?.length)return y;
+  doc.autoTable({
+    startY:y,head:[head],body,
+    theme:'striped',
+    margin:{top:43,bottom:17,left:14,right:14},
+    styles:{font:'helvetica',fontSize:7.4,cellPadding:2,overflow:'linebreak',textColor:[44,57,74],lineColor:[224,231,240],lineWidth:.15},
+    headStyles:{fillColor:[22,78,105],textColor:[255,255,255],fontStyle:'bold',fontSize:7.5},
+    alternateRowStyles:{fillColor:[246,249,252]},
+    didDrawPage:()=>drawFichaPageChrome(doc)
+  });
+  return doc.lastAutoTable.finalY+7;
+}
+function addDomTableSection(doc,title,containerId,y){
+  const tables=readTableForPDF(containerId);
+  if(!tables.length)return y;
+  y=addFichaSectionTitle(doc,title,y);
+  for(let i=0;i<tables.length;i++){
+    if(tables.length>1){
+      y=addFichaSectionTitle(doc,title+' — '+(i+1),y);
+    }
+    y=pdfTable(doc,tables[i].head,tables[i].body,y);
+  }
+  return y;
+}
+async function generateFichaPDF(){
+  const cv=$('conv').value;
+  if(!cv){$('status').textContent='Selecione uma parceria antes de gerar a ficha.';$('status').hidden=false;return;}
+  const button=$('generateFichaButton');
+  const originalText=button.textContent;
+  button.disabled=true;button.textContent='Preparando PDF…';
+  $('status').hidden=false;$('status').textContent='Montando a Ficha de Convênio em PDF…';
+  try{
+    await loadScriptOnce('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>Boolean(window.jspdf?.jsPDF));
+    await loadScriptOnce('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>Boolean(window.jspdf?.jsPDF?.API?.autoTable));
+    const JsPDF=window.jspdf.jsPDF;
+    const doc=new JsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+    doc.setProperties({title:'Ficha de Convênio - '+formatAdjustmentNumber(cv),subject:'Ficha de consulta de parceria',author:'Município de São Bernardo do Campo - SEFAZ',creator:'Painel de Ajustes'});
+    drawFichaPageChrome(doc);
+    let y=46;
+    const metadata=cadMetadataFor(cv);
+    const entidade=currentRows.map(row=>String(get(row,'ENTIDADE')).trim()).find(Boolean)||$('mEnt').innerText.trim()||'Não informado';
+    const generalRows=[
+      ['Número do ajuste',formatAdjustmentNumber(cv)],
+      ['Entidade / organização',entidade],
+      ['Tipo do ajuste',metadata?cadTypeLabel(metadata.type_code):$('cadMetaType').innerText.trim()||'Não informado'],
+      ['Processo administrativo',metadata?.process||$('cadMetaProcess').innerText.trim()||'Não informado'],
+      ['Data de assinatura',metadata?formatCadDate(metadata.signed_date):$('cadMetaSigned').innerText.trim()||'Não informado'],
+      ['Última vigência informada',metadata?formatCadDate(metadata.last_validity):$('cadMetaValidity').innerText.trim()||'Não informado'],
+      ['Objeto',metadata?(metadata.object_full||metadata.object||'Não informado'):$('cadMetaObject').innerText.trim()||'Não informado']
+    ];
+    y=addFichaSectionTitle(doc,'IDENTIFICAÇÃO DA PARCERIA',y);
+    y=pdfTable(doc,['Campo','Informação'],generalRows,y);
+    const metricIds=[
+      ['Total cadastrado inicial','mCadInicial'],
+      ['Total cadastrado em aditamentos','mCadAditamentos'],
+      ['Total cadastrado','mTotalCadastrado'],
+      ['Total empenhado','mEmp'],
+      ['Saldo cadastrado menos empenhado','mSaldo'],
+      ['Total pago','mPago'],
+      ['Saldo empenhado menos pago','mSaldoPagar']
+    ];
+    y=addFichaSectionTitle(doc,'RESUMO FINANCEIRO',y);
+    y=pdfTable(doc,['Indicador','Valor'],metricIds.map(([label,id])=>[label,$(id)?.innerText.trim()||'Não informado']),y);
+    const reconRows=[];
+    const recon=$('reconTable');
+    if(recon){
+      [...recon.querySelectorAll('.recon-card')].forEach(card=>{
+        const fonte=card.querySelector('.recon-card-head')?.innerText.trim()||'Fonte não informada';
+        [...card.querySelectorAll('tbody tr')].forEach(row=>{
+          const cells=[...row.querySelectorAll('td')].map(cell=>cell.innerText.trim());
+          if(cells.length>=2)reconRows.push([fonte,cells[0],cells[1]]);
+        });
+      });
+    }
+    if(reconRows.length){
+      y=addFichaSectionTitle(doc,'CONCILIAÇÃO CONSOLIDADA POR FONTE',y);
+      y=pdfTable(doc,['Fonte','Indicador','Valor'],reconRows,y);
+    }
+    y=addDomTableSection(doc,'VALORES CADASTRADOS POR FONTE E CATEGORIA ECONÔMICA','cadTable',y);
+    y=addDomTableSection(doc,'DETALHAMENTO DOS CADASTROS E ADITAMENTOS','cadDetailTable',y);
+    y=addDomTableSection(doc,'EMPENHOS POR ANO, FONTE E CATEGORIA ECONÔMICA','empTable',y);
+    y=addDomTableSection(doc,'PAGAMENTOS À ENTIDADE','payTable',y);
+    const safeAdjustment=formatAdjustmentNumber(cv).replace(/[\\/:*?"<>|]/g,'-').replace(/\s+/g,'_');
+    doc.save('Ficha de Convênio - '+safeAdjustment+'.pdf');
+    $('status').textContent='Ficha de Convênio gerada para o ajuste '+formatAdjustmentNumber(cv)+'.';
+  }catch(error){
+    console.error('Erro ao gerar Ficha de Convênio',error);
+    $('status').textContent='Não foi possível gerar o PDF: '+(error?.message||String(error));
+  }finally{
+    button.disabled=false;button.textContent=originalText;
+  }
+}
+$('generateFichaButton').addEventListener('click',generateFichaPDF);
+$('conv').addEventListener('change',updateFichaButtonVisibility);
+
 async function initializeAuthentication(){
   $('appShell').hidden=true;
   $('loginScreen').hidden=false;

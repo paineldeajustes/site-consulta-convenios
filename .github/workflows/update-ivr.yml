@@ -42,4 +42,7 @@ jobs:
             exit 0
           fi
           git commit -m "Atualizar dados públicos do IVR"
+          # Keep a refresh from losing a concurrent website or workflow change.
+          git fetch origin main
+          git rebase origin/main
           git push

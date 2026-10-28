@@ -481,6 +481,12 @@ def feed_items(feed_name: str, url: str, warnings: list[str]) -> list[dict]:
             plain=html.unescape(re.sub(r"<[^>]+>"," ",description))
             plain=re.sub(r"\s+"," ",plain).strip()
             plain=re.split(r"notícias relacionadas|leia também|leia mais|veja também|mais notícias",plain,flags=re.I)[0].strip()
+            headline=title.lower()
+            summary_lower=plain.lower()
+            # General weather alerts are not household-cost news unless the source
+            # explicitly discusses crops, food supply or price effects.
+            if any(term in headline for term in ("defesa civil","temporais","alerta de chuva","previsão do tempo","previsao do tempo")) and not any(term in summary_lower for term in ("safra","produção agrícola","producao agricola","preço dos alimentos","precos dos alimentos","abastecimento","perdas agrícolas","perdas agricolas")):
+                continue
             topic=classify_topic((title+" "+plain).lower(),title=title)
             if topic is None: continue
             out.append(make_news_item(feed_name,title,link,published,plain,topic))

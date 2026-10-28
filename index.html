@@ -1195,7 +1195,7 @@ function drawFichaPageChrome(doc){
 }
 function addFichaSectionTitle(doc,title,y){
   const pageHeight=doc.internal.pageSize.getHeight();
-  if(y>pageHeight-27){doc.addPage();drawFichaPageChrome(doc);y=46;}
+  if(y>pageHeight-48){doc.addPage();drawFichaPageChrome(doc);y=46;}
   doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(18,52,90);
   doc.text(title,14,y);
   doc.setDrawColor(22,107,117);doc.setLineWidth(.4);doc.line(14,y+2,pageWidthSafe(doc)-14,y+2);

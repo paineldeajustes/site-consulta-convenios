@@ -200,7 +200,7 @@ async function renderExistingAttachments(task){
 }
 async function populateVisibility(task){
  const field=$("taskVisibilityField"),select=$("taskVisibilityMode"),list=$("taskVisibleUsersList");
- const me=currentUser()?.id,isCreator=!!task&&task.created_by===me;
+ const me=currentUser()?.id,isCreator=!task||task.created_by===me;
  field.hidden=!!task&&!isCreator;
  if(!isCreator){select.value="environment";list.hidden=true;list.innerHTML="";return}
  let mode="environment",selectedIds=task?members().map(m=>m.user_id):(me?[me]:[]);

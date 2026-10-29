@@ -1,4 +1,4 @@
-const CACHE = "clareza-shell-v6";
+const CACHE = "clareza-shell-v7";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./settings.css", "./settings.js"];
 
 self.addEventListener("install", event => {
@@ -12,7 +12,7 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
+      .then(keys => Promise.all(keys.filter(key => key.startsWith("clareza-shell-") && key !== CACHE).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });

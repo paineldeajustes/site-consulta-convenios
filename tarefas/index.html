@@ -46,7 +46,7 @@
   </div>
 </section>
 <div id="app" hidden>
-  <header class="top"><div class="wrap toprow"><div class="brand"><div class="mark">✓</div><div>Clareza<small>Seu espaço de organização</small></div></div><div style="display:flex;align-items:center;gap:10px;min-width:0"><span id="userEmail" class="account"></span><button id="logout" class="logoutbtn" type="button" aria-label="Sair da conta" title="Sair da conta">Sair</button></div></div></header>
+  <header class="top"><div class="wrap toprow"><div class="brand"><div class="mark">✓</div><div>Clareza<small>Seu espaço de organização</small></div></div><div style="display:flex;align-items:center;gap:10px;min-width:0"><span id="userEmail" class="account"></span><button id="openSettings" class="logoutbtn settingsTopBtn" type="button" aria-label="Abrir configurações" title="Configurações">⚙ Config.</button><button id="logout" class="logoutbtn" type="button" aria-label="Sair da conta" title="Sair da conta">Sair</button></div></div></header>
   <section id="accessPendingPanel" class="wrap main" hidden><div class="authcard" style="margin:22px auto;max-width:520px"><div class="authbrand"><div class="mark">✓</div><div><h1>Clareza</h1><p>Agenda compartilhada</p></div></div><h2 id="accessPendingTitle">Aguardando autorização</h2><p id="accessPendingText" class="authdesc">Sua conta foi criada, mas o administrador precisa aprovar o acesso à agenda compartilhada.</p><div class="shareactions"><button id="checkAccessStatus" class="btn" type="button">Verificar autorização</button><button id="pendingLogout" class="btn ghost" type="button">Sair</button></div><p id="accessPendingMessage" class="msg" hidden></p></div></section><main id="mainContent" class="wrap main">
     <div class="hello"><div><p id="todayLabel" class="eyebrow"></p><h1 id="greeting">Vamos deixar o dia mais leve.</h1><p class="sub">O que precisa da sua atenção hoje?</p></div><button class="btn" id="newTaskTop">＋ Nova</button></div>
     <section class="stats" aria-label="Resumo das tarefas">
@@ -55,7 +55,7 @@
       <div class="stat"><div class="label">Concluídas</div><div id="statDone" class="num">0</div><div class="foot">no total</div></div>
     </section>
     <section id="pushPanel" class="pushpanel" aria-label="Notificações de prazo"><div class="pushrow"><div><strong>Notificações de prazos</strong><p id="pushStatus">Ative os avisos neste dispositivo para receber lembretes mesmo quando o Clareza estiver fechado.</p></div><div class="push-actions"><button id="enablePush" class="btn secondary" type="button">Ativar avisos</button><button id="testPush" class="btn ghost" type="button" hidden>Testar aviso</button></div></div></section>
-    <section id="accessAdminPanel" class="sharepanel" aria-label="Administração de acessos" hidden><div class="sharehead"><div><strong>Administração de acessos</strong><p class="sharecopy">Novos usuários só verão a agenda depois da sua aprovação. Você é o administrador.</p></div></div><div id="accessRequestsList" class="access-requests"><p class="sharecopy">Verificando solicitações…</p></div><p id="adminAccessMessage" class="msg" hidden></p></section>
+    
     <div class="toolbar"><div class="search"><input id="search" type="search" placeholder="Buscar uma tarefa..." aria-label="Buscar tarefas"></div><button id="filters" class="filterbtn" type="button">Filtros ▾</button></div>
     <div id="filterExtras" hidden style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px">
       <select id="priorityFilter" class="filterbtn" aria-label="Filtrar por prioridade"><option value="todas">Todas as prioridades</option><option value="urgente">Urgente</option><option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option></select>
@@ -69,6 +69,71 @@
     <section id="emptyState" class="empty" hidden><div class="symbol">✦</div><h3 id="emptyTitle">Tudo começa com uma tarefa</h3><p id="emptyText">Adicione sua primeira tarefa para organizar o que importa.</p><div style="margin-top:16px"><button id="emptyAdd" class="btn">＋ Criar primeira tarefa</button></div></section>
     <div class="footer">Clareza · Feito para simplificar sua rotina<br>Seus dados ficam vinculados à sua conta.<br>No iPhone: Safari → Compartilhar → Adicionar à Tela de Início.</div>
   </main>
+
+  <main id="settingsScreen" class="wrap main settings-screen" hidden>
+    <div class="settings-title-row"><div><p class="eyebrow">PREFERÊNCIAS DO APLICATIVO</p><h1>Configurações</h1><p class="sub">Personalize o Clareza sem precisar alterar o código.</p></div><button id="backToTasks" class="btn ghost" type="button">← Tarefas</button></div>
+    <section class="settings-card">
+      <div class="settings-card-head"><div><h2>Seu perfil</h2><p>Informações e aparência deste usuário.</p></div><icon class="settings-symbol" aria-hidden="true">♙</icon></div>
+      <div class="formgrid">
+        <div class="field"><label for="settingsDisplayName">Como devemos chamar você?</label><input id="settingsDisplayName" maxlength="60" placeholder="Seu nome"></div>
+        <div class="field"><label for="settingsEmail">E-mail da conta</label><input id="settingsEmail" type="email" readonly></div>
+        <div class="field"><label for="settingsTheme">Aparência</label><select id="settingsTheme"><option value="light">Claro</option><option value="dark">Escuro</option><option value="system">Seguir o aparelho</option></select></div>
+        <div class="field settings-toggle-field"><label for="settingsCompact">Exibição compacta</label><label class="toggle-line"><input id="settingsCompact" type="checkbox"><span>Mostrar tarefas em cartões mais compactos</span></label></div>
+      </div>
+      <div class="settings-actions"><button id="saveProfileSettings" class="btn" type="button">Salvar perfil</button></div>
+      <p id="profileSettingsMessage" class="msg" hidden></p>
+    </section>
+    <section class="settings-card">
+      <div class="settings-card-head"><div><h2>Agenda compartilhada</h2><p>Estas opções valem para você e sua esposa. Só o administrador pode alterá-las.</p></div><span id="settingsAdminBadge" class="settings-role">Membro</span></div>
+      <div class="formgrid">
+        <div class="field span2"><label for="settingsHouseholdName">Nome da agenda</label><input id="settingsHouseholdName" maxlength="80" placeholder="Ex.: Nossa agenda"></div>
+        <div class="field"><label for="settingsDefaultContext">Contexto padrão</label><select id="settingsDefaultContext"></select></div>
+        <div class="field"><label for="settingsDefaultPriority">Prioridade padrão</label><select id="settingsDefaultPriority"><option value="baixa">Baixa</option><option value="media">Média</option><option value="alta">Alta</option><option value="urgente">Urgente</option></select></div>
+      </div>
+      <div class="settings-subhead"><h3>Cores e nomes dos contextos</h3><p>O cartão inteiro da tarefa usa a cor escolhida aqui.</p></div>
+      <div id="contextSettingsList" class="context-settings-list"></div>
+      <div class="settings-actions"><button id="saveHouseholdSettings" class="btn" type="button">Salvar configurações compartilhadas</button></div>
+      <p id="householdSettingsMessage" class="msg" hidden></p>
+    </section>
+    <section class="settings-card">
+      <div class="settings-card-head"><div><h2>Notificações e lembretes</h2><p>Configure os padrões usados ao criar tarefas novas. Cada tarefa poderá ter opções próprias.</p></div><span class="settings-symbol" aria-hidden="true">♧</span></div>
+      <fieldset class="reminderbox"><legend>Lembretes padrão antes do prazo</legend><div class="remindergrid">
+        <label class="reminder-choice"><input id="settingsReminderDay" type="checkbox" checked><span>1 dia antes</span></label>
+        <label class="reminder-choice"><input id="settingsReminder2h" type="checkbox" checked><span>2 horas antes</span></label>
+        <label class="reminder-choice"><input id="settingsReminder1h" type="checkbox" checked><span>1 hora antes</span></label>
+        <label class="reminder-choice"><input id="settingsReminderAtTime" type="checkbox" checked><span>Na hora do prazo</span></label>
+      </div></fieldset>
+      <div class="settings-subhead"><h3>Repetir avisos de atraso</h3><p>Horários compartilhados pela agenda toda.</p></div>
+      <div class="formgrid">
+        <div class="field"><label class="toggle-line" for="settingsOverdueMorning"><input id="settingsOverdueMorning" type="checkbox" checked><span>Ativar aviso da manhã</span></label><label for="settingsMorningTime">Horário da manhã</label><input id="settingsMorningTime" type="time" value="09:00"></div>
+        <div class="field"><label class="toggle-line" for="settingsOverdueAfternoon"><input id="settingsOverdueAfternoon" type="checkbox" checked><span>Ativar aviso da tarde</span></label><label for="settingsAfternoonTime">Horário da tarde</label><input id="settingsAfternoonTime" type="time" value="15:00"></div>
+      </div>
+      <div class="field"><label class="toggle-line" for="settingsConfirmComplete"><input id="settingsConfirmComplete" type="checkbox" checked><span>Confirmar antes de concluir uma tarefa</span></label></div>
+      <div class="settings-actions"><button id="saveReminderSettings" class="btn" type="button">Salvar lembretes</button></div>
+      <p id="reminderSettingsMessage" class="msg" hidden></p>
+    </section>
+    <section class="settings-card">
+      <div class="settings-card-head"><div><h2>Categorias</h2><p>Crie e organize categorias reutilizáveis nas tarefas. A lista é compartilhada.</p></div><span class="settings-symbol" aria-hidden="true">⌘</span></div>
+      <form id="newCategoryForm" class="category-create-row"><div class="field"><label for="newCategoryName">Nova categoria</label><input id="newCategoryName" maxlength="60" required placeholder="Ex.: Compras, Saúde, Projeto"></div><div class="field"><label for="newCategoryColor">Cor</label><input id="newCategoryColor" type="color" value="#eaf2ff"></div><button id="addCategoryBtn" class="btn" type="submit">Adicionar</button></form>
+      <div id="categorySettingsList" class="category-settings-list"></div>
+      <p id="categorySettingsMessage" class="msg" hidden></p>
+    </section>
+    <section id="settingsAccessSection" class="settings-card">
+      <div class="settings-card-head"><div><h2>Acessos e permissões</h2><p>Aprove ou recuse novos usuários que pedirem para entrar na agenda.</p></div><span id="settingsAccessRole" class="settings-role">Membro</span></div>
+      <section id="accessAdminPanel" class="sharepanel" aria-label="Administração de acessos" hidden><div class="sharehead"><div><strong>Administração de acessos</strong><p class="sharecopy">Novos usuários só verão a agenda depois da sua aprovação. Você é o administrador.</p></div></div><div id="accessRequestsList" class="access-requests"><p class="sharecopy">Verificando solicitações…</p></div><p id="adminAccessMessage" class="msg" hidden></p></section>
+      <p class="settings-help">Contas novas não recebem acesso automaticamente. Só o administrador pode aprovar a entrada na agenda compartilhada.</p>
+    </section>
+    <section class="settings-card">
+      <div class="settings-card-head"><div><h2>Segurança</h2><p>Altere a senha da sua conta.</p></div><span class="settings-symbol" aria-hidden="true">⌑</span></div>
+      <form id="changePasswordForm">
+        <div class="formgrid"><div class="field"><label for="settingsNewPassword">Nova senha</label><input id="settingsNewPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Pelo menos 8 caracteres" required></div><div class="field"><label for="settingsNewPasswordConfirm">Confirmar nova senha</label><input id="settingsNewPasswordConfirm" type="password" minlength="8" autocomplete="new-password" placeholder="Repita a senha" required></div></div>
+        <div class="settings-actions"><button id="changePasswordBtn" class="btn secondary" type="submit">Alterar senha</button></div>
+      </form>
+      <p id="passwordSettingsMessage" class="msg" hidden></p>
+    </section>
+    <section class="settings-card settings-about"><h2>Sobre o Clareza</h2><p>Seus dados são salvos na agenda compartilhada e as configurações são aplicadas sem alteração de código.</p><p id="settingsVersionText">Versão do aplicativo: 2026-10-29.6</p></section>
+  </main>
+
 </div>
 <div id="taskModal" class="modalback" hidden>
   <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">

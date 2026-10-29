@@ -216,7 +216,7 @@ async function renderExistingAttachments(task){
    });
   }
   row.append(name,link);
-  if(attachment.uploaded_by===currentUser()?.id || currentHousehold()?.member_role==="owner"){
+  if(task.created_by===currentUser()?.id){
    const del=document.createElement("button");del.type="button";del.className="file-remove";del.textContent="×";del.title="Excluir anexo";
    del.addEventListener("click",async()=>{
     if(!confirm("Excluir o anexo "+attachment.file_name+"?"))return;
@@ -362,8 +362,8 @@ async function sendAssigneeResponse(){
  if(response!=="accept"&&reason&&reason.length<8)throw new Error("A justificativa deve ter pelo menos oito caracteres.");
  if(response==="propose_date"&&!plannedDate)throw new Error("Informe a data em que conseguirá realizar a tarefa.");
  if(response==="propose_date"&&task.due_date){
-  const proposedTime=plannedTime||"23:59",originalTime=(task.due_time||"23:59").slice(0,5);
-  if(plannedDate<task.due_date||(plannedDate===task.due_date&&proposedTime<=originalTime))throw new Error("A nova data ou horário precisa ser posterior ao prazo original.");
+  const proposedTime=plannedTime||"",originalTime=(task.due_time||"").slice(0,5);
+  if(plannedDate<task.due_date||(plannedDate===task.due_date&&proposedTime===originalTime))throw new Error("A data não pode ser anterior ao prazo. Para alterar só o horário, mantenha o mesmo dia e escolha um horário diferente.");
  }
  const button=$("sendAssigneeResponse");button.disabled=true;button.textContent="Enviando…";
  try{

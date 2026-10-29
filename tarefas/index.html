@@ -47,7 +47,7 @@
   </div>
 </section>
 <div id="app" hidden>
-  <header class="top"><div class="wrap toprow"><div class="brand"><div class="mark">✓</div><div>Clareza<small id="appSubtitle">Seu espaço de organização</small></div></div><div style="display:flex;align-items:center;gap:10px;min-width:0"><span id="userEmail" class="account"></span><button id="openSettings" class="logoutbtn settingsTopBtn" type="button" aria-label="Abrir configurações" title="Configurações">⚙ Config.</button><button id="logout" class="logoutbtn" type="button" aria-label="Sair da conta" title="Sair da conta">Sair</button></div></div></header>
+  <header class="top"><div class="wrap toprow"><div class="brand"><div class="mark">✓</div><div>Clareza<small id="appSubtitle">Seu espaço de organização</small></div></div><div style="display:flex;align-items:center;gap:10px;min-width:0"><span id="userEmail" class="account"></span><button id="openSettings" class="logoutbtn settingsTopBtn" type="button" aria-label="Abrir configurações" title="Configurações">⚙</button><button id="logout" class="logoutbtn" type="button" aria-label="Sair da conta" title="Sair da conta">Sair</button></div></div></header>
   <section id="accessPendingPanel" class="wrap main" hidden><div class="authcard" style="margin:22px auto;max-width:520px"><div class="authbrand"><div class="mark">✓</div><div><h1>Clareza</h1><p>Agenda compartilhada</p></div></div><h2 id="accessPendingTitle">Aguardando autorização</h2><p id="accessPendingText" class="authdesc">Sua conta foi criada, mas o administrador precisa aprovar o acesso à agenda compartilhada.</p><div class="shareactions"><button id="checkAccessStatus" class="btn" type="button">Verificar autorização</button><button id="pendingLogout" class="btn ghost" type="button">Sair</button></div><p id="accessPendingMessage" class="msg" hidden></p></div></section><main id="mainContent" class="wrap main">
     <div class="hello"><div><p id="todayLabel" class="eyebrow"></p><h1 id="greeting">Vamos deixar o dia mais leve.</h1><p class="sub">O que precisa da sua atenção hoje?</p></div><button class="btn" id="newTaskTop">＋ Nova</button></div>
     <section class="stats" aria-label="Resumo das tarefas">
@@ -275,7 +275,11 @@ window.ClarezaApp={
   userSettings=personalPrefs||userSettings;
   let theme=userSettings?.theme||"light";
   if(theme==="system")theme=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
-  $("app").dataset.theme=theme;$("app").classList.toggle("compact",!!userSettings?.compact_mode);
+  $("app").dataset.theme=theme;
+  document.body.style.backgroundColor=theme==="dark"?"#141a17":"";
+  document.body.style.color=theme==="dark"?"#eaf0eb":"";
+  $("app").classList.toggle("compact",!!userSettings?.compact_mode);
+  render();
  },
  getSettings:()=>({household:householdSettings,user:userSettings,categories:categoryRecords})
 };
@@ -561,11 +565,38 @@ const priorityLabel={urgente:"Urgente",alta:"Alta",media:"Média",baixa:"Baixa"}
 const ctx=["trabalho","casa","pessoal","outros"].includes(t.context)?t.context:"pessoal";
 const builtins={trabalho:{label:"Trabalho",color:"#eaf2ff"},casa:{label:"Casa",color:"#f3eafb"},pessoal:{label:"Pessoal",color:"#e8f5eb"},outros:{label:"Outros",color:"#edf1f2"}};
 const contextSettings=(householdSettings?.context_options||[]).find(o=>o.key===ctx)||builtins[ctx];
-const ctxLabel=contextSettings.label||ctx;const ctxColor=/^#[0-9a-fA-F]{6}$/.test(contextSettings.color||"")?contextSettings.color:builtins[ctx].color;
-const categoryOption=categoryRecords.find(cat=>cat.name===t.category);const categoryColor=/^#[0-9a-fA-F]{6}$/.test(categoryOption?.color||"")?categoryOption.color:"#edf1f2";
-const categoryChip=t.category?'<span class="chip" style="background-color:'+categoryColor+';color:#26362c">'+esc(t.category)+'</span>':"";
+const ctxLabel=contextSettings.label||ctx;
+const isDarkTheme=$("app").dataset.theme==="dark";
+function adaptTaskColor(hex,dark){
+ if(!dark)return hex;
+ let raw=String(hex||"#edf1f2").replace("#","");
+ if(!/^[0-9a-fA-F]{6}$/.test(raw))raw="edf1f2";
+ let r=parseInt(raw.slice(0,2),16)/255,g=parseInt(raw.slice(2,4),16)/255,b=parseInt(raw.slice(4,6),16)/255;
+ const max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;
+ let h=0,s=0,l=(max+min)/2;
+ if(d!==0){
+  s=d/(1-Math.abs(2*l-1));
+  if(max===r)h=60*(((g-b)/d)%6);
+  else if(max===g)h=60*((b-r)/d+2);
+  else h=60*((r-g)/d+4);
+ }
+ if(h<0)h+=360;s=Math.max(.22,Math.min(.7,s));l=.22;
+ const chroma=(1-Math.abs(2*l-1))*s,x=chroma*(1-Math.abs((h/60)%2-1)),m=l-chroma/2;
+ let rgb=[0,0,0];
+ if(h<60)rgb=[chroma,x,0];else if(h<120)rgb=[x,chroma,0];else if(h<180)rgb=[0,chroma,x];else if(h<240)rgb=[0,x,chroma];else if(h<300)rgb=[x,0,chroma];else rgb=[chroma,0,x];
+ return "#"+rgb.map(v=>Math.round((v+m)*255).toString(16).padStart(2,"0")).join("");
+}
+const rawContextColor=/^#[0-9a-fA-F]{6}$/.test(contextSettings.color||"")?contextSettings.color:builtins[ctx].color;
+const ctxColor=adaptTaskColor(rawContextColor,isDarkTheme);
+const cardBorderColor=ctxColor;
+const cardTextColor=isDarkTheme?"#eaf0eb":"#26362c";
+const categoryOption=categoryRecords.find(cat=>cat.name===t.category);
+const rawCategoryColor=/^#[0-9a-fA-F]{6}$/.test(categoryOption?.color||"")?categoryOption.color:"#edf1f2";
+const categoryColor=isDarkTheme?"#303b35":rawCategoryColor;
+const categoryTextColor=isDarkTheme?"#eaf0eb":"#26362c";
+const categoryChip=t.category?'<span class="chip" style="background-color:'+categoryColor+';color:'+categoryTextColor+'">'+esc(t.category)+'</span>':"";
 const author=t.created_by_name?'<div class="byline">Criada por '+esc(t.created_by_name)+'</div>':"";
-return '<article class="task context-'+ctx+' '+(t.completed?"completed":"")+'" style="background-color:'+ctxColor+';border-color:'+ctxColor+'" data-id="'+esc(t.id)+'"><button class="check '+(t.completed?"done":"")+'" data-action="toggle" aria-label="'+(t.completed?"Reabrir tarefa":"Concluir tarefa")+'">'+(t.completed?"✓":"")+'</button><div class="taskbody" data-action="edit"><div class="tasktitle">'+esc(t.title)+'</div>'+(t.notes?'<div class="notes">'+esc(t.notes)+'</div>':"")+'<div class="chips"><span class="chip context-'+ctx+'" style="background-color:'+ctxColor+';color:#26362c">'+esc(ctxLabel)+'</span><span class="chip '+priorityClass+'">'+esc(priorityLabel)+'</span>'+due+categoryChip+'</div>'+author+'</div><button class="more" data-action="edit" aria-label="Editar tarefa">···</button></article>'
+return '<article class="task context-'+ctx+' '+(t.completed?"completed":"")+'" style="background-color:'+ctxColor+';border-color:'+cardBorderColor+';color:'+cardTextColor+'" data-id="'+esc(t.id)+'"><button class="check '+(t.completed?"done":"")+'" data-action="toggle" aria-label="'+(t.completed?"Reabrir tarefa":"Concluir tarefa")+'">'+(t.completed?"✓":"")+'</button><div class="taskbody" data-action="edit"><div class="tasktitle">'+esc(t.title)+'</div>'+(t.notes?'<div class="notes">'+esc(t.notes)+'</div>':"")+'<div class="chips"><span class="chip context-'+ctx+'" style="background-color:'+ctxColor+';color:'+cardTextColor+'">'+esc(ctxLabel)+'</span><span class="chip '+priorityClass+'">'+esc(priorityLabel)+'</span>'+due+categoryChip+'</div>'+author+'</div><button class="more" data-action="edit" aria-label="Editar tarefa">···</button></article>'
 }).join("");
 const empty=list.length===0;$("emptyState").hidden=!empty;$("taskList").hidden=empty;
 if(empty){$("emptyTitle").textContent=tasks.length===0?"Tudo começa com uma tarefa":"Nada por aqui";$("emptyText").textContent=tasks.length===0?"Adicione sua primeira tarefa para organizar o que importa.":"Experimente outro filtro ou adicione uma nova tarefa."}

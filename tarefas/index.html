@@ -346,7 +346,9 @@ function isInstalledWebApp(){
 return (window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;
 }
 async function refreshPushStatus(){
-if(!user)return;
+const panel=$("pushPanel");
+if(!user||accessPending){panel.hidden=true;return}
+panel.hidden=false;
 const button=$("enablePush"),status=$("pushStatus"),testButton=$("testPush");
 testButton.hidden=true;
 if(!("Notification"in window)||!("serviceWorker"in navigator)||!("PushManager"in window)){
@@ -364,15 +366,20 @@ button.disabled=true;button.textContent="Permissão bloqueada";return;
 try{
 const registration=await navigator.serviceWorker.ready;
 const subscription=await registration.pushManager.getSubscription();
-const {data,error}=await sb.from("task_push_subscriptions").select("id").eq("user_id",user.id).limit(1);
+if(subscription){
+const {data:row,error}=await sb.from("task_push_subscriptions").select("id,test_sent_at").eq("user_id",user.id).eq("endpoint",subscription.endpoint).maybeSingle();
 if(error)throw error;
-if(subscription&&data&&data.length){
-status.textContent="Avisos ativados neste aparelho. Você receberá os lembretes das tarefas compartilhadas.";
-button.disabled=true;button.textContent="Avisos ativados";testButton.hidden=false;
-}else{
+if(row?.test_sent_at){
+panel.hidden=true;
+return;
+}
+if(row){
+status.textContent="Avisos ativados neste aparelho. Faça o teste uma vez para confirmar o recebimento; depois este quadro será ocultado.";
+button.disabled=true;button.textContent="Avisos ativados";testButton.hidden=false;return;
+}
+}
 status.textContent="Ative para receber 1 dia antes, 2 horas antes, 1 hora antes, na hora e lembretes de atraso às 9h e às 15h, conforme cada tarefa.";
 button.disabled=false;button.textContent="Ativar avisos";
-}
 }catch(err){
 status.textContent="Toque em Ativar avisos para configurar as notificações neste aparelho.";
 button.disabled=false;button.textContent="Ativar avisos";
@@ -390,7 +397,13 @@ body:JSON.stringify({action:"test"})
 });
 let result={};try{result=await response.json()}catch{}
 if(!response.ok||!result.ok)throw new Error(result.error||"O serviço não conseguiu enviar a notificação de teste.");
-toast("Aviso de teste enviado. Confira a Central de Notificações do iPhone.");
+const registration=await navigator.serviceWorker.ready;
+const subscription=await registration.pushManager.getSubscription();
+if(!subscription)throw new Error("O aparelho não está mais inscrito nas notificações. Ative os avisos novamente.");
+const {error:markError}=await sb.from("task_push_subscriptions").update({test_sent_at:new Date().toISOString()}).eq("user_id",user.id).eq("endpoint",subscription.endpoint);
+if(markError)throw new Error("O aviso foi enviado, mas não consegui registrar o teste. Tente novamente.");
+$("pushPanel").hidden=true;
+toast("Teste concluído. O quadro de notificações foi ocultado neste aparelho.");
 }catch(err){toast(err.message||"Não foi possível enviar o teste.");}
 finally{button.disabled=false;button.textContent="Testar aviso";}
 });
@@ -418,7 +431,7 @@ if(!subscription)subscription=await registration.pushManager.subscribe({userVisi
 const data=subscription.toJSON();
 if(!data.endpoint||!data.keys?.p256dh||!data.keys?.auth)throw new Error("O aparelho não retornou os dados necessários para o push.");
 const {error}=await sb.from("task_push_subscriptions").upsert({
-user_id:user.id,endpoint:data.endpoint,p256dh:data.keys.p256dh,auth_key:data.keys.auth,last_seen_at:new Date().toISOString()
+user_id:user.id,endpoint:data.endpoint,p256dh:data.keys.p256dh,auth_key:data.keys.auth,last_seen_at:new Date().toISOString(),test_sent_at:null
 },{onConflict:"user_id,endpoint"});
 if(error)throw error;
 status.textContent="Notificações ativadas neste aparelho. Os lembretes das tarefas compartilhadas serão enviados conforme as preferências cadastradas.";

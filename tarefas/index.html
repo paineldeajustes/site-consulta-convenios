@@ -268,7 +268,7 @@ window.ClarezaApp={
   window.ClarezaSettingsBridge?.applyContextOptions?.(householdSettings?.context_options);
   let theme=userSettings?.theme||"light";
   if(theme==="system")theme=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
-  $("app").dataset.theme=theme;$("app").classList.toggle("compact",!!userSettings?.compact_mode);
+  $("app").dataset.theme=theme;document.body.style.backgroundColor=theme==="dark"?"#141a17":"";document.body.style.color=theme==="dark"?"#eaf0eb":"";$("app").classList.toggle("compact",!!userSettings?.compact_mode);
   if(user)render();updateCategories();
  },
  applyUserSettings:personalPrefs=>{
@@ -562,8 +562,10 @@ const ctx=["trabalho","casa","pessoal","outros"].includes(t.context)?t.context:"
 const builtins={trabalho:{label:"Trabalho",color:"#eaf2ff"},casa:{label:"Casa",color:"#f3eafb"},pessoal:{label:"Pessoal",color:"#e8f5eb"},outros:{label:"Outros",color:"#edf1f2"}};
 const contextSettings=(householdSettings?.context_options||[]).find(o=>o.key===ctx)||builtins[ctx];
 const ctxLabel=contextSettings.label||ctx;const ctxColor=/^#[0-9a-fA-F]{6}$/.test(contextSettings.color||"")?contextSettings.color:builtins[ctx].color;
+const categoryOption=categoryRecords.find(cat=>cat.name===t.category);const categoryColor=/^#[0-9a-fA-F]{6}$/.test(categoryOption?.color||"")?categoryOption.color:"#edf1f2";
+const categoryChip=t.category?'<span class="chip" style="background-color:'+categoryColor+';color:#26362c">'+esc(t.category)+'</span>':"";
 const author=t.created_by_name?'<div class="byline">Criada por '+esc(t.created_by_name)+'</div>':"";
-return '<article class="task context-'+ctx+' '+(t.completed?"completed":"")+'" style="background-color:'+ctxColor+';border-color:'+ctxColor+'" data-id="'+esc(t.id)+'"><button class="check '+(t.completed?"done":"")+'" data-action="toggle" aria-label="'+(t.completed?"Reabrir tarefa":"Concluir tarefa")+'">'+(t.completed?"✓":"")+'</button><div class="taskbody" data-action="edit"><div class="tasktitle">'+esc(t.title)+'</div>'+(t.notes?'<div class="notes">'+esc(t.notes)+'</div>':"")+'<div class="chips"><span class="chip context-'+ctx+'" style="background-color:'+ctxColor+';color:#26362c">'+esc(ctxLabel)+'</span><span class="chip '+priorityClass+'">'+esc(priorityLabel)+'</span>'+due+(t.category?'<span class="chip">'+esc(t.category)+'</span>':"")+'</div>'+author+'</div><button class="more" data-action="edit" aria-label="Editar tarefa">···</button></article>'
+return '<article class="task context-'+ctx+' '+(t.completed?"completed":"")+'" style="background-color:'+ctxColor+';border-color:'+ctxColor+'" data-id="'+esc(t.id)+'"><button class="check '+(t.completed?"done":"")+'" data-action="toggle" aria-label="'+(t.completed?"Reabrir tarefa":"Concluir tarefa")+'">'+(t.completed?"✓":"")+'</button><div class="taskbody" data-action="edit"><div class="tasktitle">'+esc(t.title)+'</div>'+(t.notes?'<div class="notes">'+esc(t.notes)+'</div>':"")+'<div class="chips"><span class="chip context-'+ctx+'" style="background-color:'+ctxColor+';color:#26362c">'+esc(ctxLabel)+'</span><span class="chip '+priorityClass+'">'+esc(priorityLabel)+'</span>'+due+categoryChip+'</div>'+author+'</div><button class="more" data-action="edit" aria-label="Editar tarefa">···</button></article>'
 }).join("");
 const empty=list.length===0;$("emptyState").hidden=!empty;$("taskList").hidden=empty;
 if(empty){$("emptyTitle").textContent=tasks.length===0?"Tudo começa com uma tarefa":"Nada por aqui";$("emptyText").textContent=tasks.length===0?"Adicione sua primeira tarefa para organizar o que importa.":"Experimente outro filtro ou adicione uma nova tarefa."}

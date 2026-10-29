@@ -111,3 +111,41 @@ body[data-theme="dark"] .modal .reminderbox{background:#19231d;border-color:#344
  .modal .reminder-choice{min-width:0}
  .modal .reminderhint{overflow-wrap:anywhere}
 }
+
+/* Assignment workflow, notification inbox, attachments, voice and export */
+.notifTopBtn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:42px;min-width:42px;height:42px;min-height:42px;flex:0 0 42px;padding:0;font-size:20px}
+.notification-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:#c9362b;color:#fff;font-size:10px;line-height:18px;text-align:center;font-weight:850;border:2px solid var(--paper)}
+.stat-action{width:100%;text-align:left;color:var(--ink);font-family:inherit;cursor:pointer;appearance:none;-webkit-appearance:none}
+.stat-action:active{transform:scale(.985)}
+.stat-action:focus-visible,.notifTopBtn:focus-visible{outline:3px solid #8ac6a3;outline-offset:2px}
+.export-menu{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin:-4px 0 12px}
+.export-menu button{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:11px;min-height:40px;padding:8px 12px;font-size:12px;font-weight:750}
+.notifications-panel{background:var(--paper);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:17px;padding:15px;margin:0 0 16px;max-width:100%;min-width:0}
+.notifications-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.notifications-head strong{font-size:17px}.notifications-head p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.45}
+.notification-item{display:flex;align-items:flex-start;gap:10px;border-top:1px solid var(--line);padding:12px 2px;cursor:pointer;min-width:0}
+.notification-item.unread{background:color-mix(in srgb,var(--green2) 26%,transparent);border-radius:9px;padding-left:8px;padding-right:8px}
+.notification-dot{width:9px;height:9px;flex:0 0 9px;border-radius:99px;background:var(--green);margin-top:6px}
+.notification-copy{flex:1;min-width:0}.notification-copy strong{display:block;font-size:13px;line-height:1.4;overflow-wrap:anywhere}.notification-copy p{font-size:12px;color:var(--muted);margin:3px 0 4px;line-height:1.45;overflow-wrap:anywhere}.notification-copy time{font-size:10px;color:var(--muted)}.notification-go{align-self:center;color:var(--green);font-weight:850}
+.voice-input-wrap{display:flex;gap:8px;align-items:center;min-width:0}.voice-input-wrap input{flex:1;min-width:0}.voice-btn{min-width:48px;width:48px;min-height:48px;border:1px solid var(--line);border-radius:13px;background:var(--paper);color:var(--green);font-size:21px;flex:0 0 48px}.voice-btn.recording{background:#ffe9e7;color:#b72b25;border-color:#edaaa5;animation:clarezaPulse 1.2s infinite}@keyframes clarezaPulse{50%{opacity:.55}}
+.attachment-section{border:1px dashed var(--line);border-radius:14px;padding:13px;margin:14px 0;background:color-mix(in srgb,var(--paper) 88%,var(--bg))}
+.attachment-section>label{display:block;font-size:12px;font-weight:800;margin-bottom:8px}.attachment-section input[type=file]{width:100%;max-width:100%;font-size:12px}.selected-files,.existing-attachments{display:grid;gap:6px;margin-top:8px}.file-row,.attachment-link{display:flex;align-items:center;gap:8px;min-width:0;font-size:12px;line-height:1.4;overflow-wrap:anywhere}.file-row span,.attachment-link span{flex:1;min-width:0;overflow-wrap:anywhere}.attachment-link a{color:var(--green);font-weight:750;overflow-wrap:anywhere}.file-remove{border:0;background:transparent;color:var(--red);padding:6px;font-size:15px}
+.workflow-panel{margin:14px 0;border:1px solid var(--line);border-radius:15px;padding:14px;background:var(--bg);min-width:0}.workflow-head{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap}.workflow-head strong{font-size:15px}.workflow-badge{font-size:11px;font-weight:850;padding:5px 8px;border-radius:999px;background:var(--green2);color:var(--green)}.workflow-panel label{display:block;font-size:12px;font-weight:750;margin:10px 0 5px;color:var(--muted)}.workflow-panel select,.workflow-panel input,.workflow-panel textarea{width:100%;max-width:100%;min-width:0;border:1px solid var(--line);border-radius:10px;padding:11px;background:var(--paper);color:var(--ink);font:inherit;font-size:14px;box-sizing:border-box}.workflow-panel textarea{min-height:88px;resize:vertical}.workflow-panel .btn{width:100%;margin-top:12px}.workflow-summary{font-size:12px;line-height:1.5;padding:10px;border-radius:10px;background:var(--paper);overflow-wrap:anywhere}.workflow-history{margin-top:12px;border-top:1px solid var(--line)}.workflow-history-item{padding:9px 0;border-bottom:1px solid var(--line)}.workflow-history-item strong{display:block;font-size:12px}.workflow-history-item p{font-size:11px;color:var(--muted);line-height:1.5;margin:4px 0 0;overflow-wrap:anywhere}.workflow-status-chip{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:850;border-radius:999px;padding:5px 8px;background:#eef1ef;color:#4c5b51}.workflow-status-chip.pending{background:#fff0d8;color:#805311}.workflow-status-chip.impossible{background:#ffe7e6;color:#a62925}.task-workflow-meta{font-size:11px;color:var(--muted);line-height:1.5;margin-top:7px;overflow-wrap:anywhere}
+#app[data-theme="dark"] .notifications-panel,#app[data-theme="dark"] .workflow-panel{background:#1e2722;border-color:#344139}
+#app[data-theme="dark"] .notification-item.unread{background:#263b2e}
+#app[data-theme="dark"] .attachment-section{background:#19231d;border-color:#425146}
+#app[data-theme="dark"] .export-menu button{background:#1e2722;color:#eaf0eb}
+#app[data-theme="dark"] .workflow-panel select,#app[data-theme="dark"] .workflow-panel input,#app[data-theme="dark"] .workflow-panel textarea{background:#17201b;color:#eaf0eb;border-color:#425146}
+#app[data-theme="dark"] .workflow-status-chip{background:#303b35;color:#d9e3dc}
+#app[data-theme="dark"] .workflow-status-chip.pending{background:#48371f;color:#ffda9f}
+#app[data-theme="dark"] .workflow-status-chip.impossible{background:#4a2525;color:#ffb8b1}
+@media(max-width:520px){
+ .notifTopBtn{width:38px;min-width:38px;max-width:38px;flex-basis:38px;height:40px;min-height:40px;font-size:18px}
+ #app .toolbar{flex-wrap:wrap}
+ #app .toolbar .search{flex:1 1 100%}
+ #app .toolbar .filterbtn,#app .toolbar #exportTasks{flex:1 1 0;min-width:0}
+ .notifications-head{align-items:center}
+ .notifications-head .btn{min-height:38px;padding:8px 10px}
+ .workflow-panel{padding:11px}
+ .modal .attachment-section{padding:10px}
+}

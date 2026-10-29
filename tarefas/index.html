@@ -284,43 +284,53 @@ if(full)return full.slice(0,60);
 const local=String(user?.email||"").split("@")[0].replace(/[._-]+/g," ").trim();
 return local.replace(/\b\w/g,ch=>ch.toUpperCase()).slice(0,60)||"Usuário";
 }
-function setHouseholdMessage(message,isError){
-const el=$("householdMessage");el.textContent=message||"";el.hidden=!message;el.className="msg"+(isError?" error":"");
+function adminAccessMessage(message,isError){
+const el=$("adminAccessMessage");el.textContent=message||"";el.hidden=!message;el.className="msg"+(isError?" error":"");
 }
-$("makeInvite").addEventListener("click",async()=>{
-const button=$("makeInvite");button.disabled=true;button.textContent="Gerando convite…";setHouseholdMessage("");
+async function renderAccessRequests(){
+const panel=$("accessAdminPanel"),list=$("accessRequestsList");
+if(!currentHousehold||currentHousehold.member_role!=="owner"){panel.hidden=true;return}
+panel.hidden=false;list.innerHTML='<p class="sharecopy">Verificando solicitações…</p>';
+const {data,error}=await sb.rpc("list_task_access_requests");
+if(error){
+list.innerHTML="";adminAccessMessage("Não foi possível carregar as solicitações: "+(error.message||"tente novamente."),true);return;
+}
+adminAccessMessage("");
+const requests=data||[];
+if(!requests.length){
+list.innerHTML='<p class="sharecopy">Nenhuma solicitação pendente. Quando alguém criar uma conta, o pedido aparecerá aqui para sua aprovação.</p>';
+return;
+}
+list.innerHTML=requests.map(request=>{
+const when=request.requested_at?new Date(request.requested_at).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}):"Agora";
+return '<article class="access-request"><div class="access-request-info"><strong>'+esc(request.requester_name||"Novo usuário")+'</strong><div class="access-request-meta">'+esc(request.requester_email||"E-mail não informado")+'</div><div class="access-request-meta">Solicitado em '+esc(when)+'</div></div><div class="access-request-actions"><button type="button" class="btn" data-review-action="approve" data-request-id="'+esc(request.request_id)+'">Aprovar</button><button type="button" class="btn danger" data-review-action="reject" data-request-id="'+esc(request.request_id)+'">Recusar</button></div></article>';
+}).join("");
+}
+$("accessRequestsList").addEventListener("click",async e=>{
+const button=e.target.closest("[data-review-action]");if(!button)return;
+const requestId=button.dataset.requestId,decision=button.dataset.reviewAction;
+if(!requestId||!["approve","reject"].includes(decision))return;
+const displayName=button.closest(".access-request")?.querySelector("strong")?.textContent||"este usuário";
+if(decision==="reject"&&!confirm("Recusar o acesso de "+displayName+" à agenda compartilhada?"))return;
+button.disabled=true;button.textContent=decision==="approve"?"Aprovando…":"Recusando…";
 try{
-const {data,error}=await sb.rpc("create_task_household_invite");if(error)throw error;
-const item=Array.isArray(data)?data[0]:data;if(!item?.invite_code)throw new Error("O convite não foi retornado.");
-$("inviteCode").value=item.invite_code;$("inviteResult").hidden=false;
-$("inviteExpiry").textContent="Expira em "+new Date(item.expires_at).toLocaleDateString("pt-BR")+". Envie este código somente à pessoa que participará da agenda.";
-const message="Vamos compartilhar nossas tarefas no Clareza. Entre ou crie sua conta neste link: "+location.href+"\nDepois toque em “Tenho um código” e cole este convite: "+item.invite_code;
-$("whatsappInvite").href="https://wa.me/?text="+encodeURIComponent(message);
-}catch(err){setHouseholdMessage(err.message||"Não foi possível gerar o convite.",true)}
-finally{button.disabled=false;button.textContent="Gerar convite"}
+const {data,error}=await sb.rpc("review_task_access_request",{p_request_id:requestId,p_decision:decision});
+if(error)throw error;
+await renderAccessRequests();
+toast(decision==="approve"?"Acesso autorizado para "+displayName:"Solicitação recusada");
+}catch(err){adminAccessMessage(err.message||"Não foi possível revisar essa solicitação.",true);button.disabled=false;button.textContent=decision==="approve"?"Aprovar":"Recusar"}
 });
-$("copyInvite").addEventListener("click",async()=>{
-const code=$("inviteCode").value;if(!code)return;
+$("checkAccessStatus").addEventListener("click",async()=>{
+const button=$("checkAccessStatus");button.disabled=true;button.textContent="Verificando…";
 try{
-if(navigator.clipboard&&navigator.clipboard.writeText)await navigator.clipboard.writeText(code);
-else{$("inviteCode").select();if(!document.execCommand("copy"))throw new Error("Selecione e copie o código manualmente.")}
-toast("Código copiado");
-}catch(err){$("inviteCode").focus();$("inviteCode").select();toast("Selecione o código e toque em Copiar.")}
+await loadTasks();showApp();
+if(accessPending)toast(accessRequestStatus==="rejected"?"O acesso ainda não foi autorizado.":"Ainda aguardando a autorização do administrador.");
+else toast("Acesso autorizado. Bem-vindo ao Clareza!");
+}catch(err){$("accessPendingMessage").textContent=err.message||"Não foi possível verificar o acesso."; $("accessPendingMessage").hidden=false}
+finally{button.disabled=false;button.textContent=accessRequestStatus==="rejected"?"Verificar novamente":"Verificar autorização"}
 });
-$("showJoin").addEventListener("click",()=>{
-$("joinPanel").hidden=!$("joinPanel").hidden;
-if(!$("joinPanel").hidden)$("joinCode").focus({preventScroll:true});
-});
-$("joinForm").addEventListener("submit",async e=>{
-e.preventDefault();const button=$("acceptInvite"),code=$("joinCode").value.trim();if(!code)return;
-button.disabled=true;button.textContent="Vinculando agenda…";setHouseholdMessage("");
-try{
-const {data,error}=await sb.rpc("accept_task_household_invite",{p_code:code});if(error)throw error;
-const item=Array.isArray(data)?data[0]:data;if(!item?.household_id)throw new Error("Não foi possível confirmar a agenda do convite.");
-$("joinPanel").hidden=true;$("joinCode").value="";await loadTasks();showApp();setHouseholdMessage("Pronto! Esta conta agora participa da agenda compartilhada: "+(item.household_name||"Agenda compartilhada")+".");
-toast("Agenda compartilhada conectada");
-}catch(err){setHouseholdMessage(err.message||"Não foi possível aceitar o convite. Confira o código.",true)}
-finally{button.disabled=false;button.textContent="Entrar na agenda compartilhada"}
+$("pendingLogout").addEventListener("click",async()=>{
+if(sb)await sb.auth.signOut();user=null;tasks=[];currentHousehold=null;accessPending=false;showAuth();
 });
 function urlBase64ToUint8Array(value){
 const padding="=".repeat((4-value.length%4)%4);

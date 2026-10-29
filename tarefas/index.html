@@ -735,11 +735,17 @@ if(wasEditing){
  if(createError)throw createError;taskId=newId;
 }
 if(window.ClarezaWorkflow?.uploadFiles)await window.ClarezaWorkflow.uploadFiles(taskId);
-if(!wasEditing&&taskId&&targetAssignee!==user.id&&window.ClarezaWorkflow?.dispatchNotifications){
+if(taskId&&window.ClarezaWorkflow?.dispatchNotifications&&(
+ (!wasEditing&&targetAssignee!==user.id) ||
+ (wasEditing&&editing.created_by===user.id&&targetAssignee!==user.id)
+)){
  notificationDelivery=await window.ClarezaWorkflow.dispatchNotifications(taskId);
 }
 closeModal();await loadTasks();
-if(wasEditing)toast("Alterações salvas");
+if(wasEditing&&targetAssignee!==user.id&&notificationDelivery?.deliveryError)toast("Alterações salvas; não consegui enviar o aviso agora.");
+else if(wasEditing&&targetAssignee!==user.id&&notificationDelivery?.emailConfigured===false)toast("Alterações salvas e responsável avisado no app; o e-mail depende da configuração do provedor.");
+else if(wasEditing&&targetAssignee!==user.id)toast("Alterações salvas e responsável notificado.");
+else if(wasEditing)toast("Alterações salvas");
 else if(targetAssignee!==user.id&&notificationDelivery?.emailConfigured===false)toast("Tarefa atribuída. Push/inbox acionados; o e-mail depende da configuração do provedor.");
 else if(targetAssignee!==user.id)toast("Tarefa atribuída e participante notificado.");
 else toast("Tarefa adicionada")

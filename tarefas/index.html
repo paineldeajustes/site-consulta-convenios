@@ -197,11 +197,30 @@ $("filters").addEventListener("click",()=>{$("filterExtras").hidden=!$("filterEx
 $("taskList").addEventListener("click",async e=>{
 const btn=e.target.closest("[data-action]");if(!btn)return;const card=btn.closest(".task");if(!card)return;const t=tasks.find(x=>x.id===card.dataset.id);if(!t)return;
 if(btn.dataset.action==="edit"){openTask(t);return}
-try{const {error}=await sb.from("personal_tasks").update({completed:!t.completed}).eq("id",t.id);if(error)throw error;await loadTasks();toast(t.completed?"Tarefa reaberta":"Tarefa concluída")}
+if(!t.completed){
+pendingCompletion=t;
+$("completionText").textContent="“"+t.title+"” será marcada como concluída e sairá da lista de pendentes. Deseja continuar?";
+$("completionConfirm").hidden=false;
+$("confirmCompletion").disabled=false;
+return;
+}
+try{const {error}=await sb.from("personal_tasks").update({completed:false}).eq("id",t.id);if(error)throw error;await loadTasks();toast("Tarefa reaberta")}
 catch(err){toast("Não foi possível atualizar. "+(err.message||"Tente novamente."))}
 });
+$("cancelCompletion").addEventListener("click",()=>{pendingCompletion=null;$("completionConfirm").hidden=true});
+$("confirmCompletion").addEventListener("click",async()=>{
+if(!pendingCompletion)return;
+const target=pendingCompletion,button=$("confirmCompletion");button.disabled=true;button.textContent="Concluindo…";
+try{const {error}=await sb.from("personal_tasks").update({completed:true}).eq("id",target.id);if(error)throw error;pendingCompletion=null;$("completionConfirm").hidden=true;await loadTasks();toast("Tarefa concluída")}
+catch(err){toast("Não foi possível concluir. "+(err.message||"Tente novamente."))}
+finally{button.disabled=false;button.textContent="Sim, concluir"}
+});
 function openTask(t){
-editing=t||null;$("modalTitle").textContent=t?"Editar tarefa":"Nova tarefa";$("taskTitle").value=t?.title||"";$("taskNotes").value=t?.notes||"";$("taskDue").value=t?.due_date||"";$("taskTime").value=t?.due_time?t.due_time.slice(0,5):"";$("taskPriority").value=t?.priority||"media";$("taskCategory").value=t?.category||"";$("deleteTask").hidden=!t;$("taskError").hidden=true;$("saveTask").textContent=t?"Salvar alterações":"Salvar tarefa";$("taskModal").hidden=false;document.body.style.overflow="hidden";setTimeout(()=>$("taskTitle").focus({preventScroll:true}),80)
+editing=t||null;$("modalTitle").textContent=t?"Editar tarefa":"Nova tarefa";$("taskTitle").value=t?.title||"";$("taskNotes").value=t?.notes||"";$("taskDue").value=t?.due_date||"";$("taskTime").value=t?.due_time?t.due_time.slice(0,5):"";$("taskPriority").value=t?.priority||"media";$("taskCategory").value=t?.category||"";$("taskContext").value=t?.context||"pessoal";
+const offsets=Array.isArray(t?.notification_offsets)?t.notification_offsets:[1440,120,60,0];
+$("reminderDay").checked=!t||offsets.includes(1440);$("reminder2h").checked=!t||offsets.includes(120);$("reminder1h").checked=!t||offsets.includes(60);$("reminderAtTime").checked=!t||offsets.includes(0);
+$("overdueMorning").checked=!t||t.overdue_morning!==false;$("overdueAfternoon").checked=!t||t.overdue_afternoon!==false;
+$("deleteTask").hidden=!t;$("taskError").hidden=true;$("saveTask").textContent=t?"Salvar alterações":"Salvar tarefa";$("taskModal").hidden=false;document.body.style.overflow="hidden";setTimeout(()=>$("taskTitle").focus({preventScroll:true}),80)
 }
 function closeModal(){$("taskModal").hidden=true;document.body.style.overflow="";editing=null}
 ["newTaskTop","emptyAdd"].forEach(id=>$(id).addEventListener("click",()=>openTask(null)));
@@ -210,11 +229,13 @@ $("taskModal").addEventListener("click",e=>{if(e.target===$("taskModal"))closeMo
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("taskModal").hidden)closeModal()});
 $("taskForm").addEventListener("submit",async e=>{
 e.preventDefault();if(busy)return;const title=$("taskTitle").value.trim();if(!title){$("taskTitle").focus();return}
-const input={title,notes:$("taskNotes").value.trim()||null,due_date:$("taskDue").value||null,due_time:$("taskTime").value||null,priority:$("taskPriority").value,category:$("taskCategory").value.trim()||null};
+const input={title,notes:$("taskNotes").value.trim()||null,due_date:$("taskDue").value||null,due_time:$("taskTime").value||null,priority:$("taskPriority").value,category:$("taskCategory").value.trim()||null,context:$("taskContext").value,notification_offsets:[$("reminderDay").checked?1440:null,$("reminder2h").checked?120:null,$("reminder1h").checked?60:null,$("reminderAtTime").checked?0:null].filter(v=>v!==null),overdue_morning:$("overdueMorning").checked,overdue_afternoon:$("overdueAfternoon").checked};
 const wasEditing=!!editing;
 const b=$("saveTask");busy=true;b.disabled=true;b.textContent="Salvando…";$("taskError").hidden=true;
 try{
-let response;if(wasEditing)response=await sb.from("personal_tasks").update(input).eq("id",editing.id);else response=await sb.from("personal_tasks").insert({...input,user_id:user.id});
+let response;
+if(wasEditing)response=await sb.from("personal_tasks").update(input).eq("id",editing.id);
+else response=await sb.from("personal_tasks").insert({...input,user_id:user.id,created_by:user.id,created_by_name:getDisplayName(),household_id:currentHousehold.household_id});
 if(response.error)throw response.error;closeModal();await loadTasks();toast(wasEditing?"Alterações salvas":"Tarefa adicionada")
 }catch(err){$("taskError").textContent="Não foi possível salvar: "+(err.message||"tente novamente");$("taskError").hidden=false}
 finally{busy=false;b.disabled=false;b.textContent=wasEditing?"Salvar alterações":"Salvar tarefa"}

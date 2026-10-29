@@ -144,6 +144,20 @@ function renderSelectedFiles(){
  const box=$("selectedFiles");
  box.innerHTML=pendingFiles.map((file,i)=>'<div class="file-row"><span>📎 '+escapeHtml(file.name)+' · '+(file.size/1024/1024).toFixed(1)+' MB</span><button type="button" class="file-remove" data-file-remove="'+i+'" aria-label="Remover anexo">×</button></div>').join("");
 }
+$("addTaskCategory").addEventListener("click",async()=>{
+ const name=(prompt("Nome da nova categoria:")||"").trim();if(!name)return;
+ if(name.length>60){toast("Use até 60 caracteres no nome da categoria.");return}
+ const button=$("addTaskCategory");button.disabled=true;
+ try{
+  const {data,error}=await db().rpc("add_task_category",{p_name:name,p_color:"#eaf2ff"});
+  if(error)throw error;
+  await window.ClarezaSettingsBridge?.load(true);
+  await api().reloadTasks();
+  $("taskCategory").value=(Array.isArray(data)?data[0]?.name:data?.name)||name;
+  toast("Categoria salva e disponível nas próximas tarefas.");
+ }catch(err){toast(err.message||"Não foi possível criar a categoria.")}
+ finally{button.disabled=false}
+});
 $("taskFiles").addEventListener("change",e=>{
  const input=e.target,allowed=["application/pdf","image/jpeg","image/png","image/webp","image/heic","image/heif"];
  for(const file of [...(input.files||[])]){
@@ -311,7 +325,10 @@ async function sendAssigneeResponse(){
  const reason=$("assigneeReason").value.trim()||null;
  if(response!=="accept"&&reason&&reason.length<8)throw new Error("A justificativa deve ter pelo menos oito caracteres.");
  if(response==="propose_date"&&!plannedDate)throw new Error("Informe a data em que conseguirá realizar a tarefa.");
- if(response==="propose_date"&&task.due_date&&plannedDate<=task.due_date)throw new Error("A nova data precisa ser posterior ao prazo original.");
+ if(response==="propose_date"&&task.due_date){
+  const proposedTime=plannedTime||"23:59",originalTime=(task.due_time||"23:59").slice(0,5);
+  if(plannedDate<task.due_date||(plannedDate===task.due_date&&proposedTime<=originalTime))throw new Error("A nova data ou horário precisa ser posterior ao prazo original.");
+ }
  const button=$("sendAssigneeResponse");button.disabled=true;button.textContent="Enviando…";
  try{
   const {data,error}=await db().rpc("respond_task_assignment",{p_task_id:task.id,p_response:response,p_planned_date:plannedDate,p_planned_time:plannedTime,p_reason:reason});

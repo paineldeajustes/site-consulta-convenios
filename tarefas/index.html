@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#183f35">
-<meta name="clareza-build" content="2026-10-29.8">
+<meta name="clareza-build" content="2026-10-29.9">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Clareza">
@@ -268,7 +268,7 @@ window.ClarezaApp={
   window.ClarezaSettingsBridge?.applyContextOptions?.(householdSettings?.context_options);
   let theme=userSettings?.theme||"light";
   if(theme==="system")theme=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
-  $("app").dataset.theme=theme;document.body.style.backgroundColor=theme==="dark"?"#141a17":"";document.body.style.color=theme==="dark"?"#eaf0eb":"";$("app").classList.toggle("compact",!!userSettings?.compact_mode);
+  $("app").dataset.theme=theme;document.body.dataset.theme=theme;document.body.style.backgroundColor=theme==="dark"?"#141a17":"";document.body.style.color=theme==="dark"?"#eaf0eb":"";$("app").classList.toggle("compact",!!userSettings?.compact_mode);
   if(user)render();updateCategories();
  },
  applyUserSettings:personalPrefs=>{
@@ -276,6 +276,7 @@ window.ClarezaApp={
   let theme=userSettings?.theme||"light";
   if(theme==="system")theme=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
   $("app").dataset.theme=theme;
+  document.body.dataset.theme=theme;
   document.body.style.backgroundColor=theme==="dark"?"#141a17":"";
   document.body.style.color=theme==="dark"?"#eaf0eb":"";
   $("app").classList.toggle("compact",!!userSettings?.compact_mode);

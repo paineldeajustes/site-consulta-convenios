@@ -349,7 +349,7 @@ function closeModal(){$("taskModal").hidden=true;document.body.style.overflow=""
 ["newTaskTop","emptyAdd"].forEach(id=>$(id).addEventListener("click",()=>openTask(null)));
 ["closeModal","cancelModal"].forEach(id=>$(id).addEventListener("click",closeModal));
 $("taskModal").addEventListener("click",e=>{if(e.target===$("taskModal"))closeModal()});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("taskModal").hidden)closeModal()});
+document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(!$("completionConfirm").hidden){pendingCompletion=null;$("completionConfirm").hidden=true;return}if(!$("taskModal").hidden)closeModal()});
 $("taskForm").addEventListener("submit",async e=>{
 e.preventDefault();if(busy)return;const title=$("taskTitle").value.trim();if(!title){$("taskTitle").focus();return}
 const input={title,notes:$("taskNotes").value.trim()||null,due_date:$("taskDue").value||null,due_time:$("taskTime").value||null,priority:$("taskPriority").value,category:$("taskCategory").value.trim()||null,context:$("taskContext").value,notification_offsets:[$("reminderDay").checked?1440:null,$("reminder2h").checked?120:null,$("reminder1h").checked?60:null,$("reminderAtTime").checked?0:null].filter(v=>v!==null),overdue_morning:$("overdueMorning").checked,overdue_afternoon:$("overdueAfternoon").checked};

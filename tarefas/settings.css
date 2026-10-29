@@ -149,3 +149,36 @@ body[data-theme="dark"] .modal .reminderbox{background:#19231d;border-color:#344
  .workflow-panel{padding:11px}
  .modal .attachment-section{padding:10px}
 }
+
+/* Settings for environment groups, selected viewers, categories and task-change review. */
+.category-select-row{display:flex;align-items:center;gap:7px;min-width:0}.category-select-row select{flex:1;min-width:0;width:100%}.category-add-btn{width:46px;min-width:46px;min-height:46px;height:46px;padding:0;font-size:22px;flex:0 0 46px}
+.task-visible-users{display:grid;gap:7px;padding:11px;margin-top:9px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+.task-visible-user{display:flex!important;align-items:center;gap:9px;margin:0!important;font-size:13px!important;line-height:1.4;color:var(--ink)!important}.task-visible-user input{width:18px;height:18px;min-height:18px;accent-color:var(--green);flex:0 0 auto}
+.environment-group-card{border:1px solid var(--line);border-radius:13px;background:var(--bg);padding:13px;margin:9px 0}.environment-group-card>div:first-child strong{font-size:14px}.environment-group-card>div:first-child p{font-size:11px;color:var(--muted);line-height:1.5;margin:4px 0 10px}
+.environment-group-members{display:grid;gap:7px;margin-bottom:10px}.environment-member{display:flex!important;align-items:center;gap:9px!important;margin:0!important;font-size:12px!important;font-weight:600!important;color:var(--ink)!important}.environment-member input{width:17px;height:17px;min-height:17px;accent-color:var(--green);flex:0 0 auto}
+.environment-group-card>.btn{min-height:39px;width:100%;font-size:12px}
+.change-request-fields{margin:12px 0;padding:12px;border:1px dashed var(--line);border-radius:12px;background:var(--paper)}.change-request-fields label{display:block;font-size:12px;font-weight:800;color:var(--muted);margin:0 0 7px}.change-request-fields textarea{width:100%;min-height:84px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:14px;box-sizing:border-box}.change-request-fields .hint{font-size:11px;color:var(--muted);line-height:1.5;margin:7px 0 0}
+.task-change-requests{margin-top:12px}.change-request-item{padding:12px 0;border-top:1px solid var(--line)}.change-request-item p{font-size:12px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere;margin:7px 0}.change-request-actions{display:flex;gap:8px;margin-top:9px}.change-request-actions .btn{flex:1;min-width:0;min-height:40px;padding:8px 10px;font-size:12px}
+.settings-export-menu{display:flex!important;flex-wrap:wrap;gap:9px;margin:0;justify-content:flex-start}.settings-export-menu button{flex:1 1 145px;min-height:48px;font-size:13px}
+#app .task .check:disabled{opacity:.48;cursor:not-allowed;filter:grayscale(.45)}
+#app[data-theme="dark"] .environment-group-card{background:#19231d;border-color:#344139}
+#app[data-theme="dark"] .task-visible-users{background:#17201b;border-color:#425146}
+#app[data-theme="dark"] .change-request-fields{background:#19231d;border-color:#425146}
+#app[data-theme="dark"] .change-request-fields textarea{background:#17201b;color:#eaf0eb;border-color:#425146}
+#app[data-theme="dark"] .change-request-item{border-color:#344139}
+body[data-theme="dark"] .modal .attachment-section{background:#19231d!important;border:1px solid #425146;color:#eaf0eb!important}
+body[data-theme="dark"] .modal .attachment-section>label{color:#eaf0eb!important}
+body[data-theme="dark"] .modal .attachment-section .hint,
+body[data-theme="dark"] .modal .attachment-section p{color:#aab8ae!important}
+body[data-theme="dark"] .modal .attachment-section input[type="file"]{display:block;width:100%;max-width:100%;padding:8px;background:#17201b;color:#eaf0eb;border:1px solid #425146;border-radius:9px;box-sizing:border-box;color-scheme:dark}
+body[data-theme="dark"] .modal .attachment-section .selected-files,
+body[data-theme="dark"] .modal .attachment-section .existing-attachments{color:#eaf0eb}
+body[data-theme="dark"] .modal .attachment-section .attachment-link a{color:#8ac6a3}
+body[data-theme="dark"] .modal .attachment-section .file-row{color:#d9e3dc}
+body[data-theme="dark"] .modal .attachment-section .file-remove{color:#ffb8b1}
+@media(max-width:520px){
+ .environment-group-card{padding:10px}
+ .change-request-actions{flex-direction:column}
+ .settings-export-menu button{flex-basis:100%}
+ .task-visible-users{padding:9px}
+}

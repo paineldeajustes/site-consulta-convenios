@@ -301,10 +301,10 @@ function onTasksLoaded(){
 }
 function csvDownload(){
  const list=allTasks(),memberList=members(),att=attachments();
- const headers=["ID","Tarefa","Detalhes","Prazo","Horário","Responsável","Criador","Prioridade","Contexto","Categoria","Status do fluxo","Data proposta","Justificativa","Concluída","Data de criação","Anexos"];
+ const headers=["ID","Tarefa","Detalhes","Prazo vigente","Horário","Prazo original","Responsável","Criador","Prioridade","Contexto","Categoria","Status do fluxo","Data proposta","Justificativa","Concluída","Data de criação","Anexos"];
  const rows=list.map(t=>{
   const assignee=memberList.find(m=>m.user_id===t.assignee_id),creator=memberList.find(m=>m.user_id===t.created_by);
-  return [t.id,t.title,t.notes,t.due_date,fmtTime(t.due_time),assignee?.display_name||assignee?.email,creator?.display_name||t.created_by_name,t.priority,t.context,t.category,labelStatus[t.workflow_status]||t.workflow_status,t.proposed_due_date,t.final_reason||t.proposal_reason,t.completed?"Sim":"Não",t.created_at,att.filter(a=>a.task_id===t.id).map(a=>a.file_name).join(", ")];
+  return [t.id,t.title,t.notes,t.due_date,fmtTime(t.due_time),t.original_due_date||"",assignee?.display_name||assignee?.email,creator?.display_name||t.created_by_name,t.priority,t.context,t.category,labelStatus[t.workflow_status]||t.workflow_status,t.proposed_due_date,t.final_reason||t.proposal_reason,t.completed?"Sim":"Não",t.created_at,att.filter(a=>a.task_id===t.id).map(a=>a.file_name).join(", ")];
  });
  const escape=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
  const csv="\uFEFF"+[headers,...rows].map(row=>row.map(escape).join(";")).join("\r\n");

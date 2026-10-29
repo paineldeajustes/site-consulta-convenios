@@ -220,4 +220,5 @@ window.ClarezaSettingsBridge={
  load, get:()=>({shared,personal,categories}), applyContextOptions, applyTheme,
  onContextOptionsChange:applyContextOptions
 };
+window.addEventListener("load",()=>{if(!$("app").hidden)load(false)});
 })();

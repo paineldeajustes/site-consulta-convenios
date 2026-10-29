@@ -681,7 +681,7 @@ const input={title,notes:$("taskNotes").value.trim()||null,due_date:$("taskDue")
 const wasEditing=!!editing;
 const b=$("saveTask");busy=true;b.disabled=true;b.textContent="Salvando…";$("taskError").hidden=true;
 try{
-let response,taskId=wasEditing?editing.id:null;
+let response,taskId=wasEditing?editing.id:null,notificationDelivery=null;
 if(wasEditing){
  response=await sb.from("personal_tasks").update(input).eq("id",editing.id);
  if(response.error)throw response.error;
@@ -695,11 +695,15 @@ if(wasEditing){
  if(createError)throw createError;taskId=newId;
 }
 if(window.ClarezaWorkflow?.uploadFiles)await window.ClarezaWorkflow.uploadFiles(taskId);
-if(!wasEditing&&taskId&&window.ClarezaWorkflow?.dispatchNotifications){
- const delivery=await window.ClarezaWorkflow.dispatchNotifications(taskId);
- if(delivery?.emailConfigured===false)toast("Tarefa criada. Notificação interna e push acionadas; e-mail requer configuração do provedor.");
+const targetAssignee=document.getElementById("taskAssignee").value||user.id;
+if(!wasEditing&&taskId&&targetAssignee!==user.id&&window.ClarezaWorkflow?.dispatchNotifications){
+ notificationDelivery=await window.ClarezaWorkflow.dispatchNotifications(taskId);
 }
-closeModal();await loadTasks();toast(wasEditing?"Alterações salvas":"Tarefa adicionada")
+closeModal();await loadTasks();
+if(wasEditing)toast("Alterações salvas");
+else if(targetAssignee!==user.id&&notificationDelivery?.emailConfigured===false)toast("Tarefa atribuída e notificação interna/push acionada. O e-mail ainda depende da configuração do provedor.");
+else if(targetAssignee!==user.id)toast("Tarefa atribuída e participante notificado.");
+else toast("Tarefa adicionada")
 }catch(err){$("taskError").textContent="Não foi possível salvar: "+(err.message||"tente novamente");$("taskError").hidden=false}
 finally{busy=false;b.disabled=false;b.textContent=wasEditing?"Salvar alterações":"Salvar tarefa"}
 });

@@ -34,7 +34,12 @@
       <div class="field"><label for="password">Senha</label><div class="pwrow"><input id="password" type="password" autocomplete="current-password" minlength="8" placeholder="Pelo menos 8 caracteres" required><button id="showPw" type="button">Mostrar</button></div></div>
       <button id="authSubmit" class="btn authsubmit" type="submit">Entrar</button>
     </form>
-    <div style="display:flex;justify-content:center;gap:3px;flex-wrap:wrap;margin-top:14px"><button id="forgot" class="textlink" type="button">Esqueci a senha</button><span style="color:#d2d9d2;align-self:center">·</span><button id="switchMode" class="textlink" type="button">Criar conta</button></div>
+    <form id="recoveryForm" hidden>
+      <div class="field"><label for="newPassword">Nova senha</label><input id="newPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Pelo menos 8 caracteres"></div>
+      <div class="field"><label for="newPasswordConfirm">Confirmar nova senha</label><input id="newPasswordConfirm" type="password" autocomplete="new-password" minlength="8" required placeholder="Repita a nova senha"></div>
+      <button id="updatePassword" class="btn authsubmit" type="submit">Salvar nova senha</button>
+    </form>
+    <div id="authLinks" style="display:flex;justify-content:center;gap:3px;flex-wrap:wrap;margin-top:14px"><button id="forgot" class="textlink" type="button">Esqueci a senha</button><span style="color:#d2d9d2;align-self:center">·</span><button id="switchMode" class="textlink" type="button">Criar conta</button></div>
     <div id="authMessage" class="msg" role="status" aria-live="polite" hidden></div>
     <p class="localnote">Sua conta usa autenticação por e-mail. Suas tarefas são privadas e ficam vinculadas à sua conta, inclusive ao trocar de dispositivo.</p>
   </div>
@@ -112,7 +117,7 @@ let result;
 if(signup)result=await sb.auth.signUp({email,password,options:{emailRedirectTo:location.href.split("#")[0]}});
 else result=await sb.auth.signInWithPassword({email,password});
 if(result.error)throw result.error;
-if(signup&&!result.data.session){authMessage("Conta solicitada. Confira seu e-mail e confirme o cadastro antes de entrar.","");setAuthMode(false);$("email").value=email;return}
+if(signup&&!result.data.session){setAuthMode(false);$("email").value=email;authMessage("Conta solicitada. Confira seu e-mail e confirme o cadastro antes de entrar.");return}
 user=result.data.user||result.data.session?.user;
 if(user){await loadTasks();showApp();toast(signup?"Conta criada com sucesso":"Bem-vindo de volta")}
 }catch(err){authMessage((err&&err.message)||"Não foi possível autenticar. Confira os dados e tente novamente.","error")}
@@ -209,7 +214,23 @@ async function init(){
 if(!sb){authMessage("Não foi possível carregar o serviço. Confira sua internet e atualize.","error");return}
 const {data,error}=await sb.auth.getSession();if(error){authMessage(error.message,"error");return}
 if(data.session)await startSession(data.session);
-sb.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){user=null;tasks=[];showAuth()}else if(session&&!user){setTimeout(()=>startSession(session),0)}});
+sb.auth.onAuthStateChange((event,session)=>{
+if(event==="PASSWORD_RECOVERY"){
+showAuth();$("authForm").hidden=true;$("authLinks").hidden=true;$("recoveryForm").hidden=false;
+authMessage("Link de recuperação validado. Defina uma nova senha abaixo.");
+}else if(event==="SIGNED_OUT"){user=null;tasks=[];showAuth()}
+else if(session&&!user){setTimeout(()=>startSession(session),0)}
+});
+$("recoveryForm").addEventListener("submit",async e=>{
+e.preventDefault();
+const password=$("newPassword").value,confirmPassword=$("newPasswordConfirm").value;
+if(password.length<8){authMessage("Use pelo menos oito caracteres.","error");return}
+if(password!==confirmPassword){authMessage("As senhas não coincidem.","error");return}
+const button=$("updatePassword");button.disabled=true;button.textContent="Salvando…";
+try{const {error}=await sb.auth.updateUser({password});if(error)throw error;await sb.auth.signOut();$("recoveryForm").hidden=true;$("authForm").hidden=false;$("authLinks").hidden=false;$("newPassword").value="";$("newPasswordConfirm").value="";authMessage("Senha atualizada. Entre com a nova senha.");}
+catch(err){authMessage(err.message||"Não foi possível atualizar a senha. Abra o link de recuperação mais recente.","error")}
+finally{button.disabled=false;button.textContent="Salvar nova senha"}
+});
 }
 init();
 if("serviceWorker"in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("./sw.js").catch(()=>{})}

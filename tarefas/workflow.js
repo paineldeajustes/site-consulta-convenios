@@ -203,7 +203,7 @@ async function populateVisibility(task){
  const me=currentUser()?.id,isCreator=!!task&&task.created_by===me;
  field.hidden=!!task&&!isCreator;
  if(!isCreator){select.value="environment";list.hidden=true;list.innerHTML="";return}
- let mode="environment",selectedIds=members().map(m=>m.user_id);
+ let mode="environment",selectedIds=task?members().map(m=>m.user_id):(me?[me]:[]);
  if(task){
   const {data,error}=await db().rpc("get_task_visibility",{p_task_id:task.id});
   if(!error&&data?.length){
@@ -216,9 +216,14 @@ async function populateVisibility(task){
  list.innerHTML=members().map(m=>'<label class="task-visible-user"><input type="checkbox" data-visible-user="'+m.user_id+'" '+(selectedIds.includes(m.user_id)?"checked":"")+'><span>'+escapeHtml(m.display_name||m.email)+(m.user_id===me?" (você)":"")+'</span></label>').join("");
  list.hidden=mode!=="selected";
 }
-$("taskVisibilityMode").addEventListener("change",()=>{
+$("taskVisibilityMode").addEventListener("change",async()=>{
  const list=$("taskVisibleUsersList"),visible=$("taskVisibilityMode").value==="selected";
  list.hidden=!visible;
+ if(visible&&!list.querySelector("[data-visible-user]")){
+  const task=allTasks().find(t=>t.id===window.ClarezaWorkflow.currentTaskId)||null;
+  await populateVisibility(task);
+  list.hidden=false;
+ }
 });
 function getVisibleUserIds(){
  if($("taskVisibilityMode").value!=="selected")return [];

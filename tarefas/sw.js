@@ -1,5 +1,5 @@
-const CACHE = "clareza-shell-v4";
-const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
+const CACHE = "clareza-shell-v5";
+const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./settings.css", "./settings.js"];
 
 self.addEventListener("install", event => {
   event.waitUntil(
@@ -24,7 +24,7 @@ self.addEventListener("fetch", event => {
   if (url.origin !== self.location.origin) return;
   event.respondWith(
     fetch(req).then(response => {
-      if (response.ok && (req.mode === "navigate" || url.pathname.endsWith(".html") || url.pathname.endsWith(".webmanifest") || url.pathname.endsWith(".svg"))) {
+      if (response.ok && (req.mode === "navigate" || url.pathname.endsWith(".html") || url.pathname.endsWith(".webmanifest") || url.pathname.endsWith(".svg") || url.pathname.endsWith(".js") || url.pathname.endsWith(".css"))) {
         const copy = response.clone();
         caches.open(CACHE).then(cache => cache.put(req, copy)).catch(() => {});
       }

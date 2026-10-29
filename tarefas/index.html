@@ -59,7 +59,7 @@
     <div class="listhead"><h2 id="listTitle">Suas tarefas</h2><span id="taskCount" class="count">0 itens</span></div>
     <section id="taskList" class="tasks" aria-live="polite"></section>
     <section id="emptyState" class="empty" hidden><div class="symbol">✦</div><h3 id="emptyTitle">Tudo começa com uma tarefa</h3><p id="emptyText">Adicione sua primeira tarefa para organizar o que importa.</p><div style="margin-top:16px"><button id="emptyAdd" class="btn">＋ Criar primeira tarefa</button></div></section>
-    <div class="footer">Clareza · Feito para simplificar sua rotina<br>Seus dados ficam vinculados à sua conta.</div>
+    <div class="footer">Clareza · Feito para simplificar sua rotina<br>Seus dados ficam vinculados à sua conta.<br>No iPhone: Safari → Compartilhar → Adicionar à Tela de Início.</div>
   </main>
   <button id="fab" class="fab"><span>＋</span> Nova tarefa</button>
 </div>
@@ -186,12 +186,13 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("taskModal").hid
 $("taskForm").addEventListener("submit",async e=>{
 e.preventDefault();if(busy)return;const title=$("taskTitle").value.trim();if(!title){$("taskTitle").focus();return}
 const input={title,notes:$("taskNotes").value.trim()||null,due_date:$("taskDue").value||null,due_time:$("taskTime").value||null,priority:$("taskPriority").value,category:$("taskCategory").value.trim()||null};
+const wasEditing=!!editing;
 const b=$("saveTask");busy=true;b.disabled=true;b.textContent="Salvando…";$("taskError").hidden=true;
 try{
-let response;if(editing)response=await sb.from("personal_tasks").update(input).eq("id",editing.id);else response=await sb.from("personal_tasks").insert({...input,user_id:user.id});
-if(response.error)throw response.error;closeModal();await loadTasks();toast(editing?"Alterações salvas":"Tarefa adicionada")
+let response;if(wasEditing)response=await sb.from("personal_tasks").update(input).eq("id",editing.id);else response=await sb.from("personal_tasks").insert({...input,user_id:user.id});
+if(response.error)throw response.error;closeModal();await loadTasks();toast(wasEditing?"Alterações salvas":"Tarefa adicionada")
 }catch(err){$("taskError").textContent="Não foi possível salvar: "+(err.message||"tente novamente");$("taskError").hidden=false}
-finally{busy=false;b.disabled=false;b.textContent=editing?"Salvar alterações":"Salvar tarefa"}
+finally{busy=false;b.disabled=false;b.textContent=wasEditing?"Salvar alterações":"Salvar tarefa"}
 });
 $("deleteTask").addEventListener("click",async()=>{
 if(!editing||!confirm("Excluir definitivamente esta tarefa?"))return;

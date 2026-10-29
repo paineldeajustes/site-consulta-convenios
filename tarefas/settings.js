@@ -54,6 +54,7 @@ function applyTheme(theme,compact){
  let actual=theme||"light";
  if(actual==="system")actual=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
  app.dataset.theme=actual;
+ document.body.dataset.theme=actual;
  document.body.style.backgroundColor=actual==="dark"?"#141a17":"";
  document.body.style.color=actual==="dark"?"#eaf0eb":"";
  app.classList.toggle("compact",!!compact);

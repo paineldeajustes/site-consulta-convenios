@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#183f35">
-<meta name="clareza-build" content="2026-10-29.17">
+<meta name="clareza-build" content="2026-10-29.18">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Clareza">
@@ -170,6 +170,17 @@
   </section>
 </div>
 <div id="completionConfirm" class="confirmback" hidden><section class="confirmcard" role="dialog" aria-modal="true" aria-labelledby="completionTitle"><h2 id="completionTitle">Concluir tarefa?</h2><p id="completionText">A tarefa sairá da lista de pendentes. Deseja continuar?</p><div class="confirmactions"><button id="cancelCompletion" class="btn ghost" type="button">Manter pendente</button><button id="confirmCompletion" class="btn" type="button">Sim, concluir</button></div></section></div>
+<section id="attachmentViewer" class="attachment-viewer" hidden aria-label="Visualizador de anexo">
+  <header class="attachment-viewer-head">
+    <button id="closeAttachmentViewer" class="btn secondary" type="button" aria-label="Voltar para a tarefa">← Voltar à tarefa</button>
+    <div id="attachmentViewerTitle" class="attachment-viewer-title">Anexo</div>
+    <a id="openAttachmentExternal" class="attachment-external-link" href="#" target="_blank" rel="noopener">Abrir fora</a>
+  </header>
+  <div id="attachmentViewerBody" class="attachment-viewer-body">
+    <iframe id="attachmentPdfFrame" title="Visualização de PDF" hidden></iframe>
+    <img id="attachmentImagePreview" alt="Anexo da tarefa" hidden>
+  </div>
+</section>
 <div id="toast" role="status" aria-live="polite" hidden style="position:fixed;z-index:30;left:16px;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));max-width:520px;margin:auto;padding:14px 16px;border-radius:13px;background:#193c2d;color:#fff;box-shadow:0 8px 25px #173d2b35;font-size:13px;font-weight:650"></div>
 <script>
 (function(){
@@ -177,7 +188,7 @@
 const SUPABASE_URL="https://qkjudfvlaatdcaosadun.supabase.co";
 const SUPABASE_KEY="sb_publishable_B3A7uwmQWUs8oOivjgJ6Qw_6rqx4U0W";
 const VAPID_PUBLIC_KEY="BL9Qy1VshYvVMWjTTNM-GHfGnSJAMb7wMwf7v4UjP9D-NUej0S8i9YSP986MtjI6DzOrga9vuOCh8RowpbIZFX8";
-const AUTH_REDIRECT_URL="https://paineldeajustes.github.io/site-consulta-convenios/tarefas/";
+const AUTH_REDIRECT_URL=new URL("./",window.location.href).href;
 const $=id=>document.getElementById(id);
 const sb=window.supabase&&window.supabase.createClient?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 let user=null,tasks=[],view="pendentes",editing=null,busy=false,toastTimer=null,currentHousehold=null,pendingCompletion=null,accessPending=false,accessRequestStatus="pending",householdSettings=null,userSettings=null,categoryRecords=[],householdMembers=[],taskAttachments=[];
@@ -656,7 +667,7 @@ const btn=e.target.closest("[data-action]");if(!btn)return;const card=btn.closes
 if(btn.dataset.action==="edit"){openTask(t);return}
 if(!t.completed){
 if(householdSettings?.confirm_before_complete===false){
-try{const {error}=await sb.from("personal_tasks").update({completed:true}).eq("id",t.id);if(error)throw error;await loadTasks();toast("Tarefa concluída")}
+try{const {error}=await sb.rpc("set_task_completion",{p_task_id:t.id,p_completed:true});if(error)throw error;await loadTasks();await window.ClarezaWorkflow?.dispatchNotifications?.(t.id);toast("Tarefa concluída")}
 catch(err){toast("Não foi possível concluir. "+(err.message||"Tente novamente."))}
 return;
 }
@@ -666,7 +677,7 @@ $("completionConfirm").hidden=false;
 $("confirmCompletion").disabled=false;
 return;
 }
-try{const {error}=await sb.from("personal_tasks").update({completed:false}).eq("id",t.id);if(error)throw error;await loadTasks();toast("Tarefa reaberta")}
+try{const {error}=await sb.rpc("set_task_completion",{p_task_id:t.id,p_completed:false});if(error)throw error;await loadTasks();await window.ClarezaWorkflow?.dispatchNotifications?.(t.id);toast("Tarefa reaberta")}
 catch(err){toast("Não foi possível atualizar. "+(err.message||"Tente novamente."))}
 });
 $("cancelCompletion").addEventListener("click",()=>{pendingCompletion=null;$("completionConfirm").hidden=true});

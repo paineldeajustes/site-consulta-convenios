@@ -103,6 +103,7 @@
 const SUPABASE_URL="https://qkjudfvlaatdcaosadun.supabase.co";
 const SUPABASE_KEY="sb_publishable_B3A7uwmQWUs8oOivjgJ6Qw_6rqx4U0W";
 const VAPID_PUBLIC_KEY="BL9Qy1VshYvVMWjTTNM-GHfGnSJAMb7wMwf7v4UjP9D-NUej0S8i9YSP986MtjI6DzOrga9vuOCh8RowpbIZFX8";
+const AUTH_REDIRECT_URL="https://paineldeajustes.github.io/site-consulta-convenios/";
 const $=id=>document.getElementById(id);
 const sb=window.supabase&&window.supabase.createClient?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 let user=null,tasks=[],view="pendentes",editing=null,busy=false,toastTimer=null,currentHousehold=null,pendingCompletion=null;
@@ -126,7 +127,7 @@ if(password.length<8){authMessage("Use uma senha com pelo menos oito caracteres.
 const b=$("authSubmit");b.disabled=true;b.textContent=signup?"Criando conta…":"Entrando…";authMessage("");
 try{
 let result;
-if(signup)result=await sb.auth.signUp({email,password,options:{emailRedirectTo:location.href.split("#")[0],data:{full_name:$("displayName").value.trim()}}});
+if(signup)result=await sb.auth.signUp({email,password,options:{emailRedirectTo:AUTH_REDIRECT_URL,data:{full_name:$("displayName").value.trim()}}});
 else result=await sb.auth.signInWithPassword({email,password});
 if(result.error)throw result.error;
 if(signup&&!result.data.session){setAuthMode(false);$("email").value=email;authMessage("Conta solicitada. Confira seu e-mail e confirme o cadastro antes de entrar.");return}
@@ -137,7 +138,7 @@ finally{b.disabled=false;b.textContent=signup?"Criar conta":"Entrar"}
 });
 $("forgot").addEventListener("click",async()=>{
 if(!sb)return;const email=$("email").value.trim().toLowerCase();if(!email){authMessage("Informe seu e-mail para receber as instruções de recuperação.","error");$("email").focus();return}
-try{const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.href.split("#")[0]});if(error)throw error;authMessage("Se o e-mail estiver cadastrado, você receberá as instruções para redefinir a senha.")}
+try{const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:AUTH_REDIRECT_URL});if(error)throw error;authMessage("Se o e-mail estiver cadastrado, você receberá as instruções para redefinir a senha.")}
 catch(err){authMessage(err.message||"Não foi possível pedir a recuperação agora.","error")}
 });
 $("logout").addEventListener("click",async()=>{if(sb)await sb.auth.signOut();user=null;tasks=[];showAuth();$("password").value="";authMessage("Você saiu da sua conta")});

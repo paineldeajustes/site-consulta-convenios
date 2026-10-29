@@ -1,4 +1,4 @@
-const CACHE = "clareza-shell-v3";
+const CACHE = "clareza-shell-v4";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", event => {

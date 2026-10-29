@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#183f35">
-<meta name="clareza-build" content="2026-10-29.10">
+<meta name="clareza-build" content="2026-10-29.11">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Clareza">
@@ -47,7 +47,7 @@
   </div>
 </section>
 <div id="app" hidden>
-  <header class="top"><div class="wrap toprow"><div class="brand"><div class="mark">✓</div><div>Clareza<small id="appSubtitle">Seu espaço de organização</small></div></div><div style="display:flex;align-items:center;gap:10px;min-width:0"><span id="userEmail" class="account"></span><button id="openNotifications" class="logoutbtn notifTopBtn" type="button" aria-label="Notificações" title="Notificações"><span aria-hidden="true">♧</span><span id="notificationBadge" class="notification-badge" hidden>0</span></button><button id="openSettings" class="logoutbtn settingsTopBtn" type="button" aria-label="Abrir configurações" title="Configurações">⚙</button><button id="logout" class="logoutbtn" type="button" aria-label="Sair da conta" title="Sair da conta">Sair</button></div></div></header>
+  <header class="top"><div class="wrap toprow"><div class="brand"><div class="mark">✓</div><div>Clareza<small id="appSubtitle">Seu espaço de organização</small></div></div><div style="display:flex;align-items:center;gap:10px;min-width:0"><span id="userEmail" class="account"></span><button id="openNotifications" class="logoutbtn notifTopBtn" type="button" aria-label="Notificações" title="Notificações"><span aria-hidden="true">🔔</span><span id="notificationBadge" class="notification-badge" hidden>0</span></button><button id="openSettings" class="logoutbtn settingsTopBtn" type="button" aria-label="Abrir configurações" title="Configurações">⚙</button><button id="logout" class="logoutbtn" type="button" aria-label="Sair da conta" title="Sair da conta">Sair</button></div></div></header>
   <section id="accessPendingPanel" class="wrap main" hidden><div class="authcard" style="margin:22px auto;max-width:520px"><div class="authbrand"><div class="mark">✓</div><div><h1>Clareza</h1><p>Agenda compartilhada</p></div></div><h2 id="accessPendingTitle">Aguardando autorização</h2><p id="accessPendingText" class="authdesc">Sua conta foi criada, mas o administrador precisa aprovar o acesso à agenda compartilhada.</p><div class="shareactions"><button id="checkAccessStatus" class="btn" type="button">Verificar autorização</button><button id="pendingLogout" class="btn ghost" type="button">Sair</button></div><p id="accessPendingMessage" class="msg" hidden></p></div></section><main id="mainContent" class="wrap main">
     <div class="hello"><div><p id="todayLabel" class="eyebrow"></p><h1 id="greeting">Vamos deixar o dia mais leve.</h1><p class="sub">O que precisa da sua atenção hoje?</p></div><button class="btn" id="newTaskTop">＋ Nova</button></div>
     <section class="stats" aria-label="Resumo das tarefas">
@@ -742,5 +742,6 @@ if("serviceWorker"in navigator&&location.protocol==="https:"){navigator.serviceW
 })();
 </script>
 <script src="./settings.js"></script>
+<script src="./workflow.js"></script>
 </body>
 </html>

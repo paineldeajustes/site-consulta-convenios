@@ -317,8 +317,13 @@ function downloadBlob(content,name,type){
  const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");
  a.href=url;a.download=name;a.style.display="none";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
-function exportJson(){
- const payload={exported_at:new Date().toISOString(),application:"Clareza",tasks:allTasks(),attachments:attachments(),workflow_history:"Use o histórico dentro de cada tarefa para consultar movimentações."};
+async function exportJson(){
+ const list=allTasks(),ids=list.map(t=>t.id);let history=[];
+ if(ids.length){
+  try{const {data,error}=await db().from("task_workflow_history").select("*").in("task_id",ids).order("created_at",{ascending:true});if(error)throw error;history=data||[]}
+  catch(err){toast("Não consegui incluir o histórico no backup: "+(err.message||"erro"));return}
+ }
+ const payload={exported_at:new Date().toISOString(),application:"Clareza",tasks:list,attachments:attachments(),workflow_history:history};
  downloadBlob(JSON.stringify(payload,null,2),"clareza-backup-"+localISO(new Date())+".json","application/json");
 }
 function exportPrint(){

@@ -88,6 +88,7 @@ function populate(){
  $("settingsTheme").value=p.theme||"light";
  $("settingsCompact").checked=!!p.compact_mode;
  $("settingsHouseholdName").value=h.display_name||"Agenda compartilhada";
+ if($("appSubtitle"))$("appSubtitle").textContent=h.display_name||"Seu espaço de organização";
  $("settingsDefaultContext").value=h.default_context||"pessoal";
  $("settingsDefaultPriority").value=h.default_priority||"media";
  $("settingsReminderDay").checked=(h.default_notification_offsets||defaults.default_notification_offsets).includes(1440);

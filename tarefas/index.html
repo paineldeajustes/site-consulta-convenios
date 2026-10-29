@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#183f35">
-<meta name="clareza-build" content="2026-10-29.18">
+<meta name="clareza-build" content="2026-10-29.19">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Clareza">
@@ -684,7 +684,7 @@ $("cancelCompletion").addEventListener("click",()=>{pendingCompletion=null;$("co
 $("confirmCompletion").addEventListener("click",async()=>{
 if(!pendingCompletion)return;
 const target=pendingCompletion,button=$("confirmCompletion");button.disabled=true;button.textContent="Concluindo…";
-try{const {error}=await sb.from("personal_tasks").update({completed:true}).eq("id",target.id);if(error)throw error;pendingCompletion=null;$("completionConfirm").hidden=true;await loadTasks();toast("Tarefa concluída")}
+try{const {error}=await sb.rpc("set_task_completion",{p_task_id:target.id,p_completed:true});if(error)throw error;pendingCompletion=null;$("completionConfirm").hidden=true;await loadTasks();await window.ClarezaWorkflow?.dispatchNotifications?.(target.id);toast("Tarefa concluída")}
 catch(err){toast("Não foi possível concluir. "+(err.message||"Tente novamente."))}
 finally{button.disabled=false;button.textContent="Sim, concluir"}
 });

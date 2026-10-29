@@ -217,7 +217,8 @@ return (window.matchMedia&&window.matchMedia("(display-mode: standalone)").match
 }
 async function refreshPushStatus(){
 if(!user)return;
-const button=$("enablePush"),status=$("pushStatus");
+const button=$("enablePush"),status=$("pushStatus"),testButton=$("testPush");
+testButton.hidden=true;
 if(!("Notification"in window)||!("serviceWorker"in navigator)||!("PushManager"in window)){
 status.textContent="Este navegador não oferece notificações push. Você ainda pode ver suas tarefas normalmente.";
 button.disabled=true;button.textContent="Indisponível";return;
@@ -237,7 +238,7 @@ const {data,error}=await sb.from("task_push_subscriptions").select("id").eq("use
 if(error)throw error;
 if(subscription&&data&&data.length){
 status.textContent="Avisos ativados neste aparelho. Você receberá os lembretes das tarefas compartilhadas.";
-button.disabled=true;button.textContent="Avisos ativados";
+button.disabled=true;button.textContent="Avisos ativados";testButton.hidden=false;
 }else{
 status.textContent="Ative para receber 1 dia antes, 2 horas antes, 1 hora antes, na hora e lembretes de atraso às 9h e às 15h, conforme cada tarefa.";
 button.disabled=false;button.textContent="Ativar avisos";
@@ -247,6 +248,22 @@ status.textContent="Toque em Ativar avisos para configurar as notificações nes
 button.disabled=false;button.textContent="Ativar avisos";
 }
 }
+$("testPush").addEventListener("click",async()=>{
+const button=$("testPush");button.disabled=true;button.textContent="Enviando…";
+try{
+const {data:{session},error:sessionError}=await sb.auth.getSession();
+if(sessionError||!session?.access_token)throw new Error("Sua sessão expirou. Entre novamente.");
+const response=await fetch(SUPABASE_URL+"/functions/v1/clareza-reminders",{
+method:"POST",
+headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+session.access_token},
+body:JSON.stringify({action:"test"})
+});
+let result={};try{result=await response.json()}catch{}
+if(!response.ok||!result.ok)throw new Error(result.error||"O serviço não conseguiu enviar a notificação de teste.");
+toast("Aviso de teste enviado. Confira a Central de Notificações do iPhone.");
+}catch(err){toast(err.message||"Não foi possível enviar o teste.");}
+finally{button.disabled=false;button.textContent="Testar aviso";}
+});
 $("enablePush").addEventListener("click",async()=>{
 const button=$("enablePush"),status=$("pushStatus");
 if(isIOSDevice()&&!isInstalledWebApp()){
@@ -275,7 +292,7 @@ user_id:user.id,endpoint:data.endpoint,p256dh:data.keys.p256dh,auth_key:data.key
 },{onConflict:"user_id,endpoint"});
 if(error)throw error;
 status.textContent="Notificações ativadas neste aparelho. Os lembretes das tarefas compartilhadas serão enviados conforme as preferências cadastradas.";
-button.textContent="Avisos ativados";button.disabled=true;toast("Notificações ativadas");
+button.textContent="Avisos ativados";button.disabled=true;$("testPush").hidden=false;toast("Notificações ativadas");
 }catch(err){
 status.textContent="Não foi possível ativar os avisos: "+(err.message||"confira a permissão e tente novamente.");
 button.disabled=false;button.textContent="Tentar novamente";

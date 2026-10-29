@@ -102,9 +102,10 @@
 "use strict";
 const SUPABASE_URL="https://qkjudfvlaatdcaosadun.supabase.co";
 const SUPABASE_KEY="sb_publishable_B3A7uwmQWUs8oOivjgJ6Qw_6rqx4U0W";
+const VAPID_PUBLIC_KEY="BL9Qy1VshYvVMWjTTNM-GHfGnSJAMb7wMwf7v4UjP9D-NUej0S8i9YSP986MtjI6DzOrga9vuOCh8RowpbIZFX8";
 const $=id=>document.getElementById(id);
 const sb=window.supabase&&window.supabase.createClient?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
-let user=null,tasks=[],view="pendentes",editing=null,busy=false,toastTimer=null;
+let user=null,tasks=[],view="pendentes",editing=null,busy=false,toastTimer=null,currentHousehold=null,pendingCompletion=null;
 const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const normalize=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
@@ -114,8 +115,8 @@ function dueToday(t){return !t.completed&&t.due_date===todayISO()}
 function toast(message){const el=$("toast");el.textContent=message;el.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.hidden=true,2800)}
 function authMessage(text,type){const el=$("authMessage");el.textContent=text||"";el.hidden=!text;el.className="msg"+(type==="error"?" error":"")}
 function showAuth(){ $("app").hidden=true;$("authScreen").hidden=false; }
-function showApp(){ $("authScreen").hidden=true;$("app").hidden=false; $("userEmail").textContent=user?.email||""; render(); }
-function setAuthMode(signup){$("authTitle").textContent=signup?"Criar sua conta":"Bem-vindo de volta";$("authDesc").textContent=signup?"Crie seu acesso com e-mail e senha. Suas tarefas serão privadas nessa conta.":"Entre para acessar suas tarefas e acompanhar suas prioridades.";$("authSubmit").textContent=signup?"Criar conta":"Entrar";$("switchMode").textContent=signup?"Já tenho conta":"Criar conta";$("password").autocomplete=signup?"new-password":"current-password";$("password").value="";$("forgot").hidden=signup;authMessage("");$("authForm").dataset.mode=signup?"signup":"login"}
+function showApp(){ $("authScreen").hidden=true;$("app").hidden=false; $("userEmail").textContent=user?.email||""; render(); refreshPushStatus(); }
+function setAuthMode(signup){$("authTitle").textContent=signup?"Criar sua conta":"Bem-vindo de volta";$("authDesc").textContent=signup?"Crie seu acesso com e-mail e senha para participar da agenda compartilhada.":"Entre para acessar suas tarefas e acompanhar suas prioridades.";$("authSubmit").textContent=signup?"Criar conta":"Entrar";$("switchMode").textContent=signup?"Já tenho conta":"Criar conta";$("password").autocomplete=signup?"new-password":"current-password";$("password").value="";$("forgot").hidden=signup;$("displayNameField").hidden=!signup;$("displayName").required=signup;authMessage("");$("authForm").dataset.mode=signup?"signup":"login"}
 $("switchMode").addEventListener("click",()=>setAuthMode($("authForm").dataset.mode!=="signup"));
 $("showPw").addEventListener("click",()=>{const p=$("password");p.type=p.type==="password"?"text":"password";$("showPw").textContent=p.type==="password"?"Mostrar":"Ocultar"});
 $("authForm").addEventListener("submit",async e=>{
@@ -125,7 +126,7 @@ if(password.length<8){authMessage("Use uma senha com pelo menos oito caracteres.
 const b=$("authSubmit");b.disabled=true;b.textContent=signup?"Criando conta…":"Entrando…";authMessage("");
 try{
 let result;
-if(signup)result=await sb.auth.signUp({email,password,options:{emailRedirectTo:location.href.split("#")[0]}});
+if(signup)result=await sb.auth.signUp({email,password,options:{emailRedirectTo:location.href.split("#")[0],data:{full_name:$("displayName").value.trim()}}});
 else result=await sb.auth.signInWithPassword({email,password});
 if(result.error)throw result.error;
 if(signup&&!result.data.session){setAuthMode(false);$("email").value=email;authMessage("Conta solicitada. Confira seu e-mail e confirme o cadastro antes de entrar.");return}
@@ -142,7 +143,12 @@ catch(err){authMessage(err.message||"Não foi possível pedir a recuperação ag
 $("logout").addEventListener("click",async()=>{if(sb)await sb.auth.signOut();user=null;tasks=[];showAuth();$("password").value="";authMessage("Você saiu da sua conta")});
 async function loadTasks(){
 if(!sb||!user)return;
-const {data,error}=await sb.from("personal_tasks").select("*").order("completed",{ascending:true}).order("due_date",{ascending:true,nullsFirst:false}).order("created_at",{ascending:false});
+const {data:households,error:householdError}=await sb.rpc("get_or_create_task_household");
+if(householdError)throw householdError;
+currentHousehold=Array.isArray(households)?households[0]:households;
+if(!currentHousehold?.household_id)throw new Error("Não foi possível abrir a agenda compartilhada.");
+$("householdName").textContent=currentHousehold.household_name||"Agenda compartilhada";
+const {data,error}=await sb.from("personal_tasks").select("*").eq("household_id",currentHousehold.household_id).order("completed",{ascending:true}).order("due_date",{ascending:true,nullsFirst:false}).order("created_at",{ascending:false});
 if(error)throw error;tasks=data||[];render();
 }
 function categories(){return [...new Set(tasks.map(t=>(t.category||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"))}

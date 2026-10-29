@@ -3,7 +3,7 @@ const $=id=>document.getElementById(id);
 const DB_URL="https://qkjudfvlaatdcaosadun.supabase.co";
 const DB_KEY="sb_publishable_B3A7uwmQWUs8oOivjgJ6Qw_6rqx4U0W";
 const BUCKET="clareza-task-files";
-let pendingFiles=[],notificationRows=[],openedDeepLink=false,recognition=null;
+let pendingFiles=[],notificationRows=[],openedDeepLink=false;
 let voiceCreated=false;
 const api=()=>window.ClarezaApp;
 const db=()=>api()?.client?.();
@@ -184,23 +184,121 @@ async function renderExistingAttachments(task){
   box.append(row);
  }
 }
+async function populateVisibility(task){
+ const field=$("taskVisibilityField"),select=$("taskVisibilityMode"),list=$("taskVisibleUsersList");
+ const me=currentUser()?.id,isCreator=!!task&&task.created_by===me;
+ field.hidden=!!task&&!isCreator;
+ if(!isCreator){select.value="environment";list.hidden=true;list.innerHTML="";return}
+ let mode="environment",selectedIds=members().map(m=>m.user_id);
+ if(task){
+  const {data,error}=await db().rpc("get_task_visibility",{p_task_id:task.id});
+  if(!error&&data?.length){
+   mode=data.find(x=>x.visibility_mode)?.visibility_mode||"environment";
+   const ids=data.filter(x=>x.user_id).map(x=>x.user_id);
+   if(ids.length)selectedIds=ids;
+  }else mode=task.visibility_mode||"environment";
+ }
+ select.value=mode;
+ list.innerHTML=members().map(m=>'<label class="task-visible-user"><input type="checkbox" data-visible-user="'+m.user_id+'" '+(selectedIds.includes(m.user_id)?"checked":"")+'><span>'+escapeHtml(m.display_name||m.email)+(m.user_id===me?" (você)":"")+'</span></label>').join("");
+ list.hidden=mode!=="selected";
+}
+$("taskVisibilityMode").addEventListener("change",()=>{
+ const list=$("taskVisibleUsersList"),visible=$("taskVisibilityMode").value==="selected";
+ list.hidden=!visible;
+});
+function getVisibleUserIds(){
+ if($("taskVisibilityMode").value!=="selected")return [];
+ return [...$("taskVisibleUsersList").querySelectorAll("[data-visible-user]:checked")].map(x=>x.dataset.visibleUser);
+}
+async function renderChangeRequests(task){
+ const box=$("taskChangeRequests"),me=currentUser()?.id;
+ if(!task){box.hidden=true;box.innerHTML="";return}
+ try{
+  const {data,error}=await db().from("task_change_requests").select("*").eq("task_id",task.id).order("created_at",{ascending:false});
+  if(error)throw error;
+  const rows=data||[];
+  if(!rows.length){box.hidden=true;box.innerHTML="";return}
+  box.hidden=false;
+  box.innerHTML='<p class="hint"><strong>Solicitações de alteração/exclusão</strong></p>'+rows.map(r=>{
+   const requester=members().find(m=>m.user_id===r.requester_id);
+   const status={pending:"Aguardando análise",approved:"Aprovada",rejected:"Recusada"}[r.status]||r.status;
+   const proposal=r.request_type==="delete"?"Solicita excluir esta tarefa.":("Título proposto: "+(r.proposed_data?.title||task.title)+"; prazo: "+fmtDate(r.proposed_data?.due_date||task.due_date)+(r.proposed_data?.due_time?" às "+fmtTime(r.proposed_data.due_time):"")+".");
+   return '<article class="change-request-item"><div class="workflow-head"><strong>'+escapeHtml(requester?.display_name||"Participante")+' · '+(r.request_type==="delete"?"Exclusão":"Alteração")+'</strong><span class="workflow-status-chip '+(r.status==="pending"?"pending":"")+'">'+status+'</span></div><p>'+escapeHtml(proposal)+'</p><p>'+escapeHtml(r.reason)+'</p>'+(r.decision_note?'<p>Observação: '+escapeHtml(r.decision_note)+'</p>':"")+(r.status==="pending"&&task.created_by===me?'<div class="change-request-actions"><button class="btn" data-change-action="approve" data-request-id="'+r.id+'">Aprovar</button><button class="btn secondary" data-change-action="reject" data-request-id="'+r.id+'">Recusar</button></div>':"")+'</article>';
+  }).join("");
+ }catch(err){box.hidden=false;box.innerHTML='<p class="hint">Não foi possível carregar as solicitações: '+escapeHtml(err.message||"erro")+'</p>'}
+}
+$("taskChangeRequests").addEventListener("click",async e=>{
+ const b=e.target.closest("[data-change-action]");if(!b)return;
+ const requestId=b.dataset.requestId,decision=b.dataset.changeAction;
+ let note=null;if(decision==="reject")note=prompt("Justificativa para recusar a solicitação (opcional):")||null;
+ b.disabled=true;b.textContent=decision==="approve"?"Aprovando…":"Registrando…";
+ try{
+  const {data,error}=await db().rpc("review_task_change_request",{p_request_id:requestId,p_decision:decision,p_note:note});
+  if(error)throw error;
+  const request=(await db().from("task_change_requests").select("task_id,request_type").eq("id",requestId).maybeSingle()).data;
+  const taskId=request?.task_id||window.ClarezaWorkflow.currentTaskId;
+  const delivery=taskId?await dispatchNotifications(taskId):null;
+  await api().reloadTasks();
+  if(request?.request_type==="delete"&&decision==="approve"){
+   api().closeTaskModal?.();toast("Solicitação aprovada: tarefa excluída.");
+  }else{
+   const task=allTasks().find(t=>t.id===taskId);if(task)api().openTask(task);
+   toast(delivery?.deliveryError?"Decisão registrada; notificação pendente.":"Solicitação analisada e participante notificado.");
+  }
+ }catch(err){toast(err.message||"Não foi possível analisar a solicitação.")}
+ finally{b.disabled=false;b.textContent=decision==="approve"?"Aprovar":"Recusar"}
+});
+async function renderEnvironmentGroups(){
+ const box=$("environmentGroupSettings"),message=$("environmentGroupMessage");
+ if(!box)return;
+ if(currentHousehold()?.member_role!=="owner"){
+  box.innerHTML='<p class="settings-help">Apenas o administrador pode alterar os integrantes dos grupos. As tarefas que você pode ver dependem do ambiente e das autorizações do criador.</p>';return;
+ }
+ box.innerHTML='<p class="settings-help">Carregando…</p>';
+ const {data,error}=await db().rpc("get_task_environment_groups");
+ if(error){box.innerHTML="";message.textContent=error.message||"Não foi possível carregar os grupos.";message.hidden=false;return}
+ message.hidden=true;
+ const rows=data||[],settings=api()?.getSettings?.()?.household;
+ const fallback={trabalho:"Trabalho",casa:"Casa",pessoal:"Pessoal",outros:"Outros"};
+ const options=settings?.context_options||[];
+ const keys=["trabalho","casa","pessoal","outros"];
+ box.innerHTML=keys.map(key=>{
+  const list=rows.filter(r=>r.environment_key===key);
+  const label=options.find(o=>o.key===key)?.label||fallback[key];
+  return '<section class="environment-group-card"><div><strong>'+escapeHtml(label)+'</strong><p>Quem pode visualizar tarefas deste ambiente.</p></div><div class="environment-group-members">'+list.map(m=>'<label class="environment-member"><input type="checkbox" data-env-user="'+m.user_id+'" '+(m.is_member?"checked":"")+' '+(m.is_creator?"disabled":"")+'><span>'+escapeHtml(m.display_name||m.email)+'</span></label>').join("")+'</div><button type="button" class="btn secondary" data-env-save="'+key+'">Salvar grupo</button></section>';
+ }).join("");
+}
+$("environmentGroupSettings").addEventListener("click",async e=>{
+ const button=e.target.closest("[data-env-save]");if(!button)return;
+ const key=button.dataset.envSave;
+ const ids=[...button.closest(".environment-group-card").querySelectorAll("[data-env-user]:checked")].map(x=>x.dataset.envUser);
+ button.disabled=true;button.textContent="Salvando…";
+ try{
+  const {error}=await db().rpc("save_task_environment_group_members",{p_environment_key:key,p_user_ids:ids});if(error)throw error;
+  $("environmentGroupMessage").textContent="Grupo salvo. A visibilidade será aplicada na próxima atualização dos integrantes.";$("environmentGroupMessage").hidden=false;
+  await api().reloadTasks();await renderEnvironmentGroups();
+ }catch(err){$("environmentGroupMessage").textContent=err.message||"Não foi possível salvar o grupo.";$("environmentGroupMessage").hidden=false;button.disabled=false;button.textContent="Salvar grupo"}
+});
+async function loadEnvironmentGroups(){await renderEnvironmentGroups()}
+$("openSettings").addEventListener("click",()=>{setTimeout(loadEnvironmentGroups,250)});
 async function onOpenTask(task){
  voiceCreated=false;pendingFiles=[];renderSelectedFiles();
  populateAssignees(task);
+ const me=currentUser()?.id,isCreator=!task||task.created_by===me;
+ await populateVisibility(task);
+ $("changeRequestFields").hidden=!task||isCreator;
+ $("changeRequestReason").value="";
+ $("saveTask").textContent=task&&!isCreator?"Solicitar alteração ao criador":task?"Salvar alterações":"Salvar tarefa";
+ $("deleteTask").textContent=task&&!isCreator?"Solicitar exclusão":"Excluir tarefa";
+ $("deleteTask").hidden=!task;
+ $("taskFiles").disabled=!isCreator;$("taskFiles").hidden=!isCreator;
  if(task){
-  const myId=currentUser()?.id;
-  const taskAssignee=$("taskAssignee");
-  if(task.assignee_id)taskAssignee.value=task.assignee_id;
-  taskAssignee.disabled=true;
-  $("attachmentSection").hidden=false;
-  await renderExistingAttachments(task);
-  statusWorkflow(task);
+  const taskAssignee=$("taskAssignee");if(task.assignee_id)taskAssignee.value=task.assignee_id;taskAssignee.disabled=true;
+  $("attachmentSection").hidden=false;await renderExistingAttachments(task);statusWorkflow(task);await renderChangeRequests(task);
  }else{
-  $("taskAssignee").disabled=false;
-  $("taskAssignee").value=currentUser()?.id||"";
-  $("workflowPanel").hidden=true;
-  $("existingAttachments").innerHTML="";
-  $("attachmentSection").hidden=false;
+  $("taskAssignee").disabled=false;$("taskAssignee").value=currentUser()?.id||"";
+  $("workflowPanel").hidden=true;$("taskChangeRequests").hidden=true;$("taskChangeRequests").innerHTML="";
+  $("existingAttachments").innerHTML="";$("attachmentSection").hidden=false;$("taskFiles").disabled=false;$("taskFiles").hidden=false;
   $("assigneeResponseFields").hidden=true;$("creatorDecisionFields").hidden=true;
  }
 }
@@ -334,31 +432,9 @@ function exportPrint(){
  w.document.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Clareza — Exportação</title><style>body{font:14px Arial,sans-serif;max-width:900px;margin:25px auto;color:#20372d}h1{font-size:24px}article{padding:15px 0;border-bottom:1px solid #ccd5ce;page-break-inside:avoid}h2{font-size:17px}p{line-height:1.5}small{color:#627368}@media print{button{display:none}}</style></head><body><h1>Clareza — Exportação de tarefas</h1><p>Gerado em '+new Date().toLocaleString("pt-BR")+'</p>'+rows+'<script>window.onload=()=>window.print()<\/script></body></html>');
  w.document.close();
 }
-$("exportTasks").addEventListener("click",()=>{$("exportMenu").hidden=!$("exportMenu").hidden;$("notificationsPanel").hidden=true});
-$("exportCsv").addEventListener("click",()=>{csvDownload();$("exportMenu").hidden=true});
-$("exportJson").addEventListener("click",()=>{exportJson();$("exportMenu").hidden=true});
-$("exportPrint").addEventListener("click",()=>{exportPrint();$("exportMenu").hidden=true});
-function startVoice(){
- const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
- if(!Speech){toast("Ditado por voz não está disponível neste navegador. Use o microfone do teclado do iPhone.");return}
- if(recognition){try{recognition.stop()}catch{}recognition=null;$("voiceTask").classList.remove("recording");return}
- recognition=new Speech();recognition.lang="pt-BR";recognition.interimResults=false;recognition.maxAlternatives=1;
- $("voiceTask").classList.add("recording");$("voiceStatus").hidden=false;$("voiceStatus").textContent="Ouvindo… diga a tarefa, a data e o horário.";
- recognition.onresult=e=>{
-  const transcript=e.results?.[0]?.[0]?.transcript||"";
-  const parsed=parseDatePhrase(transcript);
-  $("taskTitle").value=parsed.title||transcript.trim();
-  if(parsed.dueDate)$("taskDue").value=parsed.dueDate;
-  if(parsed.dueTime)$("taskTime").value=parsed.dueTime;
-  voiceCreated=true;if(window.ClarezaWorkflow)window.ClarezaWorkflow.voiceCreated=true;$("voiceStatus").textContent="Entendi: "+transcript;
- };
- recognition.onerror=e=>{$("voiceStatus").textContent=e.error==="not-allowed"?"Permita o uso do microfone para ditar tarefas.":"Não consegui reconhecer a fala. Tente novamente."};
- recognition.onend=()=>{$("voiceTask").classList.remove("recording");recognition=null};
- try{recognition.start()}catch(err){$("voiceTask").classList.remove("recording");recognition=null;toast("Não consegui iniciar o microfone.")}
-}
-$("voiceTask").addEventListener("click",startVoice);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadNotifications()});
-setInterval(()=>{if(!document.hidden&&currentUser())loadNotifications()},60000);
+$("exportCsv").addEventListener("click",()=>csvDownload());
+$("exportJson").addEventListener("click",()=>exportJson());
+$("exportPrint").addEventListener("click",()=>exportPrint());
 window.ClarezaWorkflow={
  currentTaskId:null,voiceCreated:false,
  onOpenTask:async task=>{
@@ -369,6 +445,8 @@ window.ClarezaWorkflow={
  onTasksLoaded,
  uploadFiles,
  dispatchNotifications,
- loadNotifications
+ loadNotifications,
+ getVisibleUserIds,
+ loadEnvironmentGroups
 };
 })();

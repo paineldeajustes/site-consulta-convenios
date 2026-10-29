@@ -166,13 +166,10 @@ async function renderExistingAttachments(task){
   const row=document.createElement("div");row.className="attachment-link";
   const icon=attachment.mime_type==="application/pdf"?"📄":"🖼️";
   const name=document.createElement("span");name.textContent=icon+" "+attachment.file_name;
-  const link=document.createElement("a");link.textContent="Abrir";link.href="#";link.target="_blank";link.rel="noopener";
-  link.addEventListener("click",async e=>{
-   e.preventDefault();
-   const {data,error}=await db().storage.from(BUCKET).createSignedUrl(attachment.storage_path,3600);
-   if(error){toast(error.message||"Não foi possível abrir o anexo.");return}
-   window.open(data.signedUrl,"_blank","noopener");
-  });
+  const link=document.createElement("a");link.textContent="Carregando…";link.href="#";link.target="_blank";link.rel="noopener";
+  const {data:signed,error:signedError}=await db().storage.from(BUCKET).createSignedUrl(attachment.storage_path,3600);
+  if(signedError){link.textContent="Indisponível";link.removeAttribute("href");}
+  else{link.textContent="Abrir";link.href=signed.signedUrl;}
   row.append(name,link);
   if(attachment.uploaded_by===currentUser()?.id || currentHousehold()?.member_role==="owner"){
    const del=document.createElement("button");del.type="button";del.className="file-remove";del.textContent="×";del.title="Excluir anexo";

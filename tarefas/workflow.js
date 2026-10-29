@@ -224,7 +224,7 @@ async function sendAssigneeResponse(){
   const delivery=await invokeTaskNotify(task.id).catch(err=>({deliveryError:err.message}));
   await api().reloadTasks();
   const updated=allTasks().find(t=>t.id===task.id);if(updated)api().openTask(updated);
-  toast(delivery.deliveryError?"Resposta salva; notificação aguardando envio.":"Resposta registrada e participantes notificados.");
+  toast(delivery.deliveryError?"Resposta salva; notificação aguardando envio.":delivery.emailConfigured===false?"Resposta registrada. Push/inbox acionados; e-mail exige configurar o provedor.":"Resposta registrada e participantes notificados.");
  }catch(err){showError(err.message||"Não foi possível registrar a resposta.")}
  finally{button.disabled=false;button.textContent="Enviar resposta"}
 }
@@ -241,7 +241,7 @@ $("sendCreatorDecision").addEventListener("click",async()=>{
   if(error)throw error;
   const delivery=await invokeTaskNotify(task.id).catch(err=>({deliveryError:err.message}));
   await api().reloadTasks();const updated=allTasks().find(t=>t.id===task.id);if(updated)api().openTask(updated);
-  toast(delivery.deliveryError?"Decisão salva; notificação aguardando envio.":"Decisão final registrada e responsável notificado.");
+  toast(delivery.deliveryError?"Decisão salva; notificação aguardando envio.":delivery.emailConfigured===false?"Decisão final registrada. Push/inbox acionados; e-mail exige configurar o provedor.":"Decisão final registrada e responsável notificado.");
  }catch(err){showError(err.message||"Não foi possível registrar a decisão.")}
  finally{button.disabled=false;button.textContent="Registrar decisão final"}
 });
@@ -348,7 +348,7 @@ function startVoice(){
   $("taskTitle").value=parsed.title||transcript.trim();
   if(parsed.dueDate)$("taskDue").value=parsed.dueDate;
   if(parsed.dueTime)$("taskTime").value=parsed.dueTime;
-  voiceCreated=true;$("voiceStatus").textContent="Entendi: "+transcript;
+  voiceCreated=true;if(window.ClarezaWorkflow)window.ClarezaWorkflow.voiceCreated=true;$("voiceStatus").textContent="Entendi: "+transcript;
  };
  recognition.onerror=e=>{$("voiceStatus").textContent=e.error==="not-allowed"?"Permita o uso do microfone para ditar tarefas.":"Não consegui reconhecer a fala. Tente novamente."};
  recognition.onend=()=>{$("voiceTask").classList.remove("recording");recognition=null};
@@ -356,6 +356,7 @@ function startVoice(){
 }
 $("voiceTask").addEventListener("click",startVoice);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadNotifications()});
+setInterval(()=>{if(!document.hidden&&currentUser())loadNotifications()},60000);
 window.ClarezaWorkflow={
  currentTaskId:null,voiceCreated:false,
  onOpenTask:async task=>{

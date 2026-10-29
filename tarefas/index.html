@@ -178,7 +178,7 @@ const VAPID_PUBLIC_KEY="BL9Qy1VshYvVMWjTTNM-GHfGnSJAMb7wMwf7v4UjP9D-NUej0S8i9YSP
 const AUTH_REDIRECT_URL="https://paineldeajustes.github.io/site-consulta-convenios/";
 const $=id=>document.getElementById(id);
 const sb=window.supabase&&window.supabase.createClient?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
-let user=null,tasks=[],view="pendentes",editing=null,busy=false,toastTimer=null,currentHousehold=null,pendingCompletion=null,accessPending=false,accessRequestStatus="pending",householdSettings=null,userSettings=null,categoryRecords=[];
+let user=null,tasks=[],view="pendentes",editing=null,busy=false,toastTimer=null,currentHousehold=null,pendingCompletion=null,accessPending=false,accessRequestStatus="pending",householdSettings=null,userSettings=null,categoryRecords=[],householdMembers=[],taskAttachments=[];
 const APP_BUILD=document.querySelector('meta[name="clareza-build"]')?.content||"unknown";
 let lastDataRefreshAt=0,lastAppCheckAt=0,appReloadInProgress=false,appCheckInProgress=false;
 const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
@@ -267,6 +267,14 @@ window.ClarezaApp={
  household:()=>currentHousehold,
  reloadTasks:()=>loadTasks(),
  render:()=>render(),
+ getTasks:()=>tasks,
+ getMembers:()=>householdMembers,
+ getAttachments:()=>taskAttachments,
+ openTask:(task)=>openTask(task),
+ toast:(message)=>toast(message),
+ currentUser:()=>user,
+ taskHousehold:()=>currentHousehold,
+ getSettings:()=>({household:householdSettings,user:userSettings,categories:categoryRecords}),
  setDisplayName:name=>{if(user)user.user_metadata={...(user.user_metadata||{}),full_name:name};},
  setSettings:(householdPrefs,personalPrefs,cats)=>{
   householdSettings=householdPrefs||null;userSettings=personalPrefs||null;categoryRecords=cats||[];
@@ -287,7 +295,7 @@ window.ClarezaApp={
   $("app").classList.toggle("compact",!!userSettings?.compact_mode);
   render();
  },
- getSettings:()=>({household:householdSettings,user:userSettings,categories:categoryRecords})
+
 };
 function formatDate(value){if(!value)return"";const d=new Date(value+"T12:00:00");return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"}).replace(".","")}
 function overdue(t){return !t.completed&&t.due_date&&t.due_date<todayISO()}
@@ -369,9 +377,13 @@ if(!currentHousehold?.household_id){
 accessPending=false;accessRequestStatus="approved";
 const {data,error}=await sb.from("personal_tasks").select("*").eq("household_id",currentHousehold.household_id).order("completed",{ascending:true}).order("due_date",{ascending:true,nullsFirst:false}).order("created_at",{ascending:false});
 if(error)throw error;tasks=data||[];
+const {data:memberRows,error:memberError}=await sb.rpc("list_task_assignees");if(memberError)throw memberError;householdMembers=memberRows||[];
+const taskIds=tasks.map(t=>t.id);
+if(taskIds.length){const {data:attachRows,error:attachError}=await sb.from("task_attachments").select("*").in("task_id",taskIds).order("created_at",{ascending:true});if(attachError)throw attachError;taskAttachments=attachRows||[]}else taskAttachments=[];
 if(window.ClarezaSettingsBridge?.load)await window.ClarezaSettingsBridge.load(false);
 lastDataRefreshAt=Date.now();updateRefreshStatus();render();
 await renderAccessRequests();
+window.ClarezaWorkflow?.onTasksLoaded?.();
 }
 function categories(){return [...new Set([...categoryRecords.map(c=>(c.name||"").trim()),...tasks.map(t=>(t.category||"").trim())].filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"))}
 function updateCategories(){
@@ -610,6 +622,15 @@ if(empty){$("emptyTitle").textContent=tasks.length===0?"Tudo começa com uma tar
 document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{view=t.dataset.view;render()}));
 $("search").addEventListener("input",render);$("priorityFilter").addEventListener("change",render);$("categoryFilter").addEventListener("change",render);
 $("filters").addEventListener("click",()=>{$("filterExtras").hidden=!$("filterExtras").hidden;$("filters").textContent=$("filterExtras").hidden?"Filtros ▾":"Filtros ▴"});
+function setViewAndScroll(nextView){
+ view=nextView;
+ document.querySelectorAll(".tab").forEach(el=>el.classList.toggle("active",el.dataset.view===view));
+ render();
+ $("taskList").scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("pendingStat").addEventListener("click",()=>setViewAndScroll("pendentes"));
+$("overdueStat").addEventListener("click",()=>setViewAndScroll("atrasadas"));
+$("doneStat").addEventListener("click",()=>setViewAndScroll("concluidas"));
 $("taskList").addEventListener("click",async e=>{
 const btn=e.target.closest("[data-action]");if(!btn)return;const card=btn.closest(".task");if(!card)return;const t=tasks.find(x=>x.id===card.dataset.id);if(!t)return;
 if(btn.dataset.action==="edit"){openTask(t);return}
@@ -641,7 +662,7 @@ editing=t||null;$("modalTitle").textContent=t?"Editar tarefa":"Nova tarefa";$("t
 const offsets=Array.isArray(t?.notification_offsets)?t.notification_offsets:(householdSettings?.default_notification_offsets||[1440,120,60,0]);
 $("reminderDay").checked=offsets.includes(1440);$("reminder2h").checked=offsets.includes(120);$("reminder1h").checked=offsets.includes(60);$("reminderAtTime").checked=offsets.includes(0);
 $("overdueMorning").checked=t?t.overdue_morning!==false:(householdSettings?.overdue_morning_enabled!==false);$("overdueAfternoon").checked=t?t.overdue_afternoon!==false:(householdSettings?.overdue_afternoon_enabled!==false);
-$("deleteTask").hidden=!t;$("taskError").hidden=true;$("saveTask").textContent=t?"Salvar alterações":"Salvar tarefa";$("taskModal").hidden=false;document.body.style.overflow="hidden";setTimeout(()=>$("taskTitle").focus({preventScroll:true}),80)
+$("deleteTask").hidden=!t;$("taskError").hidden=true;$("saveTask").textContent=t?"Salvar alterações":"Salvar tarefa";$("taskModal").hidden=false;document.body.style.overflow="hidden";window.ClarezaWorkflow?.onOpenTask?.(t);setTimeout(()=>$("taskTitle").focus({preventScroll:true}),80)
 }
 function closeModal(){$("taskModal").hidden=true;document.body.style.overflow="";editing=null}
 ["newTaskTop","emptyAdd"].forEach(id=>$(id).addEventListener("click",()=>openTask(null)));
@@ -654,10 +675,25 @@ const input={title,notes:$("taskNotes").value.trim()||null,due_date:$("taskDue")
 const wasEditing=!!editing;
 const b=$("saveTask");busy=true;b.disabled=true;b.textContent="Salvando…";$("taskError").hidden=true;
 try{
-let response;
-if(wasEditing)response=await sb.from("personal_tasks").update(input).eq("id",editing.id);
-else response=await sb.from("personal_tasks").insert({...input,user_id:user.id,created_by:user.id,created_by_name:getDisplayName(),household_id:currentHousehold.household_id});
-if(response.error)throw response.error;closeModal();await loadTasks();toast(wasEditing?"Alterações salvas":"Tarefa adicionada")
+let response,taskId=wasEditing?editing.id:null;
+if(wasEditing){
+ response=await sb.from("personal_tasks").update(input).eq("id",editing.id);
+ if(response.error)throw response.error;
+}else{
+ const {data:newId,error:createError}=await sb.rpc("create_task_with_assignment",{
+  p_title:input.title,p_notes:input.notes,p_due_date:input.due_date,p_due_time:input.due_time,p_priority:input.priority,
+  p_category:input.category,p_context:input.context,p_assignee_id:document.getElementById("taskAssignee").value||user.id,
+  p_notification_offsets:input.notification_offsets,p_overdue_morning:input.overdue_morning,p_overdue_afternoon:input.overdue_afternoon,
+  p_voice_created:!!window.ClarezaWorkflow?.voiceCreated
+ });
+ if(createError)throw createError;taskId=newId;
+}
+if(window.ClarezaWorkflow?.uploadFiles)await window.ClarezaWorkflow.uploadFiles(taskId);
+if(!wasEditing&&taskId&&window.ClarezaWorkflow?.dispatchNotifications){
+ const delivery=await window.ClarezaWorkflow.dispatchNotifications(taskId);
+ if(delivery?.emailConfigured===false)toast("Tarefa criada. Notificação interna e push acionadas; e-mail requer configuração do provedor.");
+}
+closeModal();await loadTasks();toast(wasEditing?"Alterações salvas":"Tarefa adicionada")
 }catch(err){$("taskError").textContent="Não foi possível salvar: "+(err.message||"tente novamente");$("taskError").hidden=false}
 finally{busy=false;b.disabled=false;b.textContent=wasEditing?"Salvar alterações":"Salvar tarefa"}
 });

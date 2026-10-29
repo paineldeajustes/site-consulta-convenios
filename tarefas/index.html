@@ -602,7 +602,7 @@ finally{button.disabled=false;button.textContent="Sim, concluir"}
 function openTask(t){
 editing=t||null;$("modalTitle").textContent=t?"Editar tarefa":"Nova tarefa";$("taskTitle").value=t?.title||"";$("taskNotes").value=t?.notes||"";$("taskDue").value=t?.due_date||"";$("taskTime").value=t?.due_time?t.due_time.slice(0,5):"";$("taskPriority").value=t?.priority||(householdSettings?.default_priority||"media");$("taskCategory").value=t?.category||"";$("taskContext").value=t?.context||(householdSettings?.default_context||"pessoal");
 const offsets=Array.isArray(t?.notification_offsets)?t.notification_offsets:(householdSettings?.default_notification_offsets||[1440,120,60,0]);
-$("reminderDay").checked=!t||offsets.includes(1440);$("reminder2h").checked=!t||offsets.includes(120);$("reminder1h").checked=!t||offsets.includes(60);$("reminderAtTime").checked=!t||offsets.includes(0);
+$("reminderDay").checked=offsets.includes(1440);$("reminder2h").checked=offsets.includes(120);$("reminder1h").checked=offsets.includes(60);$("reminderAtTime").checked=offsets.includes(0);
 $("overdueMorning").checked=t?t.overdue_morning!==false:(householdSettings?.overdue_morning_enabled!==false);$("overdueAfternoon").checked=t?t.overdue_afternoon!==false:(householdSettings?.overdue_afternoon_enabled!==false);
 $("deleteTask").hidden=!t;$("taskError").hidden=true;$("saveTask").textContent=t?"Salvar alterações":"Salvar tarefa";$("taskModal").hidden=false;document.body.style.overflow="hidden";setTimeout(()=>$("taskTitle").focus({preventScroll:true}),80)
 }

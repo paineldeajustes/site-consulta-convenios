@@ -171,6 +171,31 @@ $("selectedFiles").addEventListener("click",e=>{
  const b=e.target.closest("[data-file-remove]");if(!b)return;
  pendingFiles.splice(Number(b.dataset.fileRemove),1);renderSelectedFiles();
 });
+function openAttachmentViewer(url,mimeType,fileName){
+ const viewer=$("attachmentViewer"),frame=$("attachmentPdfFrame"),image=$("attachmentImagePreview"),external=$("openAttachmentExternal");
+ if(!viewer||!frame||!image)return;
+ $("attachmentViewerTitle").textContent=fileName||"Anexo";
+ external.href=url;external.hidden=false;
+ frame.hidden=true;image.hidden=true;frame.src="about:blank";image.removeAttribute("src");
+ viewer.hidden=false;document.body.style.overflow="hidden";
+ if(mimeType==="application/pdf"){
+  frame.title=fileName||"Documento PDF";frame.src=url;frame.hidden=false;
+ }else if(String(mimeType||"").startsWith("image/")){
+  image.alt=fileName||"Imagem anexada à tarefa";image.src=url;image.hidden=false;
+ }else{
+  external.textContent="Baixar arquivo";
+  external.href=url;
+ }
+}
+function closeAttachmentViewer(){
+ const viewer=$("attachmentViewer");if(!viewer)return;
+ viewer.hidden=true;$("attachmentPdfFrame").src="about:blank";$("attachmentImagePreview").removeAttribute("src");
+ $("attachmentPdfFrame").hidden=true;$("attachmentImagePreview").hidden=true;
+ document.body.style.overflow=$("taskModal").hidden?"":"hidden";
+ $("closeAttachmentViewer").blur();
+}
+$("closeAttachmentViewer").addEventListener("click",closeAttachmentViewer);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("attachmentViewer").hidden)closeAttachmentViewer()});
 async function renderExistingAttachments(task){
  const box=$("existingAttachments");if(!box)return;
  const rows=attachments().filter(a=>a.task_id===task?.id);
@@ -180,10 +205,16 @@ async function renderExistingAttachments(task){
   const row=document.createElement("div");row.className="attachment-link";
   const icon=attachment.mime_type==="application/pdf"?"📄":"🖼️";
   const name=document.createElement("span");name.textContent=icon+" "+attachment.file_name;
-  const link=document.createElement("a");link.textContent="Carregando…";link.href="#";link.target="_blank";link.rel="noopener";
+  const link=document.createElement("a");link.textContent="Carregando…";link.href="#";link.rel="noopener";
   const {data:signed,error:signedError}=await db().storage.from(BUCKET).createSignedUrl(attachment.storage_path,3600);
   if(signedError){link.textContent="Indisponível";link.removeAttribute("href");}
-  else{link.textContent="Abrir";link.href=signed.signedUrl;}
+  else{
+   link.textContent="Abrir";link.href=signed.signedUrl;
+   link.addEventListener("click",e=>{
+    e.preventDefault();
+    openAttachmentViewer(signed.signedUrl,attachment.mime_type,attachment.file_name);
+   });
+  }
   row.append(name,link);
   if(attachment.uploaded_by===currentUser()?.id || currentHousehold()?.member_role==="owner"){
    const del=document.createElement("button");del.type="button";del.className="file-remove";del.textContent="×";del.title="Excluir anexo";

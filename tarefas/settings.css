@@ -89,3 +89,25 @@ html,body{width:100%;max-width:100%;overflow-x:hidden;overscroll-behavior-x:none
 #app[data-theme="dark"] .modal{background:#1e2722!important;color:#eaf0eb;border:1px solid #344139}
 #app[data-theme="dark"] .modalhead h2{color:#eaf0eb}
 #app[data-theme="dark"] .check{color:#fff}
+
+/* The task editor modal sits outside #app, so theme/width rules must also target it directly. */
+.modalback{width:100vw;max-width:100vw;left:0;right:0;overflow-x:hidden;box-sizing:border-box}
+.modal{width:100%;max-width:560px;min-width:0;box-sizing:border-box;overflow-x:hidden}
+.modal .formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.modal .field{min-width:0;max-width:100%}
+.modal input,.modal select,.modal textarea{max-width:100%;min-width:0;box-sizing:border-box}
+.modal .modalactions{max-width:100%;min-width:0;flex-wrap:wrap}
+body[data-theme="dark"] .modalback{background:rgba(3,8,5,.68)}
+body[data-theme="dark"] .modal{background:#1e2722!important;color:#eaf0eb;border:1px solid #344139}
+body[data-theme="dark"] .modal .modalhead h2{color:#eaf0eb}
+body[data-theme="dark"] .modal label,body[data-theme="dark"] .modal legend,body[data-theme="dark"] .modal .reminderhint{color:#c5d1c8}
+body[data-theme="dark"] .modal input:not([type=checkbox]),body[data-theme="dark"] .modal select,body[data-theme="dark"] .modal textarea{background:#17201b;color:#eaf0eb;border-color:#425146}
+body[data-theme="dark"] .modal .reminderbox{background:#19231d;border-color:#344139}
+@media(max-width:520px){
+ .modalback{align-items:flex-end;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+ .modal{width:100%;max-width:100%;max-height:88dvh;padding:18px 14px 16px;border-radius:22px;overflow-y:auto;overflow-x:hidden}
+ .modal .formgrid{grid-template-columns:minmax(0,1fr)}
+ .modal .remindergrid{grid-template-columns:minmax(0,1fr)}
+ .modal .reminder-choice{min-width:0}
+ .modal .reminderhint{overflow-wrap:anywhere}
+}

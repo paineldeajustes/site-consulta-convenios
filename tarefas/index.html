@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#183f35">
-<meta name="clareza-build" content="2026-10-29.5">
+<meta name="clareza-build" content="2026-10-29.6">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Clareza">
@@ -173,7 +173,7 @@ const VAPID_PUBLIC_KEY="BL9Qy1VshYvVMWjTTNM-GHfGnSJAMb7wMwf7v4UjP9D-NUej0S8i9YSP
 const AUTH_REDIRECT_URL="https://paineldeajustes.github.io/site-consulta-convenios/";
 const $=id=>document.getElementById(id);
 const sb=window.supabase&&window.supabase.createClient?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
-let user=null,tasks=[],view="pendentes",editing=null,busy=false,toastTimer=null,currentHousehold=null,pendingCompletion=null,accessPending=false,accessRequestStatus="pending";
+let user=null,tasks=[],view="pendentes",editing=null,busy=false,toastTimer=null,currentHousehold=null,pendingCompletion=null,accessPending=false,accessRequestStatus="pending",householdSettings=null,userSettings=null,categoryRecords=[];
 const APP_BUILD=document.querySelector('meta[name="clareza-build"]')?.content||"unknown";
 let lastDataRefreshAt=0,lastAppCheckAt=0,appReloadInProgress=false,appCheckInProgress=false;
 const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
@@ -256,6 +256,29 @@ if(document.hidden||!user||modalIsOpen())return;
 if(Date.now()-lastDataRefreshAt>110000)loadTasks().catch(()=>{});
 if(Date.now()-lastAppCheckAt>5*60*1000)checkForNewAppVersion();
 },30000);
+window.ClarezaApp={
+ client:()=>sb,
+ user:()=>user,
+ household:()=>currentHousehold,
+ reloadTasks:()=>loadTasks(),
+ render:()=>render(),
+ setDisplayName:name=>{if(user)user.user_metadata={...(user.user_metadata||{}),full_name:name};},
+ setSettings:(householdPrefs,personalPrefs,cats)=>{
+  householdSettings=householdPrefs||null;userSettings=personalPrefs||null;categoryRecords=cats||[];
+  window.ClarezaSettingsBridge?.applyContextOptions?.(householdSettings?.context_options);
+  let theme=userSettings?.theme||"light";
+  if(theme==="system")theme=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
+  $("app").dataset.theme=theme;$("app").classList.toggle("compact",!!userSettings?.compact_mode);
+  if(user)render();updateCategories();
+ },
+ applyUserSettings:personalPrefs=>{
+  userSettings=personalPrefs||userSettings;
+  let theme=userSettings?.theme||"light";
+  if(theme==="system")theme=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
+  $("app").dataset.theme=theme;$("app").classList.toggle("compact",!!userSettings?.compact_mode);
+ },
+ getSettings:()=>({household:householdSettings,user:userSettings,categories:categoryRecords})
+};
 function formatDate(value){if(!value)return"";const d=new Date(value+"T12:00:00");return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"}).replace(".","")}
 function overdue(t){return !t.completed&&t.due_date&&t.due_date<todayISO()}
 function dueToday(t){return !t.completed&&t.due_date===todayISO()}
@@ -281,8 +304,10 @@ if(accessPending){
 }else{
   $("mainContent").hidden=false;
   $("accessPendingPanel").hidden=true;
+  $("settingsScreen").hidden=true;
   render();
   refreshPushStatus();
+  window.ClarezaSettingsBridge?.load(false);
 }
 }
 function setAuthMode(signup){$("authTitle").textContent=signup?"Criar sua conta":"Bem-vindo de volta";$("authDesc").textContent=signup?"Crie seu acesso com e-mail e senha para participar da agenda compartilhada.":"Entre para acessar suas tarefas e acompanhar suas prioridades.";$("authSubmit").textContent=signup?"Criar conta":"Entrar";$("switchMode").textContent=signup?"Já tenho conta":"Criar conta";$("password").autocomplete=signup?"new-password":"current-password";$("password").value="";$("forgot").hidden=signup;$("displayNameField").hidden=!signup;$("displayName").required=signup;authMessage("");$("authForm").dataset.mode=signup?"signup":"login"}

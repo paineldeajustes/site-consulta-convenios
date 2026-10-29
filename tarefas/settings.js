@@ -54,6 +54,8 @@ function applyTheme(theme,compact){
  let actual=theme||"light";
  if(actual==="system")actual=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
  app.dataset.theme=actual;
+ document.body.style.backgroundColor=actual==="dark"?"#141a17":"";
+ document.body.style.color=actual==="dark"?"#eaf0eb":"";
  app.classList.toggle("compact",!!compact);
 }
 async function load(force){
@@ -97,6 +99,8 @@ function populate(){
  $("settingsOverdueAfternoon").checked=h.overdue_afternoon_enabled!==false;
  $("settingsAfternoonTime").value=timeValue(h.overdue_afternoon_time,"15:00");
  $("settingsConfirmComplete").checked=h.confirm_before_complete!==false;
+ $("taskOverdueMorningText").textContent="Se atrasar: "+timeValue(h.overdue_morning_time,"09:00");
+ $("taskOverdueAfternoonText").textContent="Se atrasar: "+timeValue(h.overdue_afternoon_time,"15:00");
  $("settingsAdminBadge").textContent=isOwner()?"Administrador":"Membro";
  $("settingsAccessRole").textContent=isOwner()?"Administrador":"Membro";
  $("settingsScreen").dataset.readonly=isOwner()?"false":"true";

@@ -377,7 +377,7 @@ if(!currentHousehold?.household_id){
   }
 }
 accessPending=false;accessRequestStatus="approved";
-const {data,error}=await sb.from("personal_tasks").select("*").eq("household_id",currentHousehold.household_id).order("completed",{ascending:true}).order("due_date",{ascending:true,nullsFirst:false}).order("created_at",{ascending:false});
+const {data,error}=await sb.from("personal_tasks").select("*").eq("household_id",currentHousehold.household_id).is("deleted_at",null).order("completed",{ascending:true}).order("due_date",{ascending:true,nullsFirst:false}).order("created_at",{ascending:false});
 if(error)throw error;tasks=data||[];
 const {data:memberRows,error:memberError}=await sb.rpc("list_task_assignees");if(memberError)throw memberError;householdMembers=memberRows||[];
 const taskIds=tasks.map(t=>t.id);
@@ -389,10 +389,19 @@ window.ClarezaWorkflow?.onTasksLoaded?.();
 }
 function categories(){return [...new Set([...categoryRecords.map(c=>(c.name||"").trim()),...tasks.map(t=>(t.category||"").trim())].filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"))}
 function updateCategories(){
-const cats=categories(),previous=$("categoryFilter").value;
+const cats=categories(),previous=$("categoryFilter").value,chosen=$("taskCategory")?.value||"";
 $("categoryFilter").innerHTML='<option value="todas">Todas as categorias</option>'+cats.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join("");
 if(cats.includes(previous))$("categoryFilter").value=previous;
-$("categoryOptions").innerHTML=cats.map(c=>'<option value="'+esc(c)+'"></option>').join("");
+if($("taskCategory")){
+ $("taskCategory").innerHTML='<option value="">Sem categoria</option>'+cats.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join("");
+ if(cats.includes(chosen))$("taskCategory").value=chosen;
+}
+const options=householdSettings?.context_options||[];
+if($("environmentFilter")){
+ const prevEnv=$("environmentFilter").value;
+ $("environmentFilter").innerHTML='<option value="todos">Todos os ambientes</option>'+["trabalho","casa","pessoal","outros"].map(k=>{const o=options.find(x=>x.key===k);return '<option value="'+k+'">'+esc(o?.label||({trabalho:"Trabalho",casa:"Casa",pessoal:"Pessoal",outros:"Outros"}[k]))+'</option>'}).join("");
+ if(["todos","trabalho","casa","pessoal","outros"].includes(prevEnv))$("environmentFilter").value=prevEnv;
+}
 }
 function getDisplayName(){
 const full=String(user?.user_metadata?.full_name||"").trim();
@@ -567,11 +576,12 @@ $("statOverdue").textContent=pending.filter(overdue).length;
 $("statDone").textContent=done.length;
 $("overdueStat").classList.toggle("warn",pending.some(overdue));
 updateCategories();
-const q=normalize($("search").value.trim()),p=$("priorityFilter").value,c=$("categoryFilter").value;
+const q=normalize($("search").value.trim()),p=$("priorityFilter").value,c=$("categoryFilter").value,env=$("environmentFilter").value;
 let list=tasks.filter(t=>{
 if(q&&!normalize([t.title,t.notes,t.category].join(" ")).includes(q))return false;
 if(p!=="todas"&&t.priority!==p)return false;
 if(c!=="todas"&&(t.category||"")!==c)return false;
+if(env!=="todos"&&t.context!==env)return false;
 switch(view){case"pendentes":return!t.completed;case"hoje":return dueToday(t);case"atrasadas":return overdue(t);case"proximas":return!t.completed&&t.due_date&&t.due_date>today;case"concluidas":return t.completed;default:return true}
 });
 list.sort((a,b)=>{if(a.completed!==b.completed)return a.completed?1:-1;const ad=a.due_date||"9999-99-99",bd=b.due_date||"9999-99-99";if(ad!==bd)return ad<bd?-1:1;const r={urgente:0,alta:1,media:2,baixa:3};if(r[a.priority]!==r[b.priority])return r[a.priority]-r[b.priority];return String(b.created_at).localeCompare(String(a.created_at))});
@@ -628,7 +638,7 @@ const empty=list.length===0;$("emptyState").hidden=!empty;$("taskList").hidden=e
 if(empty){$("emptyTitle").textContent=tasks.length===0?"Tudo começa com uma tarefa":"Nada por aqui";$("emptyText").textContent=tasks.length===0?"Adicione sua primeira tarefa para organizar o que importa.":"Experimente outro filtro ou adicione uma nova tarefa."}
 }
 document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{view=t.dataset.view;render()}));
-$("search").addEventListener("input",render);$("priorityFilter").addEventListener("change",render);$("categoryFilter").addEventListener("change",render);
+$("search").addEventListener("input",render);$("priorityFilter").addEventListener("change",render);$("categoryFilter").addEventListener("change",render);$("environmentFilter").addEventListener("change",render);
 $("filters").addEventListener("click",()=>{$("filterExtras").hidden=!$("filterExtras").hidden;$("filters").textContent=$("filterExtras").hidden?"Filtros ▾":"Filtros ▴"});
 function setViewAndScroll(nextView){
  view=nextView;
@@ -679,7 +689,7 @@ $("taskModal").addEventListener("click",e=>{if(e.target===$("taskModal"))closeMo
 document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(!$("completionConfirm").hidden){pendingCompletion=null;$("completionConfirm").hidden=true;return}if(!$("taskModal").hidden)closeModal()});
 $("taskForm").addEventListener("submit",async e=>{
 e.preventDefault();if(busy)return;const title=$("taskTitle").value.trim();if(!title){$("taskTitle").focus();return}
-const input={title,notes:$("taskNotes").value.trim()||null,due_date:$("taskDue").value||null,due_time:$("taskTime").value||null,priority:$("taskPriority").value,category:$("taskCategory").value.trim()||null,context:$("taskContext").value,notification_offsets:[$("reminderDay").checked?1440:null,$("reminder2h").checked?120:null,$("reminder1h").checked?60:null,$("reminderAtTime").checked?0:null].filter(v=>v!==null),overdue_morning:$("overdueMorning").checked,overdue_afternoon:$("overdueAfternoon").checked};
+const input={title,notes:$("taskNotes").value.trim()||null,due_date:$("taskDue").value||null,due_time:$("taskTime").value||null,priority:$("taskPriority").value,category:$("taskCategory").value.trim()||null,context:$("taskContext").value,notification_offsets:[$("reminderDay").checked?1440:null,$("reminder2h").checked?120:null,$("reminder1h").checked?60:null,$("reminderAtTime").checked?0:null].filter(v=>v!==null),overdue_morning:$("overdueMorning").checked,overdue_afternoon:$("overdueAfternoon").checked,visibility_mode:$("taskVisibilityMode").value||"environment"};
 const wasEditing=!!editing;
 const b=$("saveTask");busy=true;b.disabled=true;b.textContent="Salvando…";$("taskError").hidden=true;
 try{
@@ -692,7 +702,9 @@ if(wasEditing){
   p_title:input.title,p_notes:input.notes,p_due_date:input.due_date,p_due_time:input.due_time,p_priority:input.priority,
   p_category:input.category,p_context:input.context,p_assignee_id:document.getElementById("taskAssignee").value||user.id,
   p_notification_offsets:input.notification_offsets,p_overdue_morning:input.overdue_morning,p_overdue_afternoon:input.overdue_afternoon,
-  p_voice_created:!!window.ClarezaWorkflow?.voiceCreated
+  p_voice_created:false,
+  p_visibility_mode:document.getElementById("taskVisibilityMode").value||"environment",
+  p_visible_user_ids:window.ClarezaWorkflow?.getVisibleUserIds?.()||[]
  });
  if(createError)throw createError;taskId=newId;
 }

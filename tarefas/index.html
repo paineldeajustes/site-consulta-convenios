@@ -358,10 +358,12 @@ if(!currentHousehold?.household_id){
 }
 accessPending=false;accessRequestStatus="approved";
 const {data,error}=await sb.from("personal_tasks").select("*").eq("household_id",currentHousehold.household_id).order("completed",{ascending:true}).order("due_date",{ascending:true,nullsFirst:false}).order("created_at",{ascending:false});
-if(error)throw error;tasks=data||[];lastDataRefreshAt=Date.now();updateRefreshStatus();render();
+if(error)throw error;tasks=data||[];
+if(window.ClarezaSettingsBridge?.load)await window.ClarezaSettingsBridge.load(false);
+lastDataRefreshAt=Date.now();updateRefreshStatus();render();
 await renderAccessRequests();
 }
-function categories(){return [...new Set(tasks.map(t=>(t.category||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"))}
+function categories(){return [...new Set([...categoryRecords.map(c=>(c.name||"").trim()),...tasks.map(t=>(t.category||"").trim())].filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"))}
 function updateCategories(){
 const cats=categories(),previous=$("categoryFilter").value;
 $("categoryFilter").innerHTML='<option value="todas">Todas as categorias</option>'+cats.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join("");
@@ -556,10 +558,12 @@ $("taskList").innerHTML=list.map(t=>{
 const isOver=overdue(t),due=t.due_date?'<span class="chip '+(isOver?"overdue":dueToday(t)?"due":"")+'">'+(isOver?"Atrasada · ": "")+esc(formatDate(t.due_date))+(t.due_time?" · "+esc(t.due_time.slice(0,5)):"")+'</span>':"";
 const priorityClass=t.priority==="urgente"?"urgent":t.priority==="alta"?"high":t.priority==="baixa"?"low":"";
 const priorityLabel={urgente:"Urgente",alta:"Alta",media:"Média",baixa:"Baixa"}[t.priority]||"Média";
-const ctxLabels={trabalho:"Trabalho",casa:"Casa",pessoal:"Pessoal",outros:"Outros"};
 const ctx=["trabalho","casa","pessoal","outros"].includes(t.context)?t.context:"pessoal";
+const builtins={trabalho:{label:"Trabalho",color:"#eaf2ff"},casa:{label:"Casa",color:"#f3eafb"},pessoal:{label:"Pessoal",color:"#e8f5eb"},outros:{label:"Outros",color:"#edf1f2"}};
+const contextSettings=(householdSettings?.context_options||[]).find(o=>o.key===ctx)||builtins[ctx];
+const ctxLabel=contextSettings.label||ctx;const ctxColor=/^#[0-9a-fA-F]{6}$/.test(contextSettings.color||"")?contextSettings.color:builtins[ctx].color;
 const author=t.created_by_name?'<div class="byline">Criada por '+esc(t.created_by_name)+'</div>':"";
-return '<article class="task context-'+ctx+' '+(t.completed?"completed":"")+'" data-id="'+esc(t.id)+'"><button class="check '+(t.completed?"done":"")+'" data-action="toggle" aria-label="'+(t.completed?"Reabrir tarefa":"Concluir tarefa")+'">'+(t.completed?"✓":"")+'</button><div class="taskbody" data-action="edit"><div class="tasktitle">'+esc(t.title)+'</div>'+(t.notes?'<div class="notes">'+esc(t.notes)+'</div>':"")+'<div class="chips"><span class="chip context-'+ctx+'">'+ctxLabels[ctx]+'</span><span class="chip '+priorityClass+'">'+esc(priorityLabel)+'</span>'+due+(t.category?'<span class="chip">'+esc(t.category)+'</span>':"")+'</div>'+author+'</div><button class="more" data-action="edit" aria-label="Editar tarefa">···</button></article>'
+return '<article class="task context-'+ctx+' '+(t.completed?"completed":"")+'" style="background-color:'+ctxColor+';border-color:'+ctxColor+'" data-id="'+esc(t.id)+'"><button class="check '+(t.completed?"done":"")+'" data-action="toggle" aria-label="'+(t.completed?"Reabrir tarefa":"Concluir tarefa")+'">'+(t.completed?"✓":"")+'</button><div class="taskbody" data-action="edit"><div class="tasktitle">'+esc(t.title)+'</div>'+(t.notes?'<div class="notes">'+esc(t.notes)+'</div>':"")+'<div class="chips"><span class="chip context-'+ctx+'" style="background-color:'+ctxColor+';color:#26362c">'+esc(ctxLabel)+'</span><span class="chip '+priorityClass+'">'+esc(priorityLabel)+'</span>'+due+(t.category?'<span class="chip">'+esc(t.category)+'</span>':"")+'</div>'+author+'</div><button class="more" data-action="edit" aria-label="Editar tarefa">···</button></article>'
 }).join("");
 const empty=list.length===0;$("emptyState").hidden=!empty;$("taskList").hidden=empty;
 if(empty){$("emptyTitle").textContent=tasks.length===0?"Tudo começa com uma tarefa":"Nada por aqui";$("emptyText").textContent=tasks.length===0?"Adicione sua primeira tarefa para organizar o que importa.":"Experimente outro filtro ou adicione uma nova tarefa."}
@@ -571,6 +575,11 @@ $("taskList").addEventListener("click",async e=>{
 const btn=e.target.closest("[data-action]");if(!btn)return;const card=btn.closest(".task");if(!card)return;const t=tasks.find(x=>x.id===card.dataset.id);if(!t)return;
 if(btn.dataset.action==="edit"){openTask(t);return}
 if(!t.completed){
+if(householdSettings?.confirm_before_complete===false){
+try{const {error}=await sb.from("personal_tasks").update({completed:true}).eq("id",t.id);if(error)throw error;await loadTasks();toast("Tarefa concluída")}
+catch(err){toast("Não foi possível concluir. "+(err.message||"Tente novamente."))}
+return;
+}
 pendingCompletion=t;
 $("completionText").textContent="“"+t.title+"” será marcada como concluída e sairá da lista de pendentes. Deseja continuar?";
 $("completionConfirm").hidden=false;
@@ -589,10 +598,10 @@ catch(err){toast("Não foi possível concluir. "+(err.message||"Tente novamente.
 finally{button.disabled=false;button.textContent="Sim, concluir"}
 });
 function openTask(t){
-editing=t||null;$("modalTitle").textContent=t?"Editar tarefa":"Nova tarefa";$("taskTitle").value=t?.title||"";$("taskNotes").value=t?.notes||"";$("taskDue").value=t?.due_date||"";$("taskTime").value=t?.due_time?t.due_time.slice(0,5):"";$("taskPriority").value=t?.priority||"media";$("taskCategory").value=t?.category||"";$("taskContext").value=t?.context||"pessoal";
-const offsets=Array.isArray(t?.notification_offsets)?t.notification_offsets:[1440,120,60,0];
+editing=t||null;$("modalTitle").textContent=t?"Editar tarefa":"Nova tarefa";$("taskTitle").value=t?.title||"";$("taskNotes").value=t?.notes||"";$("taskDue").value=t?.due_date||"";$("taskTime").value=t?.due_time?t.due_time.slice(0,5):"";$("taskPriority").value=t?.priority||(householdSettings?.default_priority||"media");$("taskCategory").value=t?.category||"";$("taskContext").value=t?.context||(householdSettings?.default_context||"pessoal");
+const offsets=Array.isArray(t?.notification_offsets)?t.notification_offsets:(householdSettings?.default_notification_offsets||[1440,120,60,0]);
 $("reminderDay").checked=!t||offsets.includes(1440);$("reminder2h").checked=!t||offsets.includes(120);$("reminder1h").checked=!t||offsets.includes(60);$("reminderAtTime").checked=!t||offsets.includes(0);
-$("overdueMorning").checked=!t||t.overdue_morning!==false;$("overdueAfternoon").checked=!t||t.overdue_afternoon!==false;
+$("overdueMorning").checked=t?t.overdue_morning!==false:(householdSettings?.overdue_morning_enabled!==false);$("overdueAfternoon").checked=t?t.overdue_afternoon!==false:(householdSettings?.overdue_afternoon_enabled!==false);
 $("deleteTask").hidden=!t;$("taskError").hidden=true;$("saveTask").textContent=t?"Salvar alterações":"Salvar tarefa";$("taskModal").hidden=false;document.body.style.overflow="hidden";setTimeout(()=>$("taskTitle").focus({preventScroll:true}),80)
 }
 function closeModal(){$("taskModal").hidden=true;document.body.style.overflow="";editing=null}

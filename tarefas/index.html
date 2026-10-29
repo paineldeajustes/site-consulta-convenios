@@ -266,7 +266,6 @@ if(!currentHousehold?.household_id){
   }
 }
 accessPending=false;accessRequestStatus="approved";
-$("householdName").textContent=currentHousehold.household_name||"Agenda compartilhada";
 const {data,error}=await sb.from("personal_tasks").select("*").eq("household_id",currentHousehold.household_id).order("completed",{ascending:true}).order("due_date",{ascending:true,nullsFirst:false}).order("created_at",{ascending:false});
 if(error)throw error;tasks=data||[];lastDataRefreshAt=Date.now();updateRefreshStatus();render();
 await renderAccessRequests();

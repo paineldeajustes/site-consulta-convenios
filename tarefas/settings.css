@@ -298,3 +298,113 @@ body[data-theme="dark"] .modal .close{background:#303c34;color:#eaf0eb}
 #app[data-theme="dark"] #doneStat{background:#1d3427;border-color:#315340}
 #app[data-theme="dark"] #doneStat .label,#app[data-theme="dark"] #doneStat .foot{color:#bde7ca}
 #app[data-theme="dark"] #doneStat .num{color:#d0f2d9}
+
+/* Final usability pass inspired by Todoist's quick filtering, TickTick's context-aware lists,
+   and Microsoft To Do's clear daily focus. Keep the interface light and touch-friendly. */
+#app{font-size:15px}
+#app .main{padding-top:12px;padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+#app .stats{gap:10px;margin:16px 0 20px}
+#app .stat{border-radius:17px;padding:15px 14px;min-width:0;transition:transform .15s ease,box-shadow .15s ease}
+#app .stat-action:hover{box-shadow:0 8px 22px rgba(28,57,41,.09)}
+#app .stat .label{font-size:12px;letter-spacing:.01em}
+#app .stat .num{font-size:clamp(25px,6vw,31px);line-height:1.1;margin:9px 0 5px}
+#app .stat .foot{font-size:11px;line-height:1.35}
+#app .toolbar{align-items:center;gap:8px;margin:14px 0}
+#app .search{min-width:0;flex:1 1 180px}
+#app .search input{width:100%;min-width:0;min-height:46px;border-radius:13px;padding:11px 13px}
+#app .filterbtn{min-height:44px;border-radius:12px;padding:10px 13px;white-space:nowrap}
+#app .tabs{display:flex;gap:7px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:3px 0 9px;margin-bottom:12px}
+#app .tabs::-webkit-scrollbar{display:none}
+#app .tab{flex:0 0 auto;min-height:39px;border-radius:12px;padding:9px 13px;font-weight:750}
+#app .listhead{margin:18px 0 11px}
+#app .listhead h2{font-size:19px}
+#app .tasklist{display:grid;gap:10px}
+#app .task{border-width:1px 1px 1px 4px!important;border-radius:16px;padding:14px 12px 14px 11px;grid-template-columns:26px minmax(0,1fr) 30px;gap:10px;transition:transform .12s ease,box-shadow .12s ease}
+#app .task:active{transform:scale(.995)}
+#app .tasktitle{font-size:15px;line-height:1.4;font-weight:760;letter-spacing:-.15px}
+#app .task .notes{font-size:12px;line-height:1.5;margin-top:5px}
+#app .task .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;min-width:0}
+#app .chip{font-size:10px;line-height:1.25;font-weight:750;padding:5px 7px;border-radius:8px;max-width:100%;overflow-wrap:anywhere}
+#app .task .byline,#app .task .task-workflow-meta{font-size:11px;line-height:1.45;margin-top:8px;overflow-wrap:anywhere}
+#app .task .check{width:25px;height:25px;border-radius:8px}
+#app .task .more{width:30px;height:32px;border-radius:9px}
+#app .empty{border-radius:17px;padding:28px 18px}
+#app .refreshstatus{font-variant-numeric:tabular-nums}
+#app .top{padding-top:calc(10px + env(safe-area-inset-top));padding-bottom:11px}
+#app .toprow{min-height:46px}
+#app .brand small{font-size:11px}
+#app .settingsTopBtn,#app .notifTopBtn{box-shadow:none}
+#app .modalback{background:rgba(14,23,17,.38);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#app .modal{box-shadow:0 22px 65px rgba(0,0,0,.2)}
+/* Fix low-contrast form controls. Inputs are dark text on light surfaces in light mode. */
+.modal input:not([type=checkbox]):not([type=radio]):not([type=color]),
+.modal select,.modal textarea,
+#app input:not([type=checkbox]):not([type=radio]):not([type=color]),
+#app select,#app textarea{
+ color:#24352b;background:#fff;caret-color:#205a45;
+}
+.modal input::placeholder,.modal textarea::placeholder,
+#app input::placeholder,#app textarea::placeholder{color:#78867c;opacity:1}
+.modal input:disabled,.modal select:disabled,.modal textarea:disabled,
+#app input:disabled,#app select:disabled,#app textarea:disabled{color:#617066;background:#edf1ed;opacity:1}
+.modal input:focus-visible,.modal select:focus-visible,.modal textarea:focus-visible,
+#app input:focus-visible,#app select:focus-visible,#app textarea:focus-visible{outline:3px solid rgba(43,121,82,.23);border-color:#3e8a60}
+body[data-theme="dark"] .modal input:not([type=checkbox]):not([type=radio]):not([type=color]),
+body[data-theme="dark"] .modal select,body[data-theme="dark"] .modal textarea,
+#app[data-theme="dark"] input:not([type=checkbox]):not([type=radio]):not([type=color]),
+#app[data-theme="dark"] select,#app[data-theme="dark"] textarea{
+ color:#f0f5f1!important;background:#17201b!important;border-color:#46594b!important;caret-color:#a7d9b9;
+}
+body[data-theme="dark"] .modal input::placeholder,
+body[data-theme="dark"] .modal textarea::placeholder,
+#app[data-theme="dark"] input::placeholder,#app[data-theme="dark"] textarea::placeholder{color:#a5b4a9!important;opacity:1}
+body[data-theme="dark"] .modal input:disabled,
+body[data-theme="dark"] .modal select:disabled,
+body[data-theme="dark"] .modal textarea:disabled,
+#app[data-theme="dark"] input:disabled,
+#app[data-theme="dark"] select:disabled,
+#app[data-theme="dark"] textarea:disabled{color:#adb9b0!important;background:#26322a!important;opacity:1}
+body[data-theme="dark"] .modal label,body[data-theme="dark"] .modal legend,
+body[data-theme="dark"] .modal .hint,body[data-theme="dark"] .modal .reminderhint{color:#c2d0c6!important}
+body[data-theme="dark"] .modal .field label{color:#c2d0c6!important}
+body[data-theme="dark"] .modal .msg.error{color:#ffc7c3!important}
+#app[data-theme="dark"] .stats .stat{background:#1c2821!important;border-color:#37473b!important;color:#edf4ef}
+#app[data-theme="dark"] .stats .stat .label,#app[data-theme="dark"] .stats .stat .foot{color:#afc0b3!important}
+#app[data-theme="dark"] .stats .stat .num{color:#eaf4ed!important}
+#app[data-theme="dark"] .stats #overdueStat .num{color:#ffc1b9!important}
+#app[data-theme="dark"] .stats #doneStat .num{color:#c5edcf!important}
+#app[data-theme="dark"] .task .notes,#app[data-theme="dark"] .task .byline,#app[data-theme="dark"] .task .task-workflow-meta{color:#c1cec4!important}
+#app[data-theme="dark"] .task .tasktitle{color:#f0f5f1!important}
+#app[data-theme="dark"] .task .more{color:#dbe6dd!important;background:rgba(0,0,0,.15)}
+/* PDF and image preview stays inside the app, with a persistent return action. */
+.attachment-viewer{position:fixed;z-index:100;inset:0;width:100%;height:100%;height:100dvh;display:flex;flex-direction:column;background:#f4f7f4;color:#24352b;overflow:hidden;padding-top:env(safe-area-inset-top)}
+.attachment-viewer[hidden]{display:none!important}
+.attachment-viewer-head{flex:0 0 auto;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #d8e1da;background:#fff;min-width:0}
+.attachment-viewer-head .btn{min-height:40px;padding:8px 10px;white-space:nowrap}
+.attachment-viewer-title{font-size:13px;font-weight:800;min-width:0;overflow-wrap:anywhere;max-height:40px;overflow:hidden}
+.attachment-external-link{font-size:12px;color:#205a45;font-weight:750;white-space:nowrap}
+.attachment-viewer-body{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto;background:#e9eeea}
+#attachmentPdfFrame{display:block;width:100%;height:100%;min-height:0;border:0;background:#fff}
+#attachmentImagePreview{display:block;max-width:100%;max-height:100%;object-fit:contain}
+body[data-theme="dark"] .attachment-viewer{background:#141a17;color:#edf4ef}
+body[data-theme="dark"] .attachment-viewer-head{background:#1e2722;border-color:#344139}
+body[data-theme="dark"] .attachment-viewer-body{background:#141a17}
+body[data-theme="dark"] .attachment-external-link{color:#a7d9b9}
+@media(max-width:520px){
+ #app .main{padding-top:8px}
+ #app .stats{gap:7px;margin:13px 0 17px}
+ #app .stat{padding:12px 9px;border-radius:14px}
+ #app .stat .label{font-size:11px}
+ #app .stat .num{font-size:25px}
+ #app .stat .foot{font-size:10px}
+ #app .task{padding:12px 10px;grid-template-columns:24px minmax(0,1fr) 26px;gap:8px}
+ #app .tasktitle{font-size:14px}
+ #app .toolbar .search{flex:1 1 100%}
+ #app .toolbar .filterbtn{flex:1 1 0}
+ #app .listhead-right{gap:5px}
+ #app .refreshbtn{min-height:37px;padding:7px 9px}
+ .attachment-viewer-head{grid-template-columns:auto minmax(0,1fr) auto;gap:6px;padding:8px 9px}
+ .attachment-viewer-head .btn{font-size:11px;min-height:38px;padding:7px 8px}
+ .attachment-viewer-title{font-size:11px}
+ .attachment-external-link{font-size:11px}
+}

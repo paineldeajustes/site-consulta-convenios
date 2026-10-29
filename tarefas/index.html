@@ -694,38 +694,64 @@ const wasEditing=!!editing;
 const b=$("saveTask");busy=true;b.disabled=true;b.textContent="Salvando…";$("taskError").hidden=true;
 try{
 let response,taskId=wasEditing?editing.id:null,notificationDelivery=null;
+const targetAssignee=document.getElementById("taskAssignee").value||user.id;
+if(wasEditing&&editing.created_by!==user.id){
+ const reason=$("changeRequestReason").value.trim();
+ if(reason.length<8)throw new Error("Explique a alteração solicitada com pelo menos oito caracteres.");
+ const proposedData={title:input.title,notes:input.notes,due_date:input.due_date,due_time:input.due_time,priority:input.priority,category:input.category,context:input.context};
+ const {error:requestError}=await sb.rpc("create_task_change_request",{p_task_id:editing.id,p_request_type:"edit",p_proposed_data:proposedData,p_reason:reason});
+ if(requestError)throw requestError;
+ notificationDelivery=await window.ClarezaWorkflow?.dispatchNotifications?.(editing.id);
+ closeModal();await loadTasks();
+ toast(notificationDelivery?.deliveryError?"Solicitação registrada; a notificação será reenviada.":"Solicitação enviada ao criador para análise.");
+ return;
+}
 if(wasEditing){
  response=await sb.from("personal_tasks").update(input).eq("id",editing.id);
  if(response.error)throw response.error;
+ const {error:visibilityError}=await sb.rpc("set_task_visibility",{p_task_id:editing.id,p_visibility_mode:input.visibility_mode,p_visible_user_ids:window.ClarezaWorkflow?.getVisibleUserIds?.()||[]});
+ if(visibilityError)throw visibilityError;
 }else{
  const {data:newId,error:createError}=await sb.rpc("create_task_with_assignment",{
   p_title:input.title,p_notes:input.notes,p_due_date:input.due_date,p_due_time:input.due_time,p_priority:input.priority,
-  p_category:input.category,p_context:input.context,p_assignee_id:document.getElementById("taskAssignee").value||user.id,
+  p_category:input.category,p_context:input.context,p_assignee_id:targetAssignee,
   p_notification_offsets:input.notification_offsets,p_overdue_morning:input.overdue_morning,p_overdue_afternoon:input.overdue_afternoon,
-  p_voice_created:false,
-  p_visibility_mode:document.getElementById("taskVisibilityMode").value||"environment",
+  p_voice_created:false,p_visibility_mode:input.visibility_mode,
   p_visible_user_ids:window.ClarezaWorkflow?.getVisibleUserIds?.()||[]
  });
  if(createError)throw createError;taskId=newId;
 }
 if(window.ClarezaWorkflow?.uploadFiles)await window.ClarezaWorkflow.uploadFiles(taskId);
-const targetAssignee=document.getElementById("taskAssignee").value||user.id;
 if(!wasEditing&&taskId&&targetAssignee!==user.id&&window.ClarezaWorkflow?.dispatchNotifications){
  notificationDelivery=await window.ClarezaWorkflow.dispatchNotifications(taskId);
 }
 closeModal();await loadTasks();
 if(wasEditing)toast("Alterações salvas");
-else if(targetAssignee!==user.id&&notificationDelivery?.emailConfigured===false)toast("Tarefa atribuída e notificação interna/push acionada. O e-mail ainda depende da configuração do provedor.");
+else if(targetAssignee!==user.id&&notificationDelivery?.emailConfigured===false)toast("Tarefa atribuída. Push/inbox acionados; o e-mail depende da configuração do provedor.");
 else if(targetAssignee!==user.id)toast("Tarefa atribuída e participante notificado.");
 else toast("Tarefa adicionada")
 }catch(err){$("taskError").textContent="Não foi possível salvar: "+(err.message||"tente novamente");$("taskError").hidden=false}
 finally{busy=false;b.disabled=false;b.textContent=wasEditing?"Salvar alterações":"Salvar tarefa"}
 });
 $("deleteTask").addEventListener("click",async()=>{
-if(!editing||!confirm("Excluir definitivamente esta tarefa?"))return;
-const id=editing.id;const b=$("deleteTask");b.disabled=true;
-try{const {error}=await sb.from("personal_tasks").delete().eq("id",id);if(error)throw error;closeModal();await loadTasks();toast("Tarefa excluída")}
-catch(err){$("taskError").textContent="Não foi possível excluir: "+(err.message||"tente novamente");$("taskError").hidden=false}
+if(!editing)return;
+const b=$("deleteTask");b.disabled=true;
+try{
+ if(editing.created_by!==user.id){
+  const reason=$("changeRequestReason").value.trim();
+  if(reason.length<8)throw new Error("Para solicitar exclusão, explique o motivo no campo de justificativa (mínimo de oito caracteres).");
+  if(!confirm("Enviar ao criador uma solicitação para excluir esta tarefa?"))return;
+  const {error}=await sb.rpc("create_task_change_request",{p_task_id:editing.id,p_request_type:"delete",p_proposed_data:{},p_reason:reason});
+  if(error)throw error;
+  const delivery=await window.ClarezaWorkflow?.dispatchNotifications?.(editing.id);
+  closeModal();await loadTasks();
+  toast(delivery?.deliveryError?"Solicitação de exclusão registrada.":"Solicitação de exclusão enviada ao criador.");
+ }else{
+  if(!confirm("Excluir definitivamente esta tarefa?"))return;
+  const id=editing.id;const {error}=await sb.from("personal_tasks").delete().eq("id",id);if(error)throw error;
+  closeModal();await loadTasks();toast("Tarefa excluída");
+ }
+}catch(err){$("taskError").textContent="Não foi possível concluir: "+(err.message||"tente novamente");$("taskError").hidden=false}
 finally{b.disabled=false}
 });
 async function startSession(session){

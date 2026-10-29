@@ -157,6 +157,8 @@ $("openSettings").addEventListener("click",async()=>{
 });
 $("backToTasks").addEventListener("click",()=>{
  $("settingsScreen").hidden=true;$("mainContent").hidden=false;
+ const prefs=window.ClarezaApp?.getSettings?.()?.user;
+ if(prefs)window.ClarezaApp?.applyUserSettings?.(prefs);
  window.ClarezaApp?.render?.();
 });
 $("saveProfileSettings").addEventListener("click",async()=>{
@@ -167,7 +169,9 @@ $("saveProfileSettings").addEventListener("click",async()=>{
   const {error}=await client().rpc("save_task_user_settings",{p_display_name:name,p_theme:theme,p_compact_mode:compact});
   if(error)throw error;
   personal={...(personal||{}),display_name:name,theme,compact_mode:compact};
+  window.ClarezaSettingsBridge?.applyTheme?.(theme,compact);
   window.ClarezaApp?.applyUserSettings?.(personal);
+  window.ClarezaApp?.render?.();
   message("profileSettingsMessage","Perfil e aparência salvos.");
   if(window.ClarezaApp?.setDisplayName)window.ClarezaApp.setDisplayName(name);
  }catch(err){message("profileSettingsMessage",err.message||"Não foi possível salvar.",true)}

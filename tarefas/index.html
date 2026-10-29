@@ -107,7 +107,7 @@ const VAPID_PUBLIC_KEY="BL9Qy1VshYvVMWjTTNM-GHfGnSJAMb7wMwf7v4UjP9D-NUej0S8i9YSP
 const AUTH_REDIRECT_URL="https://paineldeajustes.github.io/site-consulta-convenios/";
 const $=id=>document.getElementById(id);
 const sb=window.supabase&&window.supabase.createClient?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
-let user=null,tasks=[],view="pendentes",editing=null,busy=false,toastTimer=null,currentHousehold=null,pendingCompletion=null;
+let user=null,tasks=[],view="pendentes",editing=null,busy=false,toastTimer=null,currentHousehold=null,pendingCompletion=null,accessPending=false,accessRequestStatus="pending";
 const APP_BUILD=document.querySelector('meta[name="clareza-build"]')?.content||"unknown";
 let lastDataRefreshAt=0,lastAppCheckAt=0,appReloadInProgress=false,appCheckInProgress=false;
 const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
@@ -196,7 +196,29 @@ function dueToday(t){return !t.completed&&t.due_date===todayISO()}
 function toast(message){const el=$("toast");el.textContent=message;el.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.hidden=true,2800)}
 function authMessage(text,type){const el=$("authMessage");el.textContent=text||"";el.hidden=!text;el.className="msg"+(type==="error"?" error":"")}
 function showAuth(){ $("app").hidden=true;$("authScreen").hidden=false; }
-function showApp(){ $("authScreen").hidden=true;$("app").hidden=false; $("userEmail").textContent=user?.email||""; render(); refreshPushStatus(); }
+function showApp(){
+$("authScreen").hidden=true;$("app").hidden=false;
+$("userEmail").textContent=user?.email||"";
+$("mainContent").hidden=accessPending;
+$("accessPendingPanel").hidden=!accessPending;
+$("pushPanel").hidden=accessPending;
+if(accessPending){
+  if(accessRequestStatus==="rejected"){
+    $("accessPendingTitle").textContent="Acesso ainda não autorizado";
+    $("accessPendingText").textContent="O administrador não aprovou esta solicitação. Fale diretamente com ele caso precise de acesso.";
+    $("checkAccessStatus").textContent="Verificar novamente";
+  }else{
+    $("accessPendingTitle").textContent="Aguardando autorização";
+    $("accessPendingText").textContent="Sua conta foi criada, mas o administrador precisa aprovar o acesso à agenda compartilhada. Você poderá ver e criar tarefas depois da aprovação.";
+    $("checkAccessStatus").textContent="Verificar autorização";
+  }
+}else{
+  $("mainContent").hidden=false;
+  $("accessPendingPanel").hidden=true;
+  render();
+  refreshPushStatus();
+}
+}
 function setAuthMode(signup){$("authTitle").textContent=signup?"Criar sua conta":"Bem-vindo de volta";$("authDesc").textContent=signup?"Crie seu acesso com e-mail e senha para participar da agenda compartilhada.":"Entre para acessar suas tarefas e acompanhar suas prioridades.";$("authSubmit").textContent=signup?"Criar conta":"Entrar";$("switchMode").textContent=signup?"Já tenho conta":"Criar conta";$("password").autocomplete=signup?"new-password":"current-password";$("password").value="";$("forgot").hidden=signup;$("displayNameField").hidden=!signup;$("displayName").required=signup;authMessage("");$("authForm").dataset.mode=signup?"signup":"login"}
 $("switchMode").addEventListener("click",()=>setAuthMode($("authForm").dataset.mode!=="signup"));
 $("showPw").addEventListener("click",()=>{const p=$("password");p.type=p.type==="password"?"text":"password";$("showPw").textContent=p.type==="password"?"Mostrar":"Ocultar"});
@@ -227,10 +249,27 @@ if(!sb||!user)return;
 const {data:households,error:householdError}=await sb.rpc("get_or_create_task_household");
 if(householdError)throw householdError;
 currentHousehold=Array.isArray(households)?households[0]:households;
-if(!currentHousehold?.household_id)throw new Error("Não foi possível abrir a agenda compartilhada.");
+if(!currentHousehold?.household_id){
+  const {data:requestRows,error:requestError}=await sb.rpc("request_task_access");
+  if(requestError)throw requestError;
+  const request=Array.isArray(requestRows)?requestRows[0]:requestRows;
+  accessRequestStatus=request?.request_status||"pending";
+  if(accessRequestStatus==="approved"){
+    const {data:retryRows,error:retryError}=await sb.rpc("get_or_create_task_household");
+    if(retryError)throw retryError;
+    currentHousehold=Array.isArray(retryRows)?retryRows[0]:retryRows;
+  }
+  if(!currentHousehold?.household_id){
+    accessPending=true;tasks=[];
+    $("accessPendingMessage").hidden=true;
+    return;
+  }
+}
+accessPending=false;accessRequestStatus="approved";
 $("householdName").textContent=currentHousehold.household_name||"Agenda compartilhada";
 const {data,error}=await sb.from("personal_tasks").select("*").eq("household_id",currentHousehold.household_id).order("completed",{ascending:true}).order("due_date",{ascending:true,nullsFirst:false}).order("created_at",{ascending:false});
 if(error)throw error;tasks=data||[];lastDataRefreshAt=Date.now();updateRefreshStatus();render();
+await renderAccessRequests();
 }
 function categories(){return [...new Set(tasks.map(t=>(t.category||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"))}
 function updateCategories(){
@@ -380,7 +419,7 @@ button.disabled=false;button.textContent="Tentar novamente";
 }
 });
 function render(){
-if(!user)return;
+if(!user||accessPending)return;
 const today=todayISO(),pending=tasks.filter(t=>!t.completed),done=tasks.filter(t=>t.completed);
 $("todayLabel").textContent=new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
 const hour=new Date().getHours();$("greeting").textContent=hour<12?"Bom dia. Vamos começar bem.":hour<18?"Boa tarde. Vamos manter o ritmo.":"Boa noite. Vamos fechar o dia bem.";
@@ -407,7 +446,7 @@ const priorityLabel={urgente:"Urgente",alta:"Alta",media:"Média",baixa:"Baixa"}
 const ctxLabels={trabalho:"Trabalho",casa:"Casa",pessoal:"Pessoal",outros:"Outros"};
 const ctx=["trabalho","casa","pessoal","outros"].includes(t.context)?t.context:"pessoal";
 const author=t.created_by_name?'<div class="byline">Criada por '+esc(t.created_by_name)+'</div>':"";
-return '<article class="task '+(t.completed?"completed":"")+'" data-id="'+esc(t.id)+'"><button class="check '+(t.completed?"done":"")+'" data-action="toggle" aria-label="'+(t.completed?"Reabrir tarefa":"Concluir tarefa")+'">'+(t.completed?"✓":"")+'</button><div class="taskbody" data-action="edit"><div class="tasktitle">'+esc(t.title)+'</div>'+(t.notes?'<div class="notes">'+esc(t.notes)+'</div>':"")+'<div class="chips"><span class="chip context-'+ctx+'">'+ctxLabels[ctx]+'</span><span class="chip '+priorityClass+'">'+esc(priorityLabel)+'</span>'+due+(t.category?'<span class="chip">'+esc(t.category)+'</span>':"")+'</div>'+author+'</div><button class="more" data-action="edit" aria-label="Editar tarefa">···</button></article>'
+return '<article class="task context-'+ctx+' '+(t.completed?"completed":"")+'" data-id="'+esc(t.id)+'"><button class="check '+(t.completed?"done":"")+'" data-action="toggle" aria-label="'+(t.completed?"Reabrir tarefa":"Concluir tarefa")+'">'+(t.completed?"✓":"")+'</button><div class="taskbody" data-action="edit"><div class="tasktitle">'+esc(t.title)+'</div>'+(t.notes?'<div class="notes">'+esc(t.notes)+'</div>':"")+'<div class="chips"><span class="chip context-'+ctx+'">'+ctxLabels[ctx]+'</span><span class="chip '+priorityClass+'">'+esc(priorityLabel)+'</span>'+due+(t.category?'<span class="chip">'+esc(t.category)+'</span>':"")+'</div>'+author+'</div><button class="more" data-action="edit" aria-label="Editar tarefa">···</button></article>'
 }).join("");
 const empty=list.length===0;$("emptyState").hidden=!empty;$("taskList").hidden=empty;
 if(empty){$("emptyTitle").textContent=tasks.length===0?"Tudo começa com uma tarefa":"Nada por aqui";$("emptyText").textContent=tasks.length===0?"Adicione sua primeira tarefa para organizar o que importa.":"Experimente outro filtro ou adicione uma nova tarefa."}
@@ -470,7 +509,7 @@ finally{b.disabled=false}
 });
 async function startSession(session){
 if(!session?.user)return;user=session.user;
-try{await loadTasks();showApp()}catch(err){showAuth();authMessage("A conta entrou, mas não foi possível carregar as tarefas. Verifique a conexão e tente atualizar. "+(err.message||""),"error")}
+try{await loadTasks();showApp()}catch(err){showAuth();authMessage("Não foi possível abrir o Clareza. Confira a conexão e tente entrar novamente. "+(err.message||""),"error")}
 }
 if(new URL(location.href).searchParams.has("clareza_reload")){const cleanUrl=new URL(location.href);cleanUrl.searchParams.delete("clareza_reload");history.replaceState(null,"",cleanUrl.pathname+cleanUrl.search+cleanUrl.hash)}
 async function init(){

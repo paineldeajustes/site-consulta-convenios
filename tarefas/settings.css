@@ -276,3 +276,25 @@ body[data-theme="dark"] .modal .close{background:#303c34;color:#eaf0eb}
   #app .modal .modalactions .btn{width:100%;min-width:0;padding:11px 8px;font-size:13px}
   #app .modal .modalactions .deletebtn{grid-column:1/-1}
 }
+
+/* Distinct but restrained summary colors, inspired by task apps' smart views. */
+#app #pendingStat{background:#edf4ff;border-color:#d2e1ff}
+#app #pendingStat .label,#app #pendingStat .foot{color:#325b9d}
+#app #pendingStat .num{color:#214f9e}
+#app #overdueStat{background:#fff0ef;border-color:#f3d4d1}
+#app #overdueStat .label,#app #overdueStat .foot{color:#9a3d35}
+#app #overdueStat .num{color:#b52e28}
+#app #doneStat{background:#edf7f0;border-color:#d3e9d9}
+#app #doneStat .label,#app #doneStat .foot{color:#326b47}
+#app #doneStat .num{color:#23613b}
+#app .stat-action{position:relative;padding-right:25px}
+#app .stat-action::after{content:"›";position:absolute;right:13px;top:13px;font-size:20px;line-height:1;color:currentColor;opacity:.55}
+#app[data-theme="dark"] #pendingStat{background:#1d2e46;border-color:#304967}
+#app[data-theme="dark"] #pendingStat .label,#app[data-theme="dark"] #pendingStat .foot{color:#b9d3ff}
+#app[data-theme="dark"] #pendingStat .num{color:#d5e4ff}
+#app[data-theme="dark"] #overdueStat{background:#3b2525;border-color:#5b3535}
+#app[data-theme="dark"] #overdueStat .label,#app[data-theme="dark"] #overdueStat .foot{color:#ffc1ba}
+#app[data-theme="dark"] #overdueStat .num{color:#ffd4d0}
+#app[data-theme="dark"] #doneStat{background:#1d3427;border-color:#315340}
+#app[data-theme="dark"] #doneStat .label,#app[data-theme="dark"] #doneStat .foot{color:#bde7ca}
+#app[data-theme="dark"] #doneStat .num{color:#d0f2d9}

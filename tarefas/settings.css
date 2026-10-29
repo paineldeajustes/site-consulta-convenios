@@ -182,3 +182,97 @@ body[data-theme="dark"] .modal .attachment-section .file-remove{color:#ffb8b1}
  .settings-export-menu button{flex-basis:100%}
  .task-visible-users{padding:9px}
 }
+
+
+/* Clareza UI refresh: reliable contrast inside the task modal in both themes.
+   The task modal lives outside #app, so its selectors must use body[data-theme]. */
+body[data-theme="light"]{color-scheme:light;background:#f5f6f3;color:#192c25}
+body[data-theme="dark"]{color-scheme:dark;background:#141a17;color:#eaf0eb}
+body[data-theme="light"] .modal{background:#fff;color:#192c25}
+body[data-theme="light"] .modal .attachment-section{background:#f7faf7!important;border:1px solid #dce5dd;color:#24352c}
+body[data-theme="light"] .modal .attachment-section>label{color:#24352c!important}
+body[data-theme="light"] .modal .attachment-section p,
+body[data-theme="light"] .modal .attachment-section .hint{color:#68786e!important}
+body[data-theme="light"] .modal .workflow-panel,
+body[data-theme="light"] .modal .change-request-fields{background:#f5f8f5!important;border-color:#d9e3da;color:#24352c}
+body[data-theme="light"] .modal .workflow-panel strong,
+body[data-theme="light"] .modal .workflow-panel label,
+body[data-theme="light"] .modal .workflow-panel .workflow-history-item strong{color:#24352c}
+body[data-theme="light"] .modal .workflow-panel p,
+body[data-theme="light"] .modal .workflow-panel .hint,
+body[data-theme="light"] .modal .workflow-panel .workflow-history-item p{color:#65756b}
+body[data-theme="light"] .modal .workflow-summary{background:#fff;color:#24352c}
+body[data-theme="light"] .modal .workflow-panel select,
+body[data-theme="light"] .modal .workflow-panel input,
+body[data-theme="light"] .modal .workflow-panel textarea,
+body[data-theme="light"] .modal .change-request-fields textarea{background:#fff;color:#192c25;border-color:#d5dfd7}
+body[data-theme="dark"] .modal{background:#1e2722!important;color:#eaf0eb!important;border:1px solid #344139}
+body[data-theme="dark"] .modal .modalhead h2,
+body[data-theme="dark"] .modal .field>label,
+body[data-theme="dark"] .modal legend{color:#eaf0eb!important}
+body[data-theme="dark"] .modal .field .hint,
+body[data-theme="dark"] .modal .reminderhint{color:#b2c0b6!important}
+body[data-theme="dark"] .modal .attachment-section{background:#19231d!important;border:1px solid #425146!important;color:#eaf0eb!important}
+body[data-theme="dark"] .modal .attachment-section>label{color:#eaf0eb!important}
+body[data-theme="dark"] .modal .attachment-section p,
+body[data-theme="dark"] .modal .attachment-section .hint{color:#b2c0b6!important}
+body[data-theme="dark"] .modal .attachment-section input[type="file"]{display:block;width:100%;max-width:100%;min-width:0;padding:8px;background:#17201b!important;color:#eaf0eb!important;border:1px solid #425146;border-radius:9px;box-sizing:border-box;color-scheme:dark;appearance:none}
+body[data-theme="dark"] .modal .attachment-section .selected-files,
+body[data-theme="dark"] .modal .attachment-section .existing-attachments,
+body[data-theme="dark"] .modal .attachment-section .file-row{color:#d9e3dc!important}
+body[data-theme="dark"] .modal .attachment-section .attachment-link a{color:#8ac6a3!important}
+body[data-theme="dark"] .modal .attachment-section .file-remove{color:#ffb8b1!important}
+body[data-theme="dark"] .modal .workflow-panel,
+body[data-theme="dark"] .modal .change-request-fields{background:#19231d!important;border:1px solid #344139!important;color:#eaf0eb!important}
+body[data-theme="dark"] .modal .workflow-panel .workflow-head strong,
+body[data-theme="dark"] .modal .workflow-panel label,
+body[data-theme="dark"] .modal .workflow-panel .workflow-history-item strong{color:#eaf0eb!important}
+body[data-theme="dark"] .modal .workflow-panel .hint,
+body[data-theme="dark"] .modal .workflow-panel p,
+body[data-theme="dark"] .modal .workflow-history-item p,
+body[data-theme="dark"] .modal .change-request-fields .hint{color:#b2c0b6!important}
+body[data-theme="dark"] .modal .workflow-summary{background:#202c25!important;color:#eaf0eb!important;border:1px solid #344139}
+body[data-theme="dark"] .modal .workflow-panel select,
+body[data-theme="dark"] .modal .workflow-panel input,
+body[data-theme="dark"] .modal .workflow-panel textarea,
+body[data-theme="dark"] .modal .change-request-fields textarea{background:#17201b!important;color:#eaf0eb!important;border-color:#425146!important;color-scheme:dark}
+body[data-theme="dark"] .modal .workflow-panel input::placeholder,
+body[data-theme="dark"] .modal .workflow-panel textarea::placeholder,
+body[data-theme="dark"] .modal .change-request-fields textarea::placeholder{color:#889b8e!important}
+body[data-theme="dark"] .modal .workflow-history{border-color:#344139}
+body[data-theme="dark"] .modal .workflow-history-item{border-color:#344139}
+body[data-theme="dark"] .modal .close{background:#303c34;color:#eaf0eb}
+
+/* Benchmark-inspired information hierarchy: quick scan, visible filters and compact task rows. */
+.stat-action{transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease}
+.stat-action:hover{border-color:#acc8b4;box-shadow:0 8px 22px rgba(31,60,44,.10)}
+.stat-action:focus-visible{outline:3px solid #79a58d;outline-offset:2px}
+.task{transition:box-shadow .12s ease,border-color .12s ease}
+.task:hover{box-shadow:0 9px 24px rgba(31,60,44,.10)}
+#app[data-theme="dark"] .task:hover{box-shadow:0 9px 24px rgba(0,0,0,.2)}
+#app .tabs{display:flex;flex-wrap:wrap;overflow:visible;scrollbar-width:none;gap:7px}
+#app .tabs::-webkit-scrollbar{display:none}
+#app .tab{flex:0 1 auto;white-space:normal;max-width:100%}
+#app .toolbar{min-width:0;flex-wrap:wrap}
+#app .search{flex:1 1 220px;min-width:0}
+#app .filterbtn{flex:0 0 auto}
+#app .listhead{flex-wrap:wrap}
+#app .listhead-right{flex-wrap:wrap;min-width:0}
+#app .refreshstatus{white-space:normal}
+@media(max-width:520px){
+  #app .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%;max-width:100%;overflow:visible}
+  #app .tab{width:100%;min-width:0;padding:9px 5px;font-size:12px;text-align:center;line-height:1.25}
+  #app .stats{gap:8px}
+  #app .stat{padding:12px 10px;border-radius:15px}
+  #app .stat .label{font-size:11px}
+  #app .stat .num{font-size:25px}
+  #app .stat .foot{font-size:10px;line-height:1.35}
+  #app .task{padding:12px;grid-template-columns:24px minmax(0,1fr) 25px;gap:8px}
+  #app .tasktitle{font-size:14px}
+  #app .listhead{align-items:flex-start}
+  #app .listhead-right{gap:6px}
+  #app .refreshbtn{padding:8px 9px;font-size:12px}
+  #app .modal .modalactions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  #app .modal .modalactions .btn{width:100%;min-width:0;padding:11px 8px;font-size:13px}
+  #app .modal .modalactions .deletebtn{grid-column:1/-1}
+}

@@ -425,11 +425,15 @@ async function downloadDriveText(file: DriveFile, accessToken: string): Promise<
 function parseMovementFile(
   file: DriveFile,
   textContent: string,
+  rowOffset = 0,
+  rowLimit = 1000,
 ): {
   fileType: "empenho" | "pagamento";
   exercise: number;
   finalized: boolean;
   headers: string[];
+  totalDataLines: number;
+  nextOffset: number;
   rows: Array<{
     rowNumber: number;
     adjustmentKey: string | null;
@@ -450,9 +454,15 @@ function parseMovementFile(
   const finalized = Boolean(match[2]);
   const explicitYear = match[2] ? Number(match[2]) : null;
   const lines = textContent.split(/\r?\n/);
-  const headerLine = lines.find((line) => line.trim() !== "");
-  if (!headerLine) throw new Error(file.name + " não contém cabeçalho.");
-  const headerIndex = lines.indexOf(headerLine);
+  let headerIndex = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].trim() !== "") {
+      headerIndex = i;
+      break;
+    }
+  }
+  if (headerIndex < 0) throw new Error(file.name + " não contém cabeçalho.");
+  const headerLine = lines[headerIndex];
   const headers = splitSemicolon(headerLine).map((value) => value.trim().replace(/^\uFEFF/, ""));
   if (headers.length < 5) throw new Error(file.name + " não possui um cabeçalho delimitado válido.");
 
@@ -462,8 +472,13 @@ function parseMovementFile(
   const missing = required.filter((name) => getColumnIndex(headers, name, 0) < 0);
   if (missing.length) throw new Error(file.name + " não possui as colunas obrigatórias: " + missing.join(", ") + ".");
 
-  const dataLines = lines.slice(headerIndex + 1);
-  const exercise = explicitYear ?? inferExercise(fileType, headers, [headerLine, ...dataLines]);
+  const dataStart = headerIndex + 1;
+  const totalDataLines = Math.max(0, lines.length - dataStart);
+  const sampleLines = [headerLine, ...lines.slice(dataStart, Math.min(lines.length, dataStart + 8000))];
+  const exercise = explicitYear ?? inferExercise(fileType, headers, sampleLines);
+  const safeOffset = Math.max(0, Math.min(totalDataLines, Math.floor(rowOffset)));
+  const safeLimit = Math.max(1, Math.min(3000, Math.floor(rowLimit)));
+  const nextOffset = Math.min(totalDataLines, safeOffset + safeLimit);
   const outputRows: Array<{
     rowNumber: number;
     adjustmentKey: string | null;
@@ -477,11 +492,10 @@ function parseMovementFile(
     dateValue: string | null;
     isValidPayment: boolean;
   }> = [];
-  let rowNumber = headerIndex + 2;
 
-  for (const rawLine of dataLines) {
-    const currentRowNumber = rowNumber++;
-    if (!rawLine.trim()) continue;
+  for (let dataIndex = safeOffset; dataIndex < nextOffset; dataIndex++) {
+    const rawLine = lines[dataStart + dataIndex];
+    if (!rawLine || !rawLine.trim()) continue;
     let values = splitSemicolon(rawLine);
     if (values.length < headers.length) {
       values = [...values, ...Array(headers.length - values.length).fill("")];
@@ -529,7 +543,7 @@ function parseMovementFile(
     }
 
     outputRows.push({
-      rowNumber: currentRowNumber,
+      rowNumber: dataStart + dataIndex + 1,
       adjustmentKey,
       documentKey,
       documentNumber,
@@ -543,15 +557,14 @@ function parseMovementFile(
     });
   }
 
-  if (!outputRows.length) throw new Error(file.name + " não contém linhas de dados.");
-  return { fileType, exercise, finalized, headers, rows: outputRows };
+  return { fileType, exercise, finalized, headers, totalDataLines, nextOffset, rows: outputRows };
 }
-
 async function importOneFile(
   admin: ReturnType<typeof createClient>,
   file: DriveFile,
   accessToken: string,
   finalizedNamesByType: Map<string, Set<number>>,
+  requestedImportId: string | null = null,
 ): Promise<Record<string, unknown>> {
   const filenameMatch = file.name.match(/^TXT_(EMPENHO|PAGAMENTO)(?:-(20\d{2}))?\.txt$/i);
   if (!filenameMatch) throw new Error("Nome de arquivo fora do padrão permitido.");
@@ -559,90 +572,236 @@ async function importOneFile(
   const md5 = file.md5Checksum ?? null;
   const modified = file.modifiedTime ?? null;
   const size = Number(file.size ?? 0);
+  const chunkLimit = 1000;
+  const insertBatchSize = 250;
+  const now = new Date().toISOString();
 
-  // Compara a versão do arquivo pelo nome e metadados antes do download integral.
-  const { data: namedImports, error: namedError } = await admin
-    .from("orcom_file_imports")
-    .select("id,file_name,exercise,drive_md5_checksum,drive_modified_at,file_size_bytes,is_finalized,row_count")
-    .eq("file_name", file.name)
-    .eq("status", "success")
-    .order("finished_at", { ascending: false })
-    .limit(10);
-  if (namedError) {
-    throw new Error("Não foi possível consultar o histórico de " + file.name + ": " + namedError.message);
-  }
-  const unchangedImport = (namedImports ?? []).find((item: Record<string, unknown>) =>
-    item.is_finalized === namedFinalized &&
-    (
-      (md5 && item.drive_md5_checksum === md5) ||
-      (!md5 && item.drive_modified_at === modified && Number(item.file_size_bytes ?? 0) === size)
-    )
-  );
-  if (unchangedImport) {
-    return {
-      file_name: file.name,
-      file_type: filenameMatch[1].toUpperCase() === "EMPENHO" ? "empenho" : "pagamento",
-      exercise: Number(unchangedImport.exercise),
-      status: "unchanged",
-      reason: "Os metadados do arquivo no Google Drive não mudaram desde a última importação bem-sucedida.",
-      row_count: Number(unchangedImport.row_count ?? 0),
-    };
+  let importRecord: Record<string, unknown> | null = null;
+  if (requestedImportId) {
+    const { data, error } = await admin
+      .from("orcom_file_imports")
+      .select("id,file_name,file_type,exercise,is_finalized,drive_md5_checksum,drive_modified_at,file_size_bytes,headers,row_count,linked_row_count,expected_row_count,next_row_number,chunk_lock_until,status")
+      .eq("id", requestedImportId)
+      .eq("file_name", file.name)
+      .maybeSingle();
+    if (error) throw new Error("Não foi possível localizar a sessão de importação de " + file.name + ": " + error.message);
+    if (!data) throw new Error("A sessão de importação indicada não existe para " + file.name + ".");
+    importRecord = data as Record<string, unknown>;
+  } else {
+    const { data: activeImports, error: activeError } = await admin
+      .from("orcom_file_imports")
+      .select("id,file_name,file_type,exercise,is_finalized,drive_md5_checksum,drive_modified_at,file_size_bytes,headers,row_count,linked_row_count,expected_row_count,next_row_number,chunk_lock_until,status")
+      .eq("file_name", file.name)
+      .eq("status", "processing")
+      .order("started_at", { ascending: false })
+      .limit(1);
+    if (activeError) throw new Error("Não foi possível consultar uma importação em andamento de " + file.name + ": " + activeError.message);
+    if (activeImports?.length) importRecord = activeImports[0] as Record<string, unknown>;
   }
 
-  const content = await downloadDriveText(file, accessToken);
-  const parsed = parseMovementFile(file, content);
-
-  if (!parsed.finalized && finalizedNamesByType.get(parsed.fileType)?.has(parsed.exercise)) {
-    return {
-      file_name: file.name,
-      file_type: parsed.fileType,
-      exercise: parsed.exercise,
-      status: "skipped",
-      reason: "Existe arquivo histórico definitivo com sufixo para este exercício; ele tem precedência sobre o arquivo corrente.",
-      row_count: parsed.rows.length,
-    };
+  // Evita reprocessar um arquivo que já foi importado com os mesmos metadados.
+  if (!importRecord) {
+    const { data: previousImports, error: previousError } = await admin
+      .from("orcom_file_imports")
+      .select("id,file_name,exercise,drive_md5_checksum,drive_modified_at,file_size_bytes,is_finalized,row_count")
+      .eq("file_name", file.name)
+      .eq("status", "success")
+      .order("finished_at", { ascending: false })
+      .limit(10);
+    if (previousError) throw new Error("Não foi possível consultar o histórico de " + file.name + ": " + previousError.message);
+    const unchangedImport = (previousImports ?? []).find((item: Record<string, unknown>) =>
+      item.is_finalized === namedFinalized &&
+      (
+        (md5 && item.drive_md5_checksum === md5) ||
+        (!md5 && item.drive_modified_at === modified && Number(item.file_size_bytes ?? 0) === size)
+      )
+    );
+    if (unchangedImport) {
+      return {
+        file_name: file.name,
+        file_type: filenameMatch[1].toUpperCase() === "EMPENHO" ? "empenho" : "pagamento",
+        exercise: Number(unchangedImport.exercise),
+        status: "unchanged",
+        row_count: Number(unchangedImport.row_count ?? 0),
+        complete: true,
+        reason: "Os metadados do arquivo no Google Drive não mudaram desde a última importação bem-sucedida.",
+      };
+    }
   }
 
-  const { data: previousImports, error: previousError } = await admin
-    .from("orcom_file_imports")
-    .select("id,file_name,drive_md5_checksum,drive_modified_at,file_size_bytes,is_finalized")
-    .eq("file_type", parsed.fileType)
-    .eq("exercise", parsed.exercise)
-    .eq("status", "success")
-    .order("finished_at", { ascending: false })
-    .limit(20);
-  if (previousError) throw new Error("Não foi possível consultar a última importação de " + file.name + ": " + previousError.message);
+  // Para retomadas, reserva uma janela exclusiva para processar o próximo bloco.
+  let lockedRecord: Record<string, unknown> | null = null;
+  if (importRecord) {
+    if (importRecord.status === "success") {
+      return {
+        file_name: file.name,
+        file_type: importRecord.file_type,
+        exercise: importRecord.exercise,
+        status: "imported",
+        row_count: importRecord.row_count,
+        complete: true,
+        import_id: importRecord.id,
+      };
+    }
+    if (importRecord.status === "failed") {
+      const { error: resumeError } = await admin
+        .from("orcom_file_imports")
+        .update({ status: "processing", finished_at: null, error_message: null, chunk_lock_until: null })
+        .eq("id", String(importRecord.id))
+        .eq("status", "failed");
+      if (resumeError) throw new Error("Não foi possível retomar a importação de " + file.name + ": " + resumeError.message);
+      importRecord.status = "processing";
+      importRecord.chunk_lock_until = null;
+    }
+    if (importRecord.status !== "processing") {
+      throw new Error("Estado inesperado da importação de " + file.name + ": " + String(importRecord.status));
+    }
 
-  const { data: importRecord, error: createError } = await admin
-    .from("orcom_file_imports")
-    .insert({
-      file_type: parsed.fileType,
-      file_name: file.name,
-      exercise: parsed.exercise,
-      is_finalized: parsed.finalized,
-      drive_file_id: file.id,
-      drive_modified_at: modified,
-      drive_md5_checksum: md5,
-      file_size_bytes: size || new TextEncoder().encode(content).length,
-      headers: parsed.headers,
-      row_count: 0,
-      linked_row_count: 0,
-      status: "processing",
-    })
-    .select("id")
-    .single();
-  if (createError || !importRecord) {
-    throw new Error("Não foi possível registrar o início da importação de " + file.name + ": " + (createError?.message ?? "sem ID retornado"));
+    const lockUntil = new Date(Date.now() + 120000).toISOString();
+    let lockQuery = admin
+      .from("orcom_file_imports")
+      .update({ chunk_lock_until: lockUntil })
+      .eq("id", String(importRecord.id))
+      .eq("status", "processing");
+    if (importRecord.chunk_lock_until) {
+      lockQuery = lockQuery.lt("chunk_lock_until", now);
+    } else {
+      lockQuery = lockQuery.is("chunk_lock_until", null);
+    }
+    const { data: claimed, error: claimError } = await lockQuery
+      .select("id,file_name,file_type,exercise,is_finalized,headers,row_count,linked_row_count,expected_row_count,next_row_number,chunk_lock_until,status")
+      .maybeSingle();
+    if (claimError) throw new Error("Não foi possível reservar o próximo bloco de " + file.name + ": " + claimError.message);
+    if (!claimed) {
+      const { data: current } = await admin
+        .from("orcom_file_imports")
+        .select("id,row_count,expected_row_count,next_row_number,chunk_lock_until,status")
+        .eq("id", String(importRecord.id))
+        .maybeSingle();
+      return {
+        file_name: file.name,
+        file_type: importRecord.file_type,
+        exercise: importRecord.exercise,
+        status: "busy",
+        complete: false,
+        import_id: importRecord.id,
+        row_count: Number(current?.row_count ?? importRecord.row_count ?? 0),
+        expected_row_count: Number(current?.expected_row_count ?? importRecord.expected_row_count ?? 0),
+        next_row_number: Number(current?.next_row_number ?? importRecord.next_row_number ?? 0),
+        reason: "Outro processo está importando o próximo bloco deste arquivo.",
+      };
+    }
+    lockedRecord = claimed as Record<string, unknown>;
   }
-  const importId = String(importRecord.id);
+
   try {
-    const batchSize = 1000;
-    let linkedCount = 0;
-    for (let start = 0; start < parsed.rows.length; start += batchSize) {
-      const rows = parsed.rows.slice(start, start + batchSize);
-      linkedCount += rows.filter((row) => Boolean(row.adjustmentKey)).length;
+    const content = await downloadDriveText(file, accessToken);
+    const offset = lockedRecord ? Number(lockedRecord.next_row_number ?? 0) : 0;
+    const parsed = parseMovementFile(file, content, offset, chunkLimit);
+
+    if (!lockedRecord) {
+      if (!parsed.finalized && finalizedNamesByType.get(parsed.fileType)?.has(parsed.exercise)) {
+        return {
+          file_name: file.name,
+          file_type: parsed.fileType,
+          exercise: parsed.exercise,
+          status: "skipped",
+          complete: true,
+          reason: "Existe arquivo histórico definitivo com sufixo para este exercício; ele tem precedência sobre o arquivo corrente.",
+        };
+      }
+      if (parsed.totalDataLines === 0) throw new Error(file.name + " não contém linhas de dados.");
+
+      const { data: created, error: createError } = await admin
+        .from("orcom_file_imports")
+        .insert({
+          file_type: parsed.fileType,
+          file_name: file.name,
+          exercise: parsed.exercise,
+          is_finalized: parsed.finalized,
+          drive_file_id: file.id,
+          drive_modified_at: modified,
+          drive_md5_checksum: md5,
+          file_size_bytes: size || new TextEncoder().encode(content).length,
+          headers: parsed.headers,
+          row_count: 0,
+          linked_row_count: 0,
+          expected_row_count: parsed.totalDataLines,
+          next_row_number: 0,
+          chunk_lock_until: null,
+          status: "processing",
+        })
+        .select("id,file_name,file_type,exercise,is_finalized,headers,row_count,linked_row_count,expected_row_count,next_row_number,chunk_lock_until,status")
+        .single();
+      if (createError || !created) {
+        // If another caller started the same file concurrently, reuse its processing record.
+        const { data: concurrent } = await admin
+          .from("orcom_file_imports")
+          .select("id,file_name,file_type,exercise,is_finalized,headers,row_count,linked_row_count,expected_row_count,next_row_number,chunk_lock_until,status")
+          .eq("file_name", file.name)
+          .eq("status", "processing")
+          .order("started_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (concurrent) {
+          return {
+            file_name: file.name,
+            file_type: concurrent.file_type,
+            exercise: concurrent.exercise,
+            status: "busy",
+            complete: false,
+            import_id: concurrent.id,
+            row_count: Number(concurrent.row_count ?? 0),
+            expected_row_count: Number(concurrent.expected_row_count ?? 0),
+            next_row_number: Number(concurrent.next_row_number ?? 0),
+            reason: "Outra chamada iniciou a importação deste arquivo. Retome a sessão existente.",
+          };
+        }
+        throw new Error("Não foi possível registrar o início da importação de " + file.name + ": " + (createError?.message ?? "sem ID retornado"));
+      }
+      importRecord = created as Record<string, unknown>;
+
+      const lockUntil = new Date(Date.now() + 120000).toISOString();
+      const { data: claimed, error: claimError } = await admin
+        .from("orcom_file_imports")
+        .update({ chunk_lock_until: lockUntil })
+        .eq("id", String(importRecord.id))
+        .eq("status", "processing")
+        .is("chunk_lock_until", null)
+        .select("id,file_name,file_type,exercise,is_finalized,headers,row_count,linked_row_count,expected_row_count,next_row_number,chunk_lock_until,status")
+        .maybeSingle();
+      if (claimError || !claimed) {
+        throw new Error("Não foi possível reservar o primeiro bloco de " + file.name + ": " + (claimError?.message ?? "sessão ocupada"));
+      }
+      lockedRecord = claimed as Record<string, unknown>;
+    }
+
+    // A validação do cabeçalho e a criação da sessão podem ter levado alguns instantes;
+    // confirma se o offset da sessão ainda é o mesmo que foi analisado.
+    const currentOffset = Number(lockedRecord!.next_row_number ?? 0);
+    if (currentOffset !== offset) {
+      await admin.from("orcom_file_imports")
+        .update({ chunk_lock_until: null })
+        .eq("id", String(lockedRecord!.id));
+      return {
+        file_name: file.name,
+        file_type: parsed.fileType,
+        exercise: parsed.exercise,
+        status: "busy",
+        complete: false,
+        import_id: lockedRecord!.id,
+        row_count: Number(lockedRecord!.row_count ?? 0),
+        expected_row_count: Number(lockedRecord!.expected_row_count ?? 0),
+        next_row_number: currentOffset,
+      };
+    }
+
+    let linkedInChunk = 0;
+    for (let start = 0; start < parsed.rows.length; start += insertBatchSize) {
+      const rows = parsed.rows.slice(start, start + insertBatchSize);
+      linkedInChunk += rows.filter((row) => Boolean(row.adjustmentKey)).length;
       const payload = rows.map((row) => ({
-        import_id: importId,
+        import_id: String(lockedRecord!.id),
         row_number: row.rowNumber,
         file_type: parsed.fileType,
         exercise: parsed.exercise,
@@ -658,49 +817,81 @@ async function importOneFile(
         is_valid_payment: row.isValidPayment,
       }));
       const { error: insertError } = await admin.from("orcom_movement_rows").insert(payload);
-      if (insertError) throw new Error("Falha ao gravar linhas de " + file.name + ": " + insertError.message);
+      if (insertError) throw new Error("Falha ao gravar bloco de " + file.name + ": " + insertError.message);
     }
 
-    const { error: finishError } = await admin
+    const totalRowCount = Number(lockedRecord!.row_count ?? 0) + parsed.rows.length;
+    const totalLinkedCount = Number(lockedRecord!.linked_row_count ?? 0) + linkedInChunk;
+    const isComplete = parsed.nextOffset >= parsed.totalDataLines;
+    const { error: progressError } = await admin
       .from("orcom_file_imports")
       .update({
-        status: "success",
-        row_count: parsed.rows.length,
-        linked_row_count: linkedCount,
-        finished_at: new Date().toISOString(),
+        row_count: totalRowCount,
+        linked_row_count: totalLinkedCount,
+        expected_row_count: parsed.totalDataLines,
+        next_row_number: parsed.nextOffset,
+        chunk_lock_until: null,
+        status: isComplete ? "success" : "processing",
+        finished_at: isComplete ? new Date().toISOString() : null,
         error_message: null,
       })
-      .eq("id", importId);
-    if (finishError) throw new Error("Não foi possível concluir o registro de " + file.name + ": " + finishError.message);
+      .eq("id", String(lockedRecord!.id));
+    if (progressError) throw new Error("Não foi possível atualizar o progresso de " + file.name + ": " + progressError.message);
 
-    const { error: supersedeError } = await admin
-      .from("orcom_file_imports")
-      .update({ status: "superseded" })
-      .eq("file_type", parsed.fileType)
-      .eq("exercise", parsed.exercise)
-      .eq("status", "success")
-      .neq("id", importId);
-    if (supersedeError) {
-      console.warn("A nova versão de " + file.name + " foi importada, mas não foi possível marcar todas as versões anteriores como substituídas:", supersedeError.message);
+    if (isComplete) {
+      const { error: supersedeError } = await admin
+        .from("orcom_file_imports")
+        .update({ status: "superseded" })
+        .eq("file_type", parsed.fileType)
+        .eq("exercise", parsed.exercise)
+        .eq("status", "success")
+        .neq("id", String(lockedRecord!.id));
+      if (supersedeError) {
+        console.warn("A nova versão de " + file.name + " foi importada, mas não foi possível marcar versões anteriores:", supersedeError.message);
+      }
     }
 
     return {
       file_name: file.name,
       file_type: parsed.fileType,
       exercise: parsed.exercise,
-      status: "imported",
-      row_count: parsed.rows.length,
-      linked_row_count: linkedCount,
+      status: isComplete ? "imported" : "processing",
+      complete: isComplete,
+      import_id: lockedRecord!.id,
+      row_count: totalRowCount,
+      chunk_row_count: parsed.rows.length,
+      expected_row_count: parsed.totalDataLines,
+      next_row_number: parsed.nextOffset,
+      linked_row_count: totalLinkedCount,
       finalized: parsed.finalized,
     };
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const isRetryable = /Google|Drive|Falha ao baixar|timeout|temporariamente|429|500|503/i.test(message);
     await admin.from("orcom_file_imports")
       .update({
-        status: "failed",
-        finished_at: new Date().toISOString(),
-        error_message: error instanceof Error ? error.message : String(error),
+        chunk_lock_until: null,
+        ...(isRetryable ? { status: "processing", finished_at: null, error_message: message } : {
+          status: "failed",
+          finished_at: new Date().toISOString(),
+          error_message: message,
+        }),
       })
-      .eq("id", importId);
+      .eq("id", String(lockedRecord!.id));
+    if (isRetryable) {
+      return {
+        file_name: file.name,
+        file_type: lockedRecord!.file_type,
+        exercise: lockedRecord!.exercise,
+        status: "retry",
+        complete: false,
+        import_id: lockedRecord!.id,
+        row_count: Number(lockedRecord!.row_count ?? 0),
+        expected_row_count: Number(lockedRecord!.expected_row_count ?? 0),
+        next_row_number: Number(lockedRecord!.next_row_number ?? 0),
+        error: message,
+      };
+    }
     throw error;
   }
 }
@@ -828,7 +1019,8 @@ Deno.serve(async (req: Request) => {
     }
 
     try {
-      const result = await importOneFile(admin, target, accessToken, finalizedNamesByType);
+      const requestedImportId = typeof requestBody.import_id === "string" ? requestBody.import_id.trim() : null;
+      const result = await importOneFile(admin, target, accessToken, finalizedNamesByType, requestedImportId || null);
       const failed = result.status === "failed";
       return jsonResponse({
         success: !failed,

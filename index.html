@@ -62,7 +62,13 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 .payment-filters{grid-template-columns:repeat(5,minmax(125px,1fr))}
 .column-filters{display:grid;grid-template-columns:repeat(5,minmax(125px,1fr));gap:10px;margin:0 0 12px;padding:12px;background:#f7f9fc;border:1px solid #e0e7f0;border-radius:10px}
 .column-filters label{margin-bottom:5px}
-.column-filters input{width:100%;min-width:0;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
+.column-filters input,.column-filters select{width:100%;min-width:0;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
+.selection-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+.selection-actions .hint{margin:0}
+.selection-actions .account-button{padding:9px 13px}
+.selection-filter-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px}
+@media(max-width:760px){.selection-filter-grid{grid-template-columns:1fr 1fr}}
+
 .source-group td{background:#eef4fa!important;color:#244466;font-weight:800;border-top:1px solid #ccd9e8}
 .emp-detail td:nth-child(2){padding-left:12px}
 @media(max-width:1100px){.column-filters{grid-template-columns:repeat(3,minmax(130px,1fr))}}
@@ -260,8 +266,11 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
     </div>
     <div class="controls" style="margin-top:14px;grid-template-columns:repeat(2,minmax(180px,1fr))">
       <div><label for="conv">Número do ajuste</label><select id="conv" disabled><option value="">Carregando ajustes…</option></select></div>
-      <div class="search-wrap"><label for="search">Localizar ajuste</label><input id="search" type="search" placeholder="Digite o número ou nome da entidade" autocomplete="off" disabled><div id="suggestions" class="suggestions" hidden></div></div>
+      <div class="search-wrap"><label for="search">Localizar ajuste ou entidade</label><input id="search" type="search" placeholder="Digite o número do ajuste ou nome da entidade" autocomplete="off" disabled><div id="suggestions" class="suggestions" hidden></div></div>
+      <div><label for="adjustmentYearFilter">Ano do ajuste</label><select id="adjustmentYearFilter" disabled><option value="">Todos os anos</option></select></div>
+      <div><label for="adjustmentLetterFilter">Letra</label><select id="adjustmentLetterFilter" disabled><option value="">Todas as letras</option></select></div>
     </div>
+    <div class="selection-actions"><button id="clearAdjustmentSelection" type="button" class="account-button" disabled>Limpar seleção</button><span class="hint">A lista contém somente ajustes concedidos com pagamentos O/R registrados a partir de 2020.</span></div>
     <div id="status" class="status">Conectando ao Supabase e carregando a base mais recente…</div>
   </section>
 
@@ -315,11 +324,11 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
   <section class="panel">
     <div class="section-head"><h2>3. Empenhos por ano, fonte e categoria econômica</h2></div>
     <div class="column-filters emp-column-filters">
-      <div><label for="empFilterYear">Ano</label><input id="empFilterYear" type="search" placeholder="Filtrar ano" autocomplete="off"></div>
-      <div><label for="empFilterNumber">Empenho</label><input id="empFilterNumber" type="search" placeholder="Filtrar empenho" autocomplete="off"></div>
-      <div><label for="empFilterSource">Fonte</label><input id="empFilterSource" type="search" placeholder="Filtrar fonte" autocomplete="off"></div>
-      <div><label for="empFilterCusteio">Custeio</label><input id="empFilterCusteio" type="search" placeholder="Filtrar custeio" autocomplete="off"></div>
-      <div><label for="empFilterCapital">Capital</label><input id="empFilterCapital" type="search" placeholder="Filtrar capital" autocomplete="off"></div>
+      <div><label for="empFilterYear">Ano</label><select id="empFilterYear"><option value="">Todos os anos</option></select></div>
+      <div><label for="empFilterNumber">Empenho</label><select id="empFilterNumber"><option value="">Todos os empenhos</option></select></div>
+      <div><label for="empFilterSource">Fonte</label><select id="empFilterSource"><option value="">Todas as fontes</option></select></div>
+      <div><label for="empFilterCusteio">Custeio</label><select id="empFilterCusteio"><option value="">Todos os valores de custeio</option></select></div>
+      <div><label for="empFilterCapital">Capital</label><select id="empFilterCapital"><option value="">Todos os valores de capital</option></select></div>
     </div>
     <div id="empTable" class="table-wrap"><div class="empty">Sem dados para exibir.</div></div>
   </section>
@@ -334,11 +343,11 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
       <div class="payment-actions" style="display:flex;align-items:end;gap:8px"><button id="clearDates" type="button" disabled>Limpar filtros</button><button id="export" type="button" disabled>Exportar pagamentos CSV</button></div>
     </div>
     <div class="column-filters payment-column-filters">
-      <div><label for="payFilterOP">OP</label><input id="payFilterOP" type="search" placeholder="Filtrar OP" autocomplete="off"></div>
-      <div><label for="payFilterEmpenho">Empenho</label><input id="payFilterEmpenho" type="search" placeholder="Filtrar empenho" autocomplete="off"></div>
-      <div><label for="payFilterFonte">Fonte</label><input id="payFilterFonte" type="search" placeholder="Filtrar fonte" autocomplete="off"></div>
-      <div><label for="payFilterCusteio">Custeio</label><input id="payFilterCusteio" type="search" placeholder="Filtrar custeio" autocomplete="off"></div>
-      <div><label for="payFilterCapital">Capital</label><input id="payFilterCapital" type="search" placeholder="Filtrar capital" autocomplete="off"></div>
+      <div><label for="payFilterOP">OP</label><select id="payFilterOP"><option value="">Todas as OPs</option></select></div>
+      <div><label for="payFilterEmpenho">Empenho</label><select id="payFilterEmpenho"><option value="">Todos os empenhos</option></select></div>
+      <div><label for="payFilterFonte">Fonte</label><select id="payFilterFonte"><option value="">Todas as fontes</option></select></div>
+      <div><label for="payFilterCusteio">Custeio</label><select id="payFilterCusteio"><option value="">Todos os valores de custeio</option></select></div>
+      <div><label for="payFilterCapital">Capital</label><select id="payFilterCapital"><option value="">Todos os valores de capital</option></select></div>
     </div>
     <div id="paySummary" class="pay-summary" hidden></div>
     <div id="payTable" class="table-wrap"><div class="empty">Sem dados para exibir.</div></div>
@@ -479,29 +488,67 @@ function renderCadExtraFields(metadata){
     return '<div class="cad-extra-field"><span>'+esc(label)+' · '+esc(key)+'</span><strong>'+esc(value)+'</strong></div>';
   }).join('');
 }
+function setSelectOptions(id,values,emptyLabel,formatter){
+  const control=$(id);
+  if(!control)return;
+  const previous=control.value;
+  const clean=[...new Set(values.map(value=>String(value??'').trim()).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
+  control.innerHTML='<option value="">'+esc(emptyLabel)+'</option>'+
+    clean.map(value=>'<option value="'+esc(value)+'">'+esc(formatter?formatter(value):value)+'</option>').join('');
+  control.value=clean.includes(previous)?previous:'';
+  control.disabled=clean.length===0;
+}
 function renderAdjustmentOptionsFromCad(){
   const selected=$('conv').value;
-  let options=[];
+  const allOptions=[];
   for(const metadata of cadMetadataByKey.values()){
     const cv=formatCadCode(metadata);
     if(!cv)continue;
-    options.push({cv,ent:String(metadata.entity||metadata.extra_fields?.['R-SOCIAL']||'').trim()});
+    allOptions.push({
+      cv,
+      ent:String(metadata.entity||metadata.extra_fields?.['R-SOCIAL']||'').trim(),
+      year:String(metadata.year||'').trim(),
+      letter:String(metadata.letter||'').trim().toUpperCase(),
+      key:String(metadata.join_key||'')
+    });
   }
-  options.sort((a,b)=>formatAdjustmentNumber(a.cv).localeCompare(formatAdjustmentNumber(b.cv),'pt-BR',{numeric:true}));
+  allOptions.sort((a,b)=>
+    a.year.localeCompare(b.year,'pt-BR',{numeric:true})||
+    a.letter.localeCompare(b.letter,'pt-BR')||
+    formatAdjustmentNumber(a.cv).localeCompare(formatAdjustmentNumber(b.cv),'pt-BR',{numeric:true})
+  );
+  setSelectOptions('adjustmentYearFilter',allOptions.map(option=>option.year),'Todos os anos',value=>value);
+  setSelectOptions('adjustmentLetterFilter',allOptions.map(option=>option.letter),'Todas as letras',value=>value||'Sem letra');
+  const year=$('adjustmentYearFilter').value;
+  const letter=$('adjustmentLetterFilter').value;
+  const filtered=allOptions.filter(option=>
+    (!year||option.year===year)&&
+    (!letter||option.letter===letter)
+  );
   const unique=new Map();
-  for(const option of options)if(!unique.has(normalizeAdjustmentSearch(option.cv)))unique.set(normalizeAdjustmentSearch(option.cv),option);
-  options=[...unique.values()];
+  for(const option of filtered){
+    const key=normalizeAdjustmentSearch(option.cv);
+    if(!unique.has(key))unique.set(key,option);
+  }
+  const options=[...unique.values()];
   window.CONVENIO_OPTIONS=options;
-  $('conv').innerHTML='<option value="">Selecione um ajuste</option>'+options.map(option=>'<option value="'+esc(option.cv)+'">'+esc(formatAdjustmentNumber(option.cv))+'</option>').join('');
+  $('conv').innerHTML='<option value="">Selecione um ajuste</option>'+
+    options.map(option=>'<option value="'+esc(option.cv)+'">'+esc(formatAdjustmentNumber(option.cv))+' — '+esc(option.ent||'Entidade não informada')+'</option>').join('');
   $('conv').disabled=options.length===0;
   $('search').disabled=options.length===0;
+  $('clearAdjustmentSelection').disabled=!selected;
   const normalizedSelected=normalizeAdjustmentSearch(selected);
   const retained=options.find(option=>normalizeAdjustmentSearch(option.cv)===normalizedSelected);
   $('conv').value=retained?retained.cv:'';
-  if(retained)$('search').value=formatAdjustmentNumber(retained.cv);
+  if(retained){
+    $('search').value=formatAdjustmentNumber(retained.cv);
+  }else if(selected){
+    clearAdjustmentSelection();
+  }
   if(!options.length){
     $('status').hidden=false;
-    $('status').textContent='Aguardando a importação válida de CadConvenios.txt para montar a seleção dos ajustes.';
+    $('status').textContent='Nenhum ajuste concedido com pagamentos a partir de 2020 foi encontrado na base atual.';
   }
 }
 function parseCadDateValue(value){
@@ -555,125 +602,149 @@ function renderCadMetadata(code){
   renderCadExtraFields(metadata);
   renderAdjustmentStatus(code,metadata);
 }
-async function loadMovementSummaryFromSupabase(){
-  movementSummaryByKey=new Map();
-  try{
-    const records=await supabaseGetAll('orcom_adjustment_movement_summary?select=adjustment_key,total_empenhado,total_pago_bruto,total_pago_valido,quantidade_empenhos,quantidade_movimentos_pagamento&order=adjustment_key.asc',1000);
-    for(const record of records){
-      movementSummaryByKey.set(normalizeAdjustmentSearch(record.adjustment_key),record);
-    }
-  }catch(error){
-    console.warn('Não foi possível carregar o resumo dos movimentos ORCOM.',error);
-  }
-}
 async function loadCadMetadataFromSupabase(){
-  cadMetadataByKey=new Map();cadMetadataLoaded=false;cadMetadataFinishedAt='';
+  cadMetadataByKey=new Map();
+  selectionRows=[];
+  cadMetadataLoaded=false;
+  cadMetadataFinishedAt='';
   try{
-    const imports=await supabaseGet('ret_fontes_imports?select=id,file_name,status,row_count,finished_at&file_name=eq.CadConvenios.txt&status=eq.success&order=finished_at.desc&limit=1');
-    if(!imports.length){
-      renderAdjustmentOptionsFromCad();
-      await loadMovementSummaryFromSupabase();
-      renderCadMetadata($('conv').value);
-      renderOverview();
-      return;
-    }
-    const latest=imports[0];
-    const records=await supabaseGetAll(`ret_fontes_rows?select=fields&import_id=eq.${encodeURIComponent(latest.id)}&order=row_number.asc`,1000);
+    const [records,cadImports]=await Promise.all([
+      supabaseGetAll(
+        'orcom_adjustment_selection?select=adjustment_key,adjustment_year,adjustment_number,adjustment_letter,entity,fields,total_cadastrado_inicial,total_cadastrado_aditamentos,total_cadastrado,total_empenhado,total_pago_bruto,total_pago_valido,quantidade_empenhos,quantidade_movimentos_pagamento&order=adjustment_year.desc,adjustment_number.desc,adjustment_letter.asc',
+        1000
+      ),
+      supabaseGet('ret_fontes_imports?select=finished_at,row_count&file_name=eq.CadConvenios.txt&status=eq.success&order=finished_at.desc&limit=1')
+    ]);
     for(const record of records){
       let metadata=record.fields;
-      if(typeof metadata==='string'){try{metadata=JSON.parse(metadata);}catch{continue;}}
-      if(!metadata||typeof metadata!=='object'||Array.isArray(metadata)||!metadata.join_key)continue;
-      cadMetadataByKey.set(normalizeAdjustmentSearch(metadata.join_key),metadata);
+      if(typeof metadata==='string'){try{metadata=JSON.parse(metadata);}catch{metadata={};}}
+      if(!metadata||typeof metadata!=='object'||Array.isArray(metadata))metadata={};
+      metadata={
+        ...metadata,
+        join_key:record.adjustment_key,
+        year:record.adjustment_year,
+        number:record.adjustment_number,
+        letter:record.adjustment_letter,
+        entity:record.entity||metadata.entity||metadata.extra_fields?.['R-SOCIAL']||'',
+        selection:record
+      };
+      const key=normalizeAdjustmentSearch(record.adjustment_key);
+      cadMetadataByKey.set(key,metadata);
+      selectionRows.push({...record,_metadata:metadata});
     }
-    cadMetadataLoaded=true;cadMetadataFinishedAt=latest.finished_at||'';
+    cadMetadataLoaded=true;
+    cadMetadataFinishedAt=cadImports[0]?.finished_at||'';
+    renderAdjustmentOptionsFromCad();
+    renderCadMetadata($('conv').value);
+    renderOverview();
+    $('fileMeta').textContent=
+      records.length.toLocaleString('pt-BR')+' ajustes elegíveis · cadastro atualizado em '+
+      (cadMetadataFinishedAt?new Date(cadMetadataFinishedAt).toLocaleString('pt-BR'):'data não informada');
   }catch(error){
-    console.warn('Não foi possível carregar o cadastro complementar CadConvenios.txt.',error);
+    console.error('Não foi possível carregar a lista de ajustes elegíveis.',error);
+    $('status').hidden=false;
+    $('status').textContent='Não foi possível carregar a lista de ajustes concedidos com pagamentos desde 2020: '+(error?.message||String(error));
+    cadMetadataLoaded=false;
+    renderAdjustmentOptionsFromCad();
   }
-  renderAdjustmentOptionsFromCad();
-  await loadMovementSummaryFromSupabase();
-  renderCadMetadata($('conv').value);
-  renderOverview();
 }
-async function loadMovementDataForAdjustment(code){
+
+function retCompactKey(metadata){
+  const year=String(metadata?.year||'').replace(/\D/g,'').slice(-4);
+  const number=String(metadata?.number||'').replace(/\D/g,'').padStart(5,'0').slice(-5);
+  const letter=String(metadata?.letter||'').replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+  return year.length===4&&number.length===5?year+number+letter:'';
+}
+function retRowsToObjects(records){
+  return records.map(record=>{
+    let values=record.fields;
+    if(typeof values==='string'){try{values=JSON.parse(values);}catch{values=[];}}
+    if(!Array.isArray(values))values=[];
+    const row={};
+    RET_SCHEMA.forEach((header,index)=>row[header]=values[index]??'');
+    return row;
+  });
+}
+async function loadRetRowsForAdjustment(code,requestId){
+  currentRows=[];
+  const metadata=cadMetadataFor(code);
+  const compact=retCompactKey(metadata);
+  if(!retFontesImportId||!compact){
+    retRowsLoadedFor='';
+    return;
+  }
+  const query=new URLSearchParams();
+  query.set('select','row_number,fields');
+  query.set('import_id','eq.'+retFontesImportId);
+  query.set('fields->>0','eq.'+compact);
+  query.set('order','row_number.asc');
+  const records=await supabaseGetAll('ret_fontes_rows?'+query.toString(),500);
+  if(requestId!==selectionRequestId)return;
+  currentRows=retRowsToObjects(records);
+  retRowsLoadedFor=metadata?.join_key||normalizeAdjustmentSearch(formatAdjustmentNumber(code));
+}
+async function loadMovementDataForAdjustment(code,requestId){
   const metadata=cadMetadataFor(code);
   const adjustmentKey=metadata?.join_key||normalizeAdjustmentSearch(formatAdjustmentNumber(code));
   if(!adjustmentKey)return;
   if(movementDataLoadedFor===adjustmentKey)return;
-  movementDataLoading=true;
-  currentMovementRows=[];currentEmpenhos=[];currentPayments=[];
-  layoutInfo.hasPayments=false;
-  render();
-  $('status').hidden=false;
-  $('status').textContent='Consultando os empenhos e pagamentos do ajuste '+formatAdjustmentNumber(code)+' em todos os exercícios importados…';
-  try{
-    const records=await supabaseGetAll(
-      'orcom_movement_rows?select=id,import_id,row_number,file_type,exercise,adjustment_key,document_key,document_number,fields,amount,category_code,source_code,transaction_kind,date_value,is_valid_payment&adjustment_key=eq.'+
-      encodeURIComponent(adjustmentKey)+'&order=file_type.asc,exercise.asc,row_number.asc',
-      1000
-    );
-    if($('conv').value!==code)return;
-    currentMovementRows=records.map(record=>({...record,fields:movementFields(record)}));
-    currentEmpenhos=currentMovementRows
-      .filter(record=>record.file_type==='empenho')
-      .map(buildEmpenhoItem);
-    currentPayments=currentMovementRows
-      .filter(record=>record.file_type==='pagamento'&&['O','R'].includes(String(record.transaction_kind||'').toUpperCase()))
-      .map(buildPaymentItem)
-      .sort((a,b)=>(b.dt?.getTime()||0)-(a.dt?.getTime()||0));
-    layoutInfo.hasPayments=currentMovementRows.some(record=>record.file_type==='pagamento');
-    movementDataLoadedFor=adjustmentKey;
-    render();
-    $('status').hidden=false;
-    $('status').textContent=
-      currentEmpenhos.length.toLocaleString('pt-BR')+' registros de empenho e '+
-      currentPayments.length.toLocaleString('pt-BR')+' movimentos de pagamento carregados, considerando todos os exercícios disponíveis.';
-  }catch(error){
-    console.error('Falha ao consultar movimentos ORCOM do ajuste',error);
-    if($('conv').value===code){
-      $('status').hidden=false;
-      $('status').textContent='Não foi possível carregar os empenhos e pagamentos deste ajuste: '+(error?.message||String(error));
-    }
-  }finally{
-    movementDataLoading=false;
-  }
+  const records=await supabaseGetAll(
+    'orcom_movement_rows?select=id,import_id,row_number,file_type,exercise,adjustment_key,document_key,document_number,fields,amount,category_code,source_code,transaction_kind,date_value,is_valid_payment&adjustment_key=eq.'+
+    encodeURIComponent(adjustmentKey)+'&order=file_type.asc,exercise.asc,row_number.asc',
+    1000
+  );
+  if(requestId!==selectionRequestId||$('conv').value!==code)return;
+  const visibleRecords=records.filter(record=>
+    record.file_type!=='pagamento'||Number(record.exercise)>=2020
+  );
+  currentMovementRows=visibleRecords.map(record=>({...record,fields:movementFields(record)}));
+  currentEmpenhos=currentMovementRows
+    .filter(record=>record.file_type==='empenho')
+    .map(buildEmpenhoItem);
+  currentPayments=currentMovementRows
+    .filter(record=>record.file_type==='pagamento'&&Number(record.exercise)>=2020&&['O','R'].includes(String(record.transaction_kind||'').toUpperCase()))
+    .map(buildPaymentItem)
+    .sort((a,b)=>(b.dt?.getTime()||0)-(a.dt?.getTime()||0));
+  layoutInfo.hasPayments=currentPayments.length>0;
+  movementDataLoadedFor=adjustmentKey;
 }
 
 async function loadLatestFromSupabase(){
   if(!SUPABASE_PUBLIC_KEY || SUPABASE_PUBLIC_KEY === 'COLE_SUA_CHAVE_PUBLICA_AQUI'){
     $('status').hidden=false;
-    $('status').textContent = 'Falta configurar a chave pública do Supabase no index.html.';
+    $('status').textContent='Falta configurar a chave pública do Supabase no index.html.';
     return;
   }
-  $('status').textContent = 'Conectando ao Supabase e buscando a última importação concluída…';
+  $('status').hidden=false;
+  $('status').textContent='Carregando a lista de ajustes concedidos com pagamentos de 2020 em diante…';
   try{
-    const imports = await supabaseGet('ret_fontes_imports?select=id,file_name,status,row_count,finished_at&file_name=eq.RET_FONTES.txt&status=eq.success&order=finished_at.desc&limit=1');
-    if(!imports.length) throw new Error('Não há importação concluída disponível.');
-    const latest = imports[0];
-    const records = await supabaseGetAll(`ret_fontes_rows?select=row_number,fields&import_id=eq.${encodeURIComponent(latest.id)}&order=row_number.asc`,1000);
-    if(!records.length) throw new Error('A importação mais recente não contém registros.');
-    const schema = ['CONVENIO','ENTIDADE','TIPOAD','NUMEROAD','TPCAD','TPFOTE','VL-BEM','VL-CUSTEIO','VL-REFORMA','EMPENHO','VALOR-NE','VALOR CUSTEIO','VALOR CAPITAL','FONTE-NE','ANO','MES','DIA','OP','EMPENHO_1','VALOR-OP','VALOR CUSTEIO_2','VALOR CAPITAL_3','FONTE-NE_4','ANO_5','MES_6','DIA_7','Column1'];
-    const quoteField = value => '"' + String(value ?? '').replace(/"/g, '""') + '"';
-    const lines = [schema.map(quoteField).join(';')];
-    for(const record of records){
-      let fields = record.fields;
-      if(typeof fields === 'string') fields = JSON.parse(fields);
-      if(!Array.isArray(fields)) throw new Error(`Formato inesperado na linha ${record.row_number}.`);
-      lines.push(fields.map(quoteField).join(';'));
-    }
-    loadTextIntoPage(lines.join('\n'), `Supabase · ${latest.file_name || 'RET_FONTES.txt'}`);
-    $('fileMeta').textContent = `Supabase · atualizado em ${latest.finished_at ? new Date(latest.finished_at).toLocaleString('pt-BR') : 'data não informada'}`;
+    const imports=await supabaseGet(
+      'ret_fontes_imports?select=id,file_name,status,row_count,finished_at&file_name=eq.RET_FONTES.txt&status=eq.success&order=finished_at.desc&limit=1'
+    );
+    if(!imports.length)throw new Error('Não há importação concluída de RET_FONTES.txt.');
+    retFontesImportId=imports[0].id;
+    headers=RET_SCHEMA.slice();
+    allRows=[];
+    currentRows=[];
+    currentEmpenhos=[];
+    currentPayments=[];
+    currentMovementRows=[];
+    movementDataLoadedFor='';
+    retRowsLoadedFor='';
     await loadCadMetadataFromSupabase();
-  }catch(err){
     $('status').hidden=false;
-    $('status').textContent = 'Não foi possível carregar os dados do Supabase: ' + (err?.message || String(err)) + '.';
-    console.error('Falha ao carregar dados do Supabase', err);
+    $('status').textContent='Lista carregada. Selecione um ajuste para carregar somente seu cadastro, empenhos e pagamentos.';
+  }catch(error){
+    $('status').hidden=false;
+    $('status').textContent='Não foi possível carregar a consulta: '+(error?.message||String(error));
+    console.error('Falha ao carregar a seleção de ajustes.',error);
   }
 }
 
-let allRows=[], headers=[], currentRows=[], currentEmpenhos=[], currentPayments=[], currentMovementRows=[], layoutInfo={hasPayments:false,maxFields:0};
+let allRows=[], headers=RET_SCHEMA.slice(), currentRows=[], currentEmpenhos=[], currentPayments=[], currentMovementRows=[], layoutInfo={hasPayments:false,maxFields:RET_SCHEMA.length};
 let activeAdjustmentFilterCode='';
 let cadMetadataByKey=new Map(),cadMetadataLoaded=false,cadMetadataFinishedAt='';
-let movementSummaryByKey=new Map(),movementDataLoadedFor='',movementDataLoading=false;
+let selectionRows=[],retFontesImportId='',retRowsLoadedFor='',selectionRequestId=0,movementDataLoadedFor='',movementDataLoading=false;
 const money = n => {
   const value=Number(n)||0;
   const cents=Math.round(Math.abs(value)*100);
@@ -982,13 +1053,37 @@ function moneyMatches(value,query){
   if(!q)return true;
   return filterMatches(money(value),q)||filterMatches(String(Number(value)||0),q);
 }
+function populateColumnSelect(id,values,emptyLabel,formatter){
+  const control=$(id);
+  if(!control)return;
+  const previous=control.value;
+  const normalized=new Map();
+  values.forEach(value=>{
+    if(value===null||value===undefined||String(value).trim()==='')return;
+    const raw=String(value);
+    normalized.set(raw,raw);
+  });
+  const sorted=[...normalized.keys()].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
+  control.innerHTML='<option value="">'+esc(emptyLabel)+'</option>'+
+    sorted.map(value=>'<option value="'+esc(value)+'">'+esc(formatter?formatter(value):value)+'</option>').join('');
+  control.value=normalized.has(previous)?previous:'';
+  control.disabled=sorted.length===0;
+}
 function resetColumnFilters(){
   ['empFilterYear','empFilterNumber','empFilterSource','empFilterCusteio','empFilterCapital',
    'payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital'
   ].forEach(id=>{if($(id))$(id).value='';});
 }
+function configureEmpenhoColumnFilters(rows){
+  populateColumnSelect('empFilterYear',rows.map(item=>item.year),'Todos os anos');
+  populateColumnSelect('empFilterNumber',rows.map(item=>item.empenho),'Todos os empenhos');
+  populateColumnSelect('empFilterSource',rows.map(item=>item.source),'Todas as fontes');
+  populateColumnSelect('empFilterCusteio',rows.map(item=>item.c),'Todos os valores de custeio',value=>money(value));
+  populateColumnSelect('empFilterCapital',rows.map(item=>item.cap),'Todos os valores de capital',value=>money(value));
+}
 function renderEmpenhoTable(rows){
   const container=$('empTable');
+  configureEmpenhoColumnFilters(rows);
   if(!rows.length){
     container.innerHTML='<div class="empty">Nenhum empenho encontrado para este ajuste nos arquivos importados.</div>';
     return;
@@ -1051,9 +1146,7 @@ function render(){
     activeAdjustmentFilterCode=cv;
   }
   const normalizedCode=normalizeAdjustmentSearch(formatAdjustmentNumber(cv));
-  currentRows=allRows.filter(row=>
-    normalizeAdjustmentSearch(formatAdjustmentNumber(get(row,'CONVENIO')))===normalizedCode
-  );
+  // currentRows é carregado sob demanda a partir do RET_FONTES, somente para o ajuste selecionado.
   const metadata=cadMetadataFor(cv);
   const entity=metadata?.entity||metadata?.extra_fields?.['R-SOCIAL']||
     currentRows.map(row=>String(get(row,'ENTIDADE')).trim()).find(Boolean)||'—';
@@ -1139,6 +1232,11 @@ function configurePaymentFilters(){
   $('quadrimFilter').value='';
   yearControl.disabled=!layoutInfo.hasPayments;
   $('quadrimFilter').disabled=!layoutInfo.hasPayments;
+  populateColumnSelect('payFilterOP',currentPayments.map(item=>item.op),'Todas as OPs');
+  populateColumnSelect('payFilterEmpenho',currentPayments.map(item=>item.ne),'Todos os empenhos');
+  populateColumnSelect('payFilterFonte',currentPayments.map(item=>item.source),'Todas as fontes');
+  populateColumnSelect('payFilterCusteio',currentPayments.map(item=>item.c),'Todos os valores de custeio',value=>money(value));
+  populateColumnSelect('payFilterCapital',currentPayments.map(item=>item.cap),'Todos os valores de capital',value=>money(value));
   ['payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital']
     .forEach(id=>{if($(id))$(id).disabled=!layoutInfo.hasPayments;});
 }
@@ -1246,47 +1344,23 @@ function paymentTotal(row){
   return num(get(row,'VALOR CUSTEIO_2'))+num(get(row,'VALOR CAPITAL_3'));
 }
 
-function summarizeAdjustment(rows,metadata,movement){
-  const sourceTotals=new Map();
-  for(const row of rows){
-    const tpcad=norm(get(row,'TPCAD'));
-    const source=String(get(row,'TPFOTE')??'').trim();
-    if(source&&(tpcad==='V'||tpcad==='A')){
-      if(!sourceTotals.has(source))sourceTotals.set(source,{initial:0,additions:0});
-      const totals=sourceTotals.get(source);
-      const value=num(get(row,'VL-CUSTEIO'))+num(get(row,'VL-REFORMA'))+num(get(row,'VL-BEM'));
-      if(tpcad==='V')totals.initial+=value;else totals.additions+=value;
-    }
-  }
-  const initial=[...sourceTotals.values()].reduce((sum,item)=>sum+item.initial,0);
-  const additions=[...sourceTotals.values()].reduce((sum,item)=>sum+item.additions,0);
-  const registered=initial+additions;
-  const emp=Number(movement?.total_empenhado)||0;
-  const paid=Number(movement?.total_pago_valido)||0;
-  const entity=metadata?.entity||metadata?.extra_fields?.['R-SOCIAL']||
-    rows.map(row=>String(get(row,'ENTIDADE')||'').trim()).find(Boolean)||'—';
-  return {initial,additions,registered,emp,paid,balance:registered-emp,balancePay:emp-paid,entity};
-}
 function renderOverview(){
-  if(!cadMetadataLoaded||!cadMetadataByKey.size){
-    $('overviewTable').innerHTML='<div class="empty">Carregando a base cadastral CadConvenios.txt…</div>';
+  if(!cadMetadataLoaded){
+    $('overviewTable').innerHTML='<div class="empty">Carregando a lista de ajustes elegíveis…</div>';
     return;
   }
-  const retGrouped=new Map();
-  for(const row of allRows){
-    const rawCode=String(get(row,'CONVENIO')||'').trim();
-    if(!rawCode)continue;
-    const key=normalizeAdjustmentSearch(formatAdjustmentNumber(rawCode));
-    if(!retGrouped.has(key))retGrouped.set(key,[]);
-    retGrouped.get(key).push(row);
-  }
-  const allAdjustments=[...cadMetadataByKey.entries()].map(([key,metadata])=>{
+  const allAdjustments=selectionRows.map(record=>{
+    const metadata=record._metadata||{};
     const code=formatCadCode(metadata);
-    const rows=retGrouped.get(key)||[];
-    const movement=movementSummaryByKey.get(key)||null;
-    const summary=summarizeAdjustment(rows,metadata,movement);
+    const initial=Number(record.total_cadastrado_inicial)||0;
+    const additions=Number(record.total_cadastrado_aditamentos)||0;
+    const registered=Number(record.total_cadastrado)||initial+additions;
+    const emp=Number(record.total_empenhado)||0;
+    const paid=Number(record.total_pago_valido)||0;
     return {
-      ...summary,code,
+      code,entity:record.entity||metadata.entity||'—',
+      initial,additions,registered,emp,paid,
+      balance:registered-emp,balancePay:emp-paid,
       cadType:cadTypeLabel(metadata.type_code),
       process:metadata.process||'—',
       signedDate:formatCadDate(metadata.signed_date),
@@ -1309,18 +1383,25 @@ function renderOverview(){
   });
   const negativeCount=allAdjustments.filter(item=>isNegativeMoney(item.balance)).length;
   $('overviewCount').textContent=filtered.length.toLocaleString('pt-BR')+' de '+allAdjustments.length.toLocaleString('pt-BR')+' ajustes';
-  $('overviewSummary').textContent=allAdjustments.length.toLocaleString('pt-BR')+' ajustes na base cadastral · '+negativeCount.toLocaleString('pt-BR')+' com saldo negativo · saldos de empenho e pagamento consultados nos TXT ORCOM.';
+  $('overviewSummary').textContent=allAdjustments.length.toLocaleString('pt-BR')+' ajustes concedidos com pagamentos O/R a partir de 2020 · '+negativeCount.toLocaleString('pt-BR')+' com saldo negativo.';
   if(!filtered.length){
     $('overviewTable').innerHTML='<div class="empty">Nenhum ajuste encontrado para os filtros selecionados.</div>';
     return;
   }
-  let html='<table><thead><tr><th>Ajuste</th><th>Entidade</th><th>Tipo</th><th>Processo</th><th>Data de assinatura</th><th>Última vigência</th><th>Objeto</th><th>Total cadastrado inicial</th><th>Total cadastrado em aditamentos</th><th>Total cadastrado</th><th>Total empenhado</th><th>Saldo do ajuste</th><th>Total pago válido</th><th>Saldo total a pagar</th></tr></thead><tbody>';
+  let html='<table><thead><tr><th>Ajuste</th><th>Entidade</th><th>Tipo</th><th>Processo</th><th>Data de assinatura</th><th>Última vigência</th><th>Objeto</th><th>Total cadastrado inicial</th><th>Total cadastrado em aditamentos</th><th>Total cadastrado</th><th>Total empenhado</th><th>Saldo do ajuste</th><th>Total pago válido (2020+)</th><th>Saldo total a pagar</th></tr></thead><tbody>';
   for(const item of filtered){
     const balanceClass=isNegativeMoney(item.balance)?'negative-value':'';
     html+='<tr><td><button type="button" class="overview-select" data-adjustment="'+esc(item.code)+'">'+esc(formatAdjustmentNumber(item.code))+'</button></td><td>'+esc(item.entity)+'</td><td>'+esc(item.cadType)+'</td><td>'+esc(item.process)+'</td><td>'+esc(item.signedDate)+'</td><td>'+esc(item.lastValidity)+'</td><td class="object-cell" title="'+esc(item.object)+'">'+esc(item.object)+'</td><td class="num">'+esc(money(item.initial))+'</td><td class="num">'+esc(money(item.additions))+'</td><td class="num">'+esc(money(item.registered))+'</td><td class="num">'+esc(money(item.emp))+'</td><td class="num '+balanceClass+'">'+esc(money(item.balance))+'</td><td class="num">'+esc(money(item.paid))+'</td><td class="num">'+esc(money(item.balancePay))+'</td></tr>';
   }
-  html+='</tbody></table>';$('overviewTable').innerHTML=html;
-  $('overviewTable').querySelectorAll('button[data-adjustment]').forEach(button=>button.addEventListener('click',()=>{showAppView('detail');chooseConv(button.getAttribute('data-adjustment'));window.scrollTo({top:0,behavior:'smooth'});}));
+  html+='</tbody></table>';
+  $('overviewTable').innerHTML=html;
+  $('overviewTable').querySelectorAll('button[data-adjustment]').forEach(button=>
+    button.addEventListener('click',()=>{
+      showAppView('detail');
+      chooseConv(button.getAttribute('data-adjustment'));
+      window.scrollTo({top:0,behavior:'smooth'});
+    })
+  );
 }
 function showAppView(view){
   const overview=view==='overview';
@@ -1332,24 +1413,90 @@ function showAppView(view){
   $('tabOverview').setAttribute('aria-selected',String(overview));
   if(overview)renderOverview();
 }
-function chooseConv(value){
+function clearAdjustmentSelection(){
+  selectionRequestId++;
+  activeAdjustmentFilterCode='';
+  currentRows=[];
+  currentMovementRows=[];
+  currentEmpenhos=[];
+  currentPayments=[];
+  movementDataLoadedFor='';
+  retRowsLoadedFor='';
+  layoutInfo.hasPayments=false;
+  $('conv').value='';
+  $('search').value='';
+  $('suggestions').hidden=true;
+  $('clearAdjustmentSelection').disabled=true;
+  $('mConv').textContent='—';
+  $('mEnt').textContent='—';
+  $('mCadInicial').textContent='—';
+  $('mCadAditamentos').textContent='—';
+  $('mTotalCadastrado').textContent='—';
+  $('mEmp').textContent='—';
+  $('mPago').textContent='—';
+  $('mSaldo').textContent='—';
+  $('mSaldoPagar').textContent='—';
+  $('saldoAjusteCard').classList.remove('negative-balance');
+  renderCadMetadata('');
+  $('reconTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar a conciliação.</div>';
+  $('cadTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar os valores cadastrados.</div>';
+  $('cadDetailTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar os cadastros.</div>';
+  $('empTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar os empenhos.</div>';
+  $('payTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar os pagamentos.</div>';
+  $('paySummary').hidden=true;
+  $('payCount').textContent='0 registros';
+  $('dateFrom').value='';$('dateTo').value='';
+  $('dateFrom').disabled=true;$('dateTo').disabled=true;
+  $('yearFilter').disabled=true;$('quadrimFilter').disabled=true;
+  $('clearDates').disabled=true;$('export').disabled=true;
+  resetColumnFilters();
+  ['empFilterYear','empFilterNumber','empFilterSource','empFilterCusteio','empFilterCapital','payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital'].forEach(id=>{if($(id))$(id).disabled=true;});
+  updateFichaButtonVisibility();
+  $('status').hidden=false;
+  $('status').textContent='Seleção limpa. Escolha um ajuste ou aplique os filtros de ano e letra.';
+}
+async function chooseConv(value){
   const cv=String(value||'').trim();
   if(!cv)return;
-  const found=(window.CONVENIO_OPTIONS||[]).find(o=>normalizeAdjustmentSearch(o.cv)===normalizeAdjustmentSearch(cv));
+  const found=(window.CONVENIO_OPTIONS||[]).find(option=>normalizeAdjustmentSearch(option.cv)===normalizeAdjustmentSearch(cv));
   if(!found)return;
+  const requestId=++selectionRequestId;
   $('conv').value=found.cv;
   $('search').value=formatAdjustmentNumber(found.cv);
   $('suggestions').hidden=true;
-  const metadata=cadMetadataFor(found.cv);
-  const adjustmentKey=metadata?.join_key||normalizeAdjustmentSearch(formatAdjustmentNumber(found.cv));
-  if(movementDataLoadedFor!==adjustmentKey){
-    currentMovementRows=[];currentEmpenhos=[];currentPayments=[];
-    layoutInfo.hasPayments=false;
-    $('paySummary').hidden=true;
-  }
+  $('clearAdjustmentSelection').disabled=false;
+  currentRows=[];
+  currentMovementRows=[];
+  currentEmpenhos=[];
+  currentPayments=[];
+  movementDataLoadedFor='';
+  retRowsLoadedFor='';
+  layoutInfo.hasPayments=false;
+  $('paySummary').hidden=true;
   render();
+  $('status').hidden=false;
+  $('status').textContent='Carregando os dados do ajuste '+formatAdjustmentNumber(found.cv)+'…';
   updateFichaButtonVisibility();
-  loadMovementDataForAdjustment(found.cv);
+  try{
+    await Promise.all([
+      loadRetRowsForAdjustment(found.cv,requestId),
+      loadMovementDataForAdjustment(found.cv,requestId)
+    ]);
+    if(requestId!==selectionRequestId||$('conv').value!==found.cv)return;
+    render();
+    $('status').hidden=false;
+    const retText=currentRows.length
+      ?currentRows.length.toLocaleString('pt-BR')+' linhas cadastrais'
+      :'nenhum lançamento correspondente no RET_FONTES.txt mais recente';
+    $('status').textContent=
+      retText+' · '+currentEmpenhos.length.toLocaleString('pt-BR')+' empenhos · '+
+      currentPayments.length.toLocaleString('pt-BR')+' movimentos de pagamento (2020+).';
+  }catch(error){
+    if(requestId!==selectionRequestId)return;
+    $('status').hidden=false;
+    $('status').textContent='Falha ao carregar os dados do ajuste: '+(error?.message||String(error));
+    console.error('Falha ao abrir ajuste',error);
+  }
 }
 function showSuggestions(){
   const panel=$('suggestions');
@@ -1366,6 +1513,9 @@ $('tabOverview').addEventListener('click',()=>showAppView('overview'));
 $('overviewSearch').addEventListener('input',renderOverview);
 $('overviewBalanceFilter').addEventListener('change',renderOverview);
 $('conv').addEventListener('change',()=>{if($('conv').value)chooseConv($('conv').value);});
+$('adjustmentYearFilter').addEventListener('change',renderAdjustmentOptionsFromCad);
+$('adjustmentLetterFilter').addEventListener('change',renderAdjustmentOptionsFromCad);
+$('clearAdjustmentSelection').addEventListener('click',clearAdjustmentSelection);
 $('search').addEventListener('input',()=>{
   const val=$('search').value.trim();
   const normalizedVal=normalizeAdjustmentSearch(val);
@@ -1386,9 +1536,9 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))$('su
 $('dateFrom').addEventListener('change',renderPayments);$('dateTo').addEventListener('change',renderPayments);
 $('yearFilter').addEventListener('change',renderPayments);$('quadrimFilter').addEventListener('change',renderPayments);
 ['empFilterYear','empFilterNumber','empFilterSource','empFilterCusteio','empFilterCapital']
-  .forEach(id=>$(id).addEventListener('input',()=>renderEmpenhoTable(currentEmpenhos)));
+  .forEach(id=>$(id).addEventListener('change',()=>renderEmpenhoTable(currentEmpenhos)));
 ['payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital']
-  .forEach(id=>$(id).addEventListener('input',renderPayments));
+  .forEach(id=>$(id).addEventListener('change',renderPayments));
 $('clearDates').addEventListener('click',()=>{
   $('dateFrom').value='';$('dateTo').value='';$('yearFilter').value='';$('quadrimFilter').value='';
   ['payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital'].forEach(id=>$(id).value='');

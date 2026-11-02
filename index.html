@@ -1577,6 +1577,42 @@ $('logoutButton').addEventListener('click',async()=>{
     $('logoutButton').disabled=false;
   }
 });
+
+function closeDocumentModal(){
+  $('documentModal').hidden=true;
+  $('documentModalBody').innerHTML='';
+}
+function openMovementDocument(type,documentKey,label){
+  const matches=currentMovementRows.filter(record=>record.file_type===type&&String(record.document_key??'')===String(documentKey??''));
+  const title=type==='empenho'?'Empenho':'Ordem de Pagamento';
+  $('documentModalTitle').textContent=title+' '+(label||'');
+  $('documentModalSubtitle').textContent=matches.length.toLocaleString('pt-BR')+' registro(s) encontrado(s) nos arquivos históricos e correntes do ORCOM.';
+  if(!matches.length){
+    $('documentModalBody').innerHTML='<div class="empty">Não foram localizados os detalhes deste documento na importação atual.</div>';
+  }else{
+    const preferredOrder=type==='empenho'
+      ?['ANO-NE','NUM-NE','DATA','CAT','GRU','MOD','ELE ','SELE','FT','VLR','SDO','ANULACAO','FORN','DOC','HISTO','NUM-CF','LETRA-CF']
+      :['OP','e/o/r','DATA','dt-bo','DT-VENC','EMPENHO','CAT','GRU','MOD','ELE ','SELE','FT','CANC','VALOR','nacf','lacf','ANULACAO','ACERTO-ORC','forn','HISTORICO','OBS','DOC'];
+    const prettyKey=key=>String(key).replace(/__([0-9]+)/g,' (ocorrência $1)');
+    $('documentModalBody').innerHTML=matches.map(record=>{
+      const fields=movementFields(record);
+      const keys=Object.keys(fields);
+      const ordered=[...preferredOrder.filter(key=>Object.prototype.hasOwnProperty.call(fields,key)),...keys.filter(key=>!preferredOrder.includes(key))];
+      const values=ordered.filter(key=>String(fields[key]??'').trim()!=='');
+      const fieldHtml=values.map(key=>'<div class="document-field"><span>'+esc(prettyKey(key))+'</span><strong>'+esc(fields[key])+'</strong></div>').join('');
+      return '<article class="document-record-card"><div class="document-record-title"><strong>'+esc(title+' '+(label||''))+'</strong><span class="pill">Exercício '+esc(record.exercise)+' · Linha '+esc(record.row_number)+'</span></div><div class="document-field-grid">'+fieldHtml+'</div></article>';
+    }).join('');
+  }
+  $('documentModal').hidden=false;
+}
+$('closeDocumentModal').addEventListener('click',closeDocumentModal);
+document.querySelectorAll('[data-close-document]').forEach(el=>el.addEventListener('click',closeDocumentModal));
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('documentModal').hidden)closeDocumentModal();});
+document.addEventListener('click',event=>{
+  const button=event.target.closest('[data-open-document]');
+  if(button)openMovementDocument(button.getAttribute('data-open-document'),button.getAttribute('data-document-key'),button.getAttribute('data-document-label'));
+});
+
 async function callImportFunction(name,token){
   const response=await fetch(`${SUPABASE_URL}/functions/v1/${name}`,{
     method:'POST',

@@ -219,3 +219,39 @@ A auditoria foi realizada diretamente no GitHub e no projeto Supabase `qkjudfvla
 - A aba aberta do site foi inspecionada: a página está acessível e apresenta a tela de autenticação. Não havia uma sessão autenticada nem foi fornecida senha nesta retomada; portanto, nenhum teste interno pós-login foi executado ou declarado aprovado.
 - A versão publicada do site preserva o último código de interface testado/sintaticamente validado no commit `f6fbe35...`; os commits seguintes atualizaram documentação e alinharam o arquivo-fonte RET_FONTES. Não foram alterados os dados importados nem as funções ativas.
 - Último workflow importador: `41524972727`, sucesso. Nenhum workflow importador foi acionado durante esta retomada.
+
+
+## Paginação das tabelas e cache de sessão — 02/11/2026
+
+Commits funcionais:
+- `53f116f0549a4a0d4ca37d91303f7bf3b171d80e` — paginação de 100 registros e cache por ajuste.
+- `7776ba559a6baf5bbddd3c746bd67366911c15c4` — preserva todos os registros na Ficha de Convênio em PDF.
+- `7a7abb54e03e2fb1c94f291cfbcf9d3291e0cdf9` — cache LRU limitado a 20 ajustes e limpeza dos controles de paginação.
+
+### Comportamento implementado
+- As tabelas de empenhos e pagamentos exibem no máximo 100 registros por página, com navegação para primeira, anterior, próxima e última página.
+- Alterar qualquer filtro de tabela retorna à página 1.
+- Totais anuais, totais gerais, resumos financeiros e conciliação permanecem calculados sobre todos os registros do ajuste e dos filtros aplicados, não apenas sobre as 100 linhas visíveis.
+- O CSV de pagamentos continua exportando todos os registros filtrados.
+- A Ficha de Convênio em PDF percorre temporariamente todas as páginas de empenhos e pagamentos e restaura a página que estava aberta na interface.
+- O modal de detalhes de documentos continua usando todos os movimentos do ajuste.
+
+### Cache e limite desta etapa
+- Movimentos de cada ajuste são carregados uma vez por sessão e armazenados em memória; o cache conserva até os 20 ajustes de movimentos usados mais recentemente (LRU).
+- O RET é armazenado em cache pela identificação da importação e pela chave compacta do ajuste.
+- O cache não usa localStorage nem IndexedDB. É descartado no logout, na atualização manual ou ao recarregar/encerrar a página.
+- Uma aba que permaneça aberta após a importação diária conserva o snapshot da sessão. Para consultar a nova carga, recarregar o Painel após a conclusão da importação (ou usar a atualização manual autorizada).
+
+### Limitação conhecida: paginação no navegador
+Esta entrega implementa paginação client-side: para o ajuste selecionado, o conjunto completo de movimentos ainda é consultado uma vez; a interface desenha até 100 registros por página. Isso reduz o volume de elementos renderizados e evita consultas repetidas ao revisitar ajustes cacheados, mas ainda não reduz o volume da primeira transferência do conjunto daquele ajuste. Paginação server-side (somente 100 linhas transferidas por requisição) permanece como evolução posterior, pois exige tratar filtros com opções completas, agregações, exportação e ficha PDF.
+
+### Integridade e segurança
+- Nenhuma migração, alteração de banco, view, RLS, Edge Function ou rotina de importação foi necessária.
+- Não houve alteração dos registros importados ORCOM.
+- Os dois blocos JavaScript inline passaram na validação sintática com `new Function`.
+- Ainda faltam testes funcionais com sessão autenticada no navegador para paginação, filtros, CSV, PDF e modal.
+
+### Publicação
+- Commit funcional: `7a7abb54e03e2fb1c94f291cfbcf9d3291e0cdf9`.
+- GitHub Pages run `41549252538`: `completed / success`.
+- Site: https://paineldeajustes.github.io/site-consulta-convenios/

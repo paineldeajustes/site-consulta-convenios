@@ -86,3 +86,25 @@ Site: https://paineldeajustes.github.io/site-consulta-convenios/
 - GitHub Pages run final `41545871962` para o commit `a47bad8...`: `completed / success`. O run intermediário `41545785874` ficou `cancelled`, substituído pela publicação mais nova bem-sucedida.
 - Site acessível, mas aba inspecionada na tela de autenticação e sem sessão ativa. Testes internos pós-login permanecem pendentes; nenhuma credencial foi usada ou solicitada.
 - Não houve importação, alteração de dados ou deploy de Edge Function nesta retomada.
+
+
+## Paginação de 100 registros — 02/11/2026
+
+**Implementado no front-end:**
+- Empenhos: até 100 registros por página.
+- Pagamentos: até 100 registros por página.
+- Navegação: primeira, anterior, próxima e última página.
+- Filtros voltam à primeira página.
+- Totais anuais e gerais, resumo financeiro e conciliação permanecem calculados sobre o conjunto completo filtrado.
+- CSV de pagamentos exporta todos os movimentos filtrados.
+- Ficha PDF percorre todas as páginas para incluir todos os empenhos e pagamentos.
+- Cache em memória durante a sessão, limitado aos 20 ajustes de movimentos usados mais recentemente (LRU); RET em cache por importação e chave do ajuste.
+- Cache é invalidado no logout, na atualização manual e ao recarregar a página. Aba aberta mantém snapshot até recarga/manual refresh.
+
+**Limitação conhecida:** paginação client-side. O conjunto completo do ajuste é transferido uma vez; somente 100 linhas são desenhadas por página. Isso reduz renderização do DOM e consultas repetidas ao revisitar ajustes cacheados, mas não reduz a primeira transferência desse ajuste. Paginação server-side permanece como evolução posterior.
+
+**Preservação:** sem migração, alteração de banco, views, RLS, Edge Functions, importações ou registros ORCOM.
+
+Commits funcionais: `53f116f0549a4a0d4ca37d91303f7bf3b171d80e`, `7776ba559a6baf5bbddd3c746bd67366911c15c4` e `7a7abb54e03e2fb1c94f291cfbcf9d3291e0cdf9`.
+
+Validação estática: os dois blocos JavaScript inline compilam sem erro. GitHub Pages run `41549252538`: `completed / success`. Testes funcionais pós-login ainda pendentes.

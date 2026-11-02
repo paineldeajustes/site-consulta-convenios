@@ -1287,6 +1287,16 @@ function renderTablePagination(containerId,currentPage,totalRows,onPageChange){
     button.addEventListener('click',()=>onPageChange(Number(button.getAttribute('data-page'))));
   });
 }
+function getFilteredEmpenhos(rows){
+  const items=rows.map(row=>({...row,total:Number(row.total)||0}));
+  return items.filter(item=>
+    filterMatches(item.year,$('empFilterYear').value)&&
+    filterMatches(item.empenho,$('empFilterNumber').value)&&
+    filterMatches(item.source,$('empFilterSource').value)&&
+    moneyMatches(item.c,$('empFilterCusteio').value)&&
+    moneyMatches(item.cap,$('empFilterCapital').value)
+  );
+}
 function renderEmpenhoTable(rows){
   const container=$('empTable');
   configureEmpenhoColumnFilters(rows);
@@ -1295,14 +1305,7 @@ function renderEmpenhoTable(rows){
     $('empPagination').innerHTML='';
     return;
   }
-  const items=rows.map(row=>({...row,total:Number(row.total)||0}));
-  const filtered=items.filter(item=>
-    filterMatches(item.year,$('empFilterYear').value)&&
-    filterMatches(item.empenho,$('empFilterNumber').value)&&
-    filterMatches(item.source,$('empFilterSource').value)&&
-    moneyMatches(item.c,$('empFilterCusteio').value)&&
-    moneyMatches(item.cap,$('empFilterCapital').value)
-  );
+  const filtered=getFilteredEmpenhos(rows);
   if(!filtered.length){
     container.innerHTML='<div class="empty">Nenhum empenho encontrado para os filtros selecionados.</div>';
     $('empPagination').innerHTML='';
@@ -1669,6 +1672,7 @@ function clearAdjustmentSelection(){
   $('cadDetailTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar os cadastros.</div>';
   $('empTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar os empenhos.</div>';
   $('payTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar os pagamentos.</div>';
+  $('empPagination').innerHTML='';$('payPagination').innerHTML='';
   $('paySummary').hidden=true;
   $('payCount').textContent='0 registros';
   $('dateFrom').value='';$('dateTo').value='';
@@ -2009,6 +2013,34 @@ function readTableForPDF(containerId){
   }).filter(tableData=>tableData.head.length&&tableData.body.length);
 }
 
+function readSingleTableForPDF(containerId){
+  const table=$(containerId)?.querySelector('table');
+  if(!table)return null;
+  const head=[...table.querySelectorAll('thead tr:first-child th')].map(cell=>cell.innerText.trim());
+  const body=[...table.querySelectorAll('tbody tr')].map(row=>[...row.querySelectorAll(':scope > td,:scope > th')].map(cell=>cell.innerText.trim()));
+  const foot=[...table.querySelectorAll('tfoot tr')].map(row=>[...row.querySelectorAll(':scope > td,:scope > th')].map(cell=>cell.innerText.trim()));
+  return head.length?{head,body,foot}:null;
+}
+function collectPagedTableForPDF(containerId,pageCount,getCurrentPage,setCurrentPage,renderPage){
+  const originalPage=getCurrentPage();
+  const allRows=[];
+  let head=[],foot=[];
+  try{
+    for(let page=1;page<=Math.max(1,pageCount);page++){
+      setCurrentPage(page);
+      renderPage();
+      const table=readSingleTableForPDF(containerId);
+      if(!table)continue;
+      if(!head.length)head=table.head;
+      allRows.push(...table.body);
+      if(!foot.length)foot=table.foot;
+    }
+  }finally{
+    setCurrentPage(originalPage);
+    renderPage();
+  }
+  return head.length?[{head,body:[...allRows,...foot]}]:[];
+}
 function loadCrestForPDF(){
   return new Promise(resolve=>{
     const image=new Image();
@@ -2071,8 +2103,8 @@ function pdfTable(doc,head,body,y){
   });
   return doc.lastAutoTable.finalY+7;
 }
-function addDomTableSection(doc,title,containerId,y){
-  const tables=readTableForPDF(containerId);
+function addDomTableSection(doc,title,containerId,y,tablesOverride=null){
+  const tables=tablesOverride||readTableForPDF(containerId);
   if(!tables.length)return y;
   y=addFichaSectionTitle(doc,title,y);
   for(let i=0;i<tables.length;i++){
@@ -2140,8 +2172,13 @@ async function generateFichaPDF(){
     }
     y=addDomTableSection(doc,'VALORES CADASTRADOS POR FONTE E CATEGORIA ECONÔMICA','cadTable',y);
     y=addDomTableSection(doc,'DETALHAMENTO DOS CADASTROS E ADITAMENTOS','cadDetailTable',y);
-    y=addDomTableSection(doc,'EMPENHOS POR ANO, FONTE E CATEGORIA ECONÔMICA','empTable',y);
-    y=addDomTableSection(doc,'PAGAMENTOS À ENTIDADE','payTable',y);
+    // A ficha deve conter todos os movimentos, não apenas a página que está aberta na tela.
+    const empPageCount=Math.ceil(getFilteredEmpenhos(currentEmpenhos).length/MOVEMENT_PAGE_SIZE);
+    const payPageCount=Math.ceil(getFilteredPayments().length/MOVEMENT_PAGE_SIZE);
+    const allEmpTables=collectPagedTableForPDF('empTable',empPageCount,()=>empCurrentPage,page=>{empCurrentPage=page;},()=>renderEmpenhoTable(currentEmpenhos));
+    const allPayTables=collectPagedTableForPDF('payTable',payPageCount,()=>payCurrentPage,page=>{payCurrentPage=page;},renderPayments);
+    y=addDomTableSection(doc,'EMPENHOS POR ANO, FONTE E CATEGORIA ECONÔMICA','empTable',y,allEmpTables);
+    y=addDomTableSection(doc,'PAGAMENTOS À ENTIDADE','payTable',y,allPayTables);
     const safeAdjustment=formatAdjustmentNumber(cv).replace(/[\\/:*?"<>|]/g,'-').replace(/\s+/g,'_');
     doc.save('Ficha de Convênio - '+safeAdjustment+'.pdf');
     $('status').textContent='Ficha de Convênio gerada para o ajuste '+formatAdjustmentNumber(cv)+'.';

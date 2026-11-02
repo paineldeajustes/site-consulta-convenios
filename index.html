@@ -1520,8 +1520,12 @@ $('search').addEventListener('input',()=>{
   const val=$('search').value.trim();
   const normalizedVal=normalizeAdjustmentSearch(val);
   const exact=(window.CONVENIO_OPTIONS||[]).find(o=>normalizeAdjustmentSearch(o.cv)===normalizedVal || normalizeAdjustmentSearch(formatAdjustmentNumber(o.cv))===normalizedVal);
-  if(exact)chooseConv(exact.cv);
-  showSuggestions();
+  if(exact){
+    chooseConv(exact.cv);
+    $('suggestions').hidden=true;
+  }else{
+    showSuggestions();
+  }
 });
 $('search').addEventListener('keydown',e=>{
   if(e.key==='Enter'){

@@ -48,14 +48,21 @@ function applyContextOptions(opts){
  });
  let active=all.filter(o=>o.enabled);
  if(!active.length)active=all;
- for(const id of ["taskContext","settingsDefaultContext"]){
-  const select=$(id);if(!select)continue;
-  const previous=select.value;
-  select.innerHTML=active.map(o=>'<option value="'+o.key+'">'+escapeHtml(o.label||o.key)+'</option>').join("");
-  select.value=active.some(o=>o.key===previous)?previous:active[0].key;
+ const escapeOption=value=>String(value||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+ const taskSelect=$("taskContext");
+ if(taskSelect){
+  const previous=taskSelect.value;
+  taskSelect.innerHTML=all.map(o=>'<option value="'+o.key+'" '+(o.enabled?"":"disabled")+'>'+escapeOption(o.label||o.key)+(o.enabled?"":" · indisponível para novas tarefas")+'</option>').join("");
+  if(all.some(o=>o.key===previous))taskSelect.value=previous;
+  else if(active.length)taskSelect.value=active[0].key;
+ }
+ const defaultSelect=$("settingsDefaultContext");
+ if(defaultSelect){
+  const previous=defaultSelect.value;
+  defaultSelect.innerHTML=active.map(o=>'<option value="'+o.key+'">'+escapeOption(o.label||o.key)+'</option>').join("");
+  defaultSelect.value=active.some(o=>o.key===previous)?previous:active[0].key;
  }
 }
-
 function applyTheme(theme,compact){
  const app=$("app");if(!app)return;
  let actual=theme||"light";

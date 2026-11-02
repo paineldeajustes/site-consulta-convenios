@@ -136,22 +136,38 @@ async function isAdminOrInternal(authorization: string): Promise<boolean> {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceKey) return false;
+  const publicAuthKey =
+    Deno.env.get("SUPABASE_ANON_KEY") ??
+    Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ??
+    serviceKey;
+  if (!supabaseUrl || !serviceKey || !publicAuthKey) return false;
+
+  // Valida o token do usuário pelo endpoint de Auth usando a chave pública.
+  // A consulta de permissões fica separada no cliente administrativo.
+  const authClient = createClient(supabaseUrl, publicAuthKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: userData, error: userError } = await authClient.auth.getUser(token);
+  const email = userData?.user?.email?.trim().toLowerCase();
+  if (userError || !email) {
+    console.error("Falha ao validar token do administrador:", userError?.message ?? "usuário sem e-mail");
+    return false;
+  }
 
   const adminClient = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: userData, error: userError } = await adminClient.auth.getUser(token);
-  const email = userData?.user?.email?.toLowerCase();
-  if (userError || !email) return false;
-
   const { data: profile, error: profileError } = await adminClient
     .from("panel_users")
     .select("email,is_admin,is_active")
     .eq("email", email)
     .maybeSingle();
 
-  return !profileError && profile?.is_admin === true && profile?.is_active === true;
+  if (profileError) {
+    console.error("Falha ao consultar perfil administrativo:", profileError.message);
+    return false;
+  }
+  return profile?.is_admin === true && profile?.is_active === true;
 }
 
 Deno.serve(async (req: Request) => {
@@ -273,14 +289,26 @@ Deno.serve(async (req: Request) => {
       }
 
       const rows = [];
+      const normalizedRows: number[] = [];
 
       for (let i = 1; i < lines.length; i++) {
-        const fields = lines[i].split(";");
+        let fields = lines[i].split(";");
 
-        if (fields.length < 25 || fields.length > 27) {
+        if (fields.length < 24 || fields.length > 27) {
           throw new Error(
-            `A linha ${i + 1} possui ${fields.length} campos; eram esperados de 25 a 27.`,
+            "A linha " + (i + 1) + " possui " + fields.length +
+              " campos; eram esperados de 24 a 27.",
           );
+        }
+
+        // Algumas linhas podem omitir delimitadores finais de colunas sem conteúdo.
+        // Completa somente à direita, preservando a posição de todos os campos existentes.
+        if (fields.length < headerFields.length) {
+          normalizedRows.push(i + 1);
+          fields = [
+            ...fields,
+            ...Array(headerFields.length - fields.length).fill(""),
+          ];
         }
 
         rows.push({
@@ -289,6 +317,14 @@ Deno.serve(async (req: Request) => {
           raw_line: lines[i],
           fields,
         });
+      }
+
+      if (normalizedRows.length > 0) {
+        console.warn(
+          "RET_FONTES.txt: " + normalizedRows.length +
+            " linha(s) tiveram colunas finais vazias normalizadas. Linhas: " +
+            normalizedRows.join(", ") + ".",
+        );
       }
 
       for (let i = 0; i < rows.length; i += 200) {

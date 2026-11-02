@@ -714,6 +714,99 @@ function sourceLabel(v){
   const labels={M:'Municipal',E:'Estadual',F:'Federal',O:'Outras'};
   return labels[norm(raw)]||raw;
 }
+
+function sourceLabelFromFT(value){
+  const raw=String(value??'').trim();
+  if(!raw)return 'Não informada';
+  const code=String(Number(raw));
+  const labels={
+    '1':'01 — Tesouro (Municipal)',
+    '2':'02 — Transferências e convênios estaduais',
+    '3':'03 — Recursos próprios de fundos especiais',
+    '4':'04 — Recursos próprios da administração indireta',
+    '5':'05 — Transferências e convênios federais',
+    '6':'06 — Outras fontes de recursos',
+    '7':'07 — Operações de crédito',
+    '8':'08 — Emendas parlamentares individuais — Legislativo Municipal',
+    '19':'19 — Recursos extraorçamentários',
+    '91':'91 — Tesouro — Exercícios anteriores',
+    '92':'92 — Transferências estaduais — Exercícios anteriores',
+    '93':'93 — Fundos especiais — Exercícios anteriores',
+    '94':'94 — Administração indireta — Exercícios anteriores',
+    '95':'95 — Transferências federais — Exercícios anteriores',
+    '96':'96 — Outras fontes — Exercícios anteriores',
+    '97':'97 — Operações de crédito — Exercícios anteriores',
+    '98':'98 — Emendas parlamentares — Exercícios anteriores'
+  };
+  return labels[code]||raw+' — Fonte não catalogada';
+}
+function parseISODate(value){
+  const raw=String(value??'').trim();
+  const match=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!match)return null;
+  const date=new Date(Number(match[1]),Number(match[2])-1,Number(match[3]));
+  if(date.getFullYear()!==Number(match[1])||date.getMonth()!==Number(match[2])-1||date.getDate()!==Number(match[3]))return null;
+  return date;
+}
+function formatEmpenhoFromPaymentValue(value){
+  const raw=String(value??'').trim();
+  const match=raw.match(/^(\d{4})(\d{5})$/);
+  if(!match)return raw;
+  return match[2]+'/'+match[1];
+}
+function movementAmount(record){
+  const value=Number(record?.amount);
+  return Number.isFinite(value)?value:0;
+}
+function movementFields(record){
+  let fields=record?.fields??{};
+  if(typeof fields==='string'){try{fields=JSON.parse(fields);}catch{fields={};}}
+  return fields&&typeof fields==='object'&&!Array.isArray(fields)?fields:{};
+}
+function buildEmpenhoItem(record){
+  const fields=movementFields(record);
+  const year=String(fields['ANO-NE']||record.exercise||'').trim();
+  const number=String(fields['NUM-NE']||'').trim();
+  const rawCategory=String(record.category_code??fields.CAT??'').trim();
+  const amount=movementAmount(record);
+  const category=rawCategory==='3'?'custeio':rawCategory==='4'?'capital':'other';
+  const numberLabel=number&&year?number.padStart(5,'0')+'/'+year:(record.document_number||number||'—');
+  return {
+    record,fields,year,empenho:numberLabel,documentKey:record.document_key||((year&&number)?year+'|'+number:null),
+    source:sourceLabelFromFT(record.source_code??fields.FT),
+    c:category==='custeio'?amount:0,
+    cap:category==='capital'?amount:0,
+    other:category==='other'?amount:0,
+    total:amount,
+    annulment:String(fields.ANULACAO||'').trim()
+  };
+}
+function buildPaymentItem(record){
+  const fields=movementFields(record);
+  const amount=movementAmount(record);
+  const rawCategory=String(record.category_code??fields.CAT??'').trim();
+  const category=rawCategory==='3'?'custeio':rawCategory==='4'?'capital':'other';
+  const empValue=String(fields.EMPENHO||'').trim();
+  const empMatch=empValue.match(/^(\d{4})(\d{5})$/);
+  const linkedEmpKey=empMatch?empMatch[1]+'|'+empMatch[2]:null;
+  return {
+    record,fields,dt:parseISODate(record.date_value),
+    op:String(fields.OP||record.document_number||'').trim(),
+    documentKey:record.document_key||String(fields.OP||'').trim(),
+    ne:formatEmpenhoFromPaymentValue(empValue),
+    linkedEmpKey,
+    source:sourceLabelFromFT(record.source_code??fields.FT),
+    c:category==='custeio'?amount:0,
+    cap:category==='capital'?amount:0,
+    other:category==='other'?amount:0,
+    total:amount,
+    valid:record.is_valid_payment===true,
+    cancel:String(fields.CANC||'').trim(),
+    annulment:String(fields.ANULACAO||'').trim(),
+    transactionKind:String(fields['e/o/r']||'').trim().toUpperCase(),
+    accountingAdjustment:String(fields['ACERTO-ORC']||'').trim()
+  };
+}
 function formatAdjustmentNumber(value){
   const raw=String(value??'').trim();
   if(!raw)return raw;

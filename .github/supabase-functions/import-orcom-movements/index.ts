@@ -580,7 +580,7 @@ async function importOneFile(
   if (requestedImportId) {
     const { data, error } = await admin
       .from("orcom_file_imports")
-      .select("id,file_name,file_type,exercise,is_finalized,drive_md5_checksum,drive_modified_at,file_size_bytes,headers,row_count,linked_row_count,expected_row_count,next_row_number,chunk_lock_until,status")
+      .select("id,file_name,file_type,exercise,is_finalized,drive_file_id,drive_md5_checksum,drive_modified_at,file_size_bytes,headers,row_count,linked_row_count,expected_row_count,next_row_number,chunk_lock_until,status")
       .eq("id", requestedImportId)
       .eq("file_name", file.name)
       .maybeSingle();
@@ -965,6 +965,40 @@ Deno.serve(async (req: Request) => {
   try {
     const serviceAccount = JSON.parse(serviceAccountJson);
     const accessToken = await getGoogleAccessToken(serviceAccount);
+    const requestedImportId = typeof requestBody.import_id === "string" ? requestBody.import_id.trim() : "";
+
+    if (action === "import_file" && requestedFileName && requestedImportId) {
+      const { data: session, error: sessionError } = await admin
+        .from("orcom_file_imports")
+        .select("id,file_name,drive_file_id,drive_modified_at,drive_md5_checksum,file_size_bytes,status")
+        .eq("id", requestedImportId)
+        .eq("file_name", requestedFileName)
+        .maybeSingle();
+      if (sessionError) {
+        throw new Error("Não foi possível consultar a sessão de " + requestedFileName + ": " + sessionError.message);
+      }
+      if (!session) {
+        return jsonResponse({ success: false, error: "Sessão de importação não encontrada.", file_name: requestedFileName }, 404);
+      }
+
+      const target: DriveFile = {
+        id: String(session.drive_file_id),
+        name: String(session.file_name),
+        modifiedTime: session.drive_modified_at ? String(session.drive_modified_at) : undefined,
+        md5Checksum: session.drive_md5_checksum ? String(session.drive_md5_checksum) : undefined,
+        size: String(session.file_size_bytes ?? 0),
+      };
+      const result = await importOneFile(admin, target, accessToken, new Map<string, Set<number>>(), requestedImportId);
+      const failed = result.status === "failed";
+      return jsonResponse({
+        success: !failed,
+        file: result,
+        message: failed
+          ? "A retomada deste bloco falhou; os blocos anteriores confirmados foram preservados."
+          : "Bloco processado. Continue enquanto o status do arquivo for processing, busy ou retry.",
+      }, 200);
+    }
+
     let listedFiles: DriveFile[] = [];
     let folderDiscoveryError = "";
     try {
@@ -1053,8 +1087,7 @@ Deno.serve(async (req: Request) => {
     }
 
     try {
-      const requestedImportId = typeof requestBody.import_id === "string" ? requestBody.import_id.trim() : null;
-      const result = await importOneFile(admin, target, accessToken, finalizedNamesByType, requestedImportId || null);
+      const result = await importOneFile(admin, target, accessToken, finalizedNamesByType, null);
       const failed = result.status === "failed";
       return jsonResponse({
         success: !failed,

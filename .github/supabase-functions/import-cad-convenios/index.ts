@@ -125,6 +125,7 @@ type CadRecord = {
   object_full: string;
   last_validity: string;
   entity: string;
+  extra_fields: Record<string, string>;
 };
 
 function mergeCadRecord(target: CadRecord, candidate: CadRecord): CadRecord {
@@ -134,6 +135,10 @@ function mergeCadRecord(target: CadRecord, candidate: CadRecord): CadRecord {
   ];
   for (const field of fields) {
     if (!target[field] && candidate[field]) target[field] = candidate[field];
+  }
+  target.extra_fields = target.extra_fields || {};
+  for (const [key, value] of Object.entries(candidate.extra_fields || {})) {
+    if (!target.extra_fields[key] && value) target.extra_fields[key] = value;
   }
   if (isValidDateValue(candidate.last_validity)) {
     if (!isValidDateValue(target.last_validity) || candidate.last_validity > target.last_validity) {
@@ -145,21 +150,45 @@ function mergeCadRecord(target: CadRecord, candidate: CadRecord): CadRecord {
 
 async function isAdminOrInternal(authorization: string): Promise<boolean> {
   const expectedSecret = Deno.env.get("IMPORT_FUNCTION_SECRET");
-  if (expectedSecret && authorization === "Bearer " + expectedSecret) return true;
+  if (expectedSecret && authorization === `Bearer ${expectedSecret}`) return true;
+
   const token = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
   if (!token) return false;
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceKey) return false;
+  const publicAuthKey =
+    Deno.env.get("SUPABASE_ANON_KEY") ??
+    Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ??
+    serviceKey;
+  if (!supabaseUrl || !serviceKey || !publicAuthKey) return false;
+
+  // Valida o token do usuário pelo endpoint de Auth usando a chave pública.
+  // A consulta de permissões fica separada no cliente administrativo.
+  const authClient = createClient(supabaseUrl, publicAuthKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: userData, error: userError } = await authClient.auth.getUser(token);
+  const email = userData?.user?.email?.trim().toLowerCase();
+  if (userError || !email) {
+    console.error("Falha ao validar token do administrador:", userError?.message ?? "usuário sem e-mail");
+    return false;
+  }
+
   const adminClient = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: userData, error: userError } = await adminClient.auth.getUser(token);
-  const email = userData?.user?.email?.toLowerCase();
-  if (userError || !email) return false;
   const { data: profile, error: profileError } = await adminClient
-    .from("panel_users").select("email,is_admin,is_active").eq("email", email).maybeSingle();
-  return !profileError && profile?.is_admin === true && profile?.is_active === true;
+    .from("panel_users")
+    .select("email,is_admin,is_active")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (profileError) {
+    console.error("Falha ao consultar perfil administrativo:", profileError.message);
+    return false;
+  }
+  return profile?.is_admin === true && profile?.is_active === true;
 }
 
 Deno.serve(async (req) => {
@@ -241,6 +270,59 @@ Deno.serve(async (req) => {
       const index = columnIndex.get(normalize(name));
       return index === undefined ? "" : clean(row[index]);
     };
+    const getColumnOccurrence = (row: string[], name: string, occurrence = 0): string => {
+      let seen = 0;
+      const normalizedName = normalize(name);
+      for (let index = 0; index < header.length; index++) {
+        if (normalize(header[index]) !== normalizedName) continue;
+        if (seen === occurrence) return clean(row[index]);
+        seen++;
+      }
+      return "";
+    };
+    const extraFieldSpecs: [string, string, number][] = [
+      ["DT-ASSINA", "DT-ASSINA", 0],
+      ["TP-PC", "TP-PC", 0],
+      ["PROCESSO", "PROCESSO", 0],
+      ["TP-AJUSTE", "TP-AJUSTE", 0],
+      ["CONC-RECEB", "CONC-RECEB", 0],
+      ["AJUSTE2", "AJUSTE2", 0],
+      ["LEI", "LEI", 0],
+      ["LEI-ESP", "LEI-ESP", 0],
+      ["PROC-PCONTAS", "PROC-PCONTAS", 0],
+      ["DT-INI", "DT-INI", 0],
+      ["DT-FIM", "DT-FIM", 0],
+      ["INI+TA", "INI+TA", 0],
+      ["ULT-TA", "ULT-TA", 0],
+      ["OBJETO", "OBJETO", 0],
+      ["R-SOCIAL", "R-SOCIAL", 0],
+      ["ENDERECO", "ENDERECO", 0],
+      ["BAIRRO", "BAIRRO", 0],
+      ["CIDADE", "CIDADE", 0],
+      ["CPF/CNPJ", "CPF/CNPJ", 0],
+      ["DIRETORIA", "DIRETORIA", 0],
+      ["CPF", "CPF", 0],
+      ["DT-INI", "DT-INI_1", 1],
+      ["DT-FIM", "DT-FIM_2", 1],
+      ["CONSELHO1", "CONSELHO1", 0],
+      ["CONSELHO2", "CONSELHO2", 0],
+      ["CONSELHO3", "CONSELHO3", 0],
+      ["CONSELHO4", "CONSELHO4", 0],
+      ["DT-INI", "DT-INI_3", 2],
+      ["DT-FIM", "DT-FIM_4", 2],
+      ["IRREGULAR", "IRREGULAR", 0],
+      ["MOTIVO", "MOTIVO", 0],
+      ["CEP", "CEP", 0],
+      ["TEL", "TEL", 0],
+      ["EMAIL-ENT", "EMAIL-ENT", 0],
+      ["CARGO-DIR", "CARGO-DIR", 0],
+      ["EMAIL-DIR", "EMAIL-DIR", 0],
+      ["TP2_AJ", "TP2_AJ", 0],
+      ["COD-FORNEC", "COD-FORNEC", 0],
+      ["SDO-CONVENIO", "SDO-CONVENIO", 0],
+      ["CA1", "CA1", 0],
+      ["CA2", "CA2", 0],
+    ];
 
     const unique = new Map<string, CadRecord>();
     for (let i = 1; i < lines.length; i++) {
@@ -263,6 +345,12 @@ Deno.serve(async (req) => {
         object_full: getColumn(row, "OBJETO COMPLETO"),
         last_validity: getColumn(row, "ULT-VIGENCIA"),
         entity: getColumn(row, "R-SOCIAL"),
+        extra_fields: Object.fromEntries(
+          extraFieldSpecs.map(([sourceName, targetName, occurrence]) => [
+            targetName,
+            getColumnOccurrence(row, sourceName, occurrence),
+          ]),
+        ),
       };
       const prior = unique.get(joinKey);
       unique.set(joinKey, prior ? mergeCadRecord(prior, candidate) : candidate);

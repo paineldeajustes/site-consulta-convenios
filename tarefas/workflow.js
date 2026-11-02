@@ -316,17 +316,25 @@ async function renderEnvironmentGroups(){
  box.innerHTML=keys.map(key=>{
   const list=rows.filter(r=>r.environment_key===key);
   const label=options.find(o=>o.key===key)?.label||fallback[key];
-  return '<section class="environment-group-card"><div><strong>'+escapeHtml(label)+'</strong><p>Quem pode visualizar tarefas deste ambiente.</p></div><div class="environment-group-members">'+list.map(m=>'<label class="environment-member"><input type="checkbox" data-env-user="'+m.user_id+'" '+(m.is_member?"checked":"")+' '+(m.is_creator?"disabled":"")+'><span>'+escapeHtml(m.display_name||m.email)+'</span></label>').join("")+'</div><button type="button" class="btn secondary" data-env-save="'+key+'">Salvar grupo</button></section>';
+  const selected=list.filter(m=>m.is_member).length;
+  return '<section class="environment-group-card"><div class="environment-group-title"><div><strong>'+escapeHtml(label)+'</strong><p>Quem pode visualizar tarefas deste ambiente.</p></div><span class="environment-group-count">'+selected+' de '+list.length+'</span></div><div class="environment-group-tools"><button type="button" data-env-mark-all="'+key+'">Selecionar participantes</button><button type="button" data-env-clear="'+key+'">Retirar participantes</button></div><div class="environment-group-members">'+list.map(m=>'<label class="environment-member"><input type="checkbox" data-env-user="'+m.user_id+'" '+(m.is_member?"checked":"")+' '+(m.is_creator?"disabled":"")+'><span>'+escapeHtml(m.display_name||m.email)+(m.is_creator?" · administrador":"")+'</span></label>').join("")+'</div><button type="button" class="btn secondary" data-env-save="'+key+'">Salvar grupo</button></section>';
  }).join("");
 }
 $("environmentGroupSettings").addEventListener("click",async e=>{
+ const quick=e.target.closest("[data-env-mark-all],[data-env-clear]");
+ if(quick){
+  const card=quick.closest(".environment-group-card");
+  const shouldCheck=quick.hasAttribute("data-env-mark-all");
+  card.querySelectorAll("[data-env-user]").forEach(input=>{if(!input.disabled)input.checked=shouldCheck});
+  return;
+ }
  const button=e.target.closest("[data-env-save]");if(!button)return;
  const key=button.dataset.envSave;
  const ids=[...button.closest(".environment-group-card").querySelectorAll("[data-env-user]:checked")].map(x=>x.dataset.envUser);
  button.disabled=true;button.textContent="Salvando…";
  try{
   const {error}=await db().rpc("save_task_environment_group_members",{p_environment_key:key,p_user_ids:ids});if(error)throw error;
-  $("environmentGroupMessage").textContent="Grupo salvo. A visibilidade será aplicada na próxima atualização dos integrantes.";$("environmentGroupMessage").hidden=false;
+  $("environmentGroupMessage").textContent="Grupo atualizado. Quem foi retirado deixa de visualizar as tarefas desse contexto; o administrador permanece no grupo.";$("environmentGroupMessage").hidden=false;
   await api().reloadTasks();await renderEnvironmentGroups();
  }catch(err){$("environmentGroupMessage").textContent=err.message||"Não foi possível salvar o grupo.";$("environmentGroupMessage").hidden=false;button.disabled=false;button.textContent="Salvar grupo"}
 });
@@ -451,6 +459,9 @@ function onTasksLoaded(){
   }
  }
 }
+const exportMenu=$("exportMenu");
+if(exportMenu)[...exportMenu.children].forEach(item=>{if(item.id!=="exportExcel")item.remove()});
+document.querySelectorAll("#exportPdf,#exportPDF,#exportCsv,#exportCSV,#exportJson,#exportJSON,[data-export-format='pdf'],[data-export-format='csv'],[data-export-format='json']").forEach(item=>item.remove());
 async function loadXlsxLibrary(){
  if(window.XLSX)return window.XLSX;
  if(window.__clarezaXlsxPromise)return window.__clarezaXlsxPromise;

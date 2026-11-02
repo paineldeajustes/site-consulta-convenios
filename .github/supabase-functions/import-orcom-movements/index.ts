@@ -255,33 +255,67 @@ async function findDriveFolderId(accessToken: string, serviceAccount: string): P
   const configuredFolderId = Deno.env.get("GOOGLE_DRIVE_FOLDER_ID")?.trim();
   if (configuredFolderId) return configuredFolderId;
 
-  // O arquivo cadastral já utilizado pelo projeto fica na pasta que concentra os TXT do ORCOM.
-  // Consultamos os pais do próprio CadConvenios.txt para evitar exigir um segundo ID manual.
-  const cadFileId = Deno.env.get("GOOGLE_CAD_FILE_ID") || "1x0SlFbGrQTBBO3LjBkGweXcaRpbqKFCz";
-  const metadataResponse = await fetch(
-    "https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(cadFileId) +
-      "?fields=id,name,parents&supportsAllDrives=true",
-    { headers: { Authorization: "Bearer " + accessToken } },
-  );
-  if (!metadataResponse.ok) {
-    const detail = await metadataResponse.text();
-    throw new Error(
-      "Não foi possível identificar a pasta do CadConvenios.txt no Google Drive. " +
-      "Verifique o ID cadastral e o compartilhamento da pasta com a conta de serviço. " +
-      detail.slice(0, 300),
-    );
-  }
-  const metadata = await metadataResponse.json();
-  const parent = Array.isArray(metadata.parents) ? metadata.parents[0] : "";
-  if (!parent) {
-    throw new Error(
-      "O Google Drive não retornou a pasta de origem do CadConvenios.txt. " +
-      "Defina GOOGLE_DRIVE_FOLDER_ID nas variáveis da função para indicar a pasta Arquivos.",
-    );
-  }
-  return String(parent);
-}
+  const knownIds = [
+    Deno.env.get("GOOGLE_CAD_FILE_ID")?.trim(),
+    "1x0SlFbGrQTBBO3LjBkGweXcaRpbqKFCz",
+    Deno.env.get("GOOGLE_DRIVE_FILE_ID")?.trim(),
+  ].filter((value): value is string => Boolean(value));
+  const uniqueIds = [...new Set(knownIds)];
 
+  for (const fileId of uniqueIds) {
+    const response = await fetch(
+      "https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(fileId) +
+        "?fields=id,name,parents,driveId,mimeType&supportsAllDrives=true",
+      { headers: { Authorization: "Bearer " + accessToken } },
+    );
+    if (!response.ok) {
+      console.warn("Não foi possível consultar os metadados do arquivo " + fileId + ": " + response.status);
+      continue;
+    }
+    const metadata = await response.json();
+    const parent = Array.isArray(metadata.parents) ? metadata.parents[0] : "";
+    if (parent) {
+      console.log("Pasta ORCOM identificada pelos metadados de " + String(metadata.name ?? fileId) + ".");
+      return String(parent);
+    }
+  }
+
+  // Alguns arquivos compartilhados individualmente não retornam o campo parents.
+  // Nesse caso, tenta localizar arquivos conhecidos pela API de listagem do Drive.
+  const knownNames = ["CadConvenios.txt", "RET_FONTES.txt", "TXT_EMPENHO.txt", "TXT_PAGAMENTO.txt"];
+  for (const fileName of knownNames) {
+    const params = new URLSearchParams({
+      q: "name = '" + fileName.replace(/'/g, "\\'") + "' and trashed = false",
+      fields: "files(id,name,parents,driveId,mimeType,modifiedTime)",
+      pageSize: "100",
+      orderBy: "modifiedTime desc",
+      supportsAllDrives: "true",
+      includeItemsFromAllDrives: "true",
+      corpora: "allDrives",
+    });
+    const response = await fetch(
+      "https://www.googleapis.com/drive/v3/files?" + params.toString(),
+      { headers: { Authorization: "Bearer " + accessToken } },
+    );
+    if (!response.ok) {
+      console.warn("Não foi possível pesquisar " + fileName + " no Google Drive: " + response.status);
+      continue;
+    }
+    const data = await response.json();
+    const matches = Array.isArray(data.files) ? data.files as DriveFile[] & Array<Record<string, unknown>> : [];
+    const withParent = matches.find((item) => Array.isArray(item.parents) && item.parents.length > 0);
+    if (withParent && Array.isArray(withParent.parents)) {
+      console.log("Pasta ORCOM identificada pela listagem do arquivo " + fileName + ".");
+      return String(withParent.parents[0]);
+    }
+  }
+
+  throw new Error(
+    "Não foi possível descobrir a pasta do Google Drive a partir dos arquivos CadConvenios.txt/RET_FONTES.txt. " +
+    "Confirme se a pasta G:\\Meu Drive\\SF\\IA\\Arquivos está compartilhada com a conta de serviço do Google e, se necessário, " +
+    "informe o ID da pasta na configuração GOOGLE_DRIVE_FOLDER_ID da função.",
+  );
+}
 async function listMovementFiles(folderId: string, accessToken: string): Promise<DriveFile[]> {
   const q = "'" + folderId.replace(/'/g, "\\'") + "' in parents and trashed = false";
   let pageToken = "";

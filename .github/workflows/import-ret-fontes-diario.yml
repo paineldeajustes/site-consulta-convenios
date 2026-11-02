@@ -8,7 +8,7 @@ on:
       - '.github/supabase-functions/import-ret-fontes/index.ts'
       - '.github/supabase-functions/import-orcom-movements/index.ts'
   schedule:
-    # 09:00 UTC = 06:00 no horário de Brasília (UTC-3). Atualizado após liberar acesso ao CadConvenios.
+    # 09:00 UTC = 06:00 no horário de Brasília (UTC-3). Importa cadastro e movimentos ORCOM após compartilhamento da pasta.
     - cron: '0 9 * * *'
   workflow_dispatch:
 

@@ -44,3 +44,16 @@ Continue o projeto Painel de Ajustes no repositório paineldeajustes/site-consul
 ## Segurança e integridade
 
 Não expor service-role, segredo de importação ou credenciais Google. Não excluir dados com status \`success\`. Há 28.000 linhas residuais em três registros de importação antigos \`failed\`; a seleção filtra explicitamente apenas imports \`success\`, então os resíduos não entram nos cálculos.
+
+
+## Incidente de login e logout — 02/11/2026
+
+O usuário autenticou com a conta institucional, mas o painel exibiu `Cannot access 'retFontesImportId' before initialization`; a lista de ajustes não carregou e o botão **Sair da conta** não respondia. A causa era a inicialização tardia das variáveis de estado e o registro tardio do listener de logout. Também faltava a definição global de `RET_SCHEMA` (26 colunas), usada pela nova leitura sob demanda.
+
+Correções em `index.html`:
+- Estados globais movidos para antes das rotinas de carga.
+- Constante global `RET_SCHEMA` restaurada com 26 colunas.
+- Listener de logout antecipado, com saída local e limpeza da interface no `finally`.
+- Botão Mostrar/Ocultar senha isolado e eventos de autenticação antecipados.
+
+Último commit de código: `f6fbe35c5d135b1773a5782be4f025f47edbf887`. GitHub Pages run `41543569107`: `completed / success` em 02/11/2026 23:13 UTC. Sintaxe dos scripts validada; **pendente teste funcional no Safari do iPhone** para confirmar login, carregamento dos ajustes, botão de senha e logout.

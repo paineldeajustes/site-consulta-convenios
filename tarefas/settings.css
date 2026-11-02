@@ -408,3 +408,145 @@ body[data-theme="dark"] .attachment-external-link{color:#a7d9b9}
  .attachment-viewer-title{font-size:11px}
  .attachment-external-link{font-size:11px}
 }
+
+
+/* Clareza — painel de filtros compacto e navegacao por visualizacoes */
+#app .search-toolbar{margin:14px 0 10px}
+#app .search-toolbar .search{width:100%;flex:1 1 100%}
+#app .filter-panel{
+  margin:0 0 22px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:19px;
+  background:var(--paper);
+  box-shadow:0 5px 18px rgba(31,60,44,.045);
+}
+#app .filter-panel-header{
+  min-height:55px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:7px 15px;
+  border-bottom:1px solid var(--line);
+}
+#app .filter-toggle{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  min-height:42px;
+  border:0;
+  padding:6px 3px;
+  background:transparent;
+  color:var(--ink);
+  font-size:15px;
+  font-weight:800;
+}
+#app .filter-symbol{font-size:22px;color:var(--green);line-height:1}
+#app .filter-chevron{font-size:18px;color:var(--muted);margin-left:1px}
+#app .filter-clear{
+  border:0;
+  background:transparent;
+  color:var(--green);
+  font-size:13px;
+  font-weight:750;
+  padding:9px 4px;
+}
+#app .filter-panel-content{padding:12px 13px 14px}
+#app .filter-panel-content[hidden]{display:none!important}
+#app .quick-views{
+  display:flex;
+  flex-wrap:nowrap;
+  gap:7px;
+  width:100%;
+  margin:0 0 13px;
+  padding:0 0 4px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  scrollbar-width:thin;
+  scrollbar-color:#cbd8ce transparent;
+}
+#app .quick-views .tab{
+  display:inline-flex;
+  flex:0 0 auto;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-height:42px;
+  padding:9px 12px;
+  border:1px solid #e7ece8;
+  border-radius:12px;
+  background:#f4f7f4;
+  color:#53635a;
+  font-size:12px;
+  font-weight:750;
+  line-height:1.2;
+  white-space:nowrap;
+}
+#app .quick-views .tab span{font-size:15px;line-height:1}
+#app .quick-views .tab.active{
+  background:var(--green);
+  border-color:var(--green);
+  color:#fff;
+  box-shadow:0 4px 10px rgba(32,90,69,.12);
+}
+#app .filter-select-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:11px 10px;
+}
+#app .filter-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+#app .filter-field label{
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.25;
+  font-weight:750;
+  padding-left:2px;
+}
+#app .filter-select{
+  width:100%;
+  min-width:0;
+  min-height:43px;
+  padding:8px 27px 8px 10px;
+  border:1px solid #dce5de;
+  border-radius:11px;
+  background:#fff;
+  color:#24352b;
+  font-size:12px;
+  font-weight:650;
+  outline:none;
+}
+#app .filter-select:focus-visible{border-color:#79a58d;box-shadow:0 0 0 3px rgba(32,90,69,.10)}
+#app .filter-priority{grid-column:1/-1;max-width:calc(33.333% - 7px)}
+#app .listhead{margin-top:19px}
+#app .listhead-right{gap:8px}
+#app .refreshstatus{font-size:11px}
+#app .refreshbtn{min-height:40px;padding:8px 11px}
+#app[data-theme="dark"] .filter-panel{background:#1e2722;border-color:#344139;box-shadow:0 5px 18px rgba(0,0,0,.13)}
+#app[data-theme="dark"] .filter-panel-header{border-color:#344139}
+#app[data-theme="dark"] .filter-toggle{color:#eaf0eb}
+#app[data-theme="dark"] .filter-symbol,#app[data-theme="dark"] .filter-clear{color:#a7d9b9}
+#app[data-theme="dark"] .quick-views .tab{background:#26322a;border-color:#39483e;color:#bdc9c0}
+#app[data-theme="dark"] .quick-views .tab.active{background:#376d50;border-color:#4d8666;color:#fff}
+#app[data-theme="dark"] .filter-select{background:#17201b!important;color:#eaf0eb!important;border-color:#46594b!important}
+#app[data-theme="dark"] .filter-field label{color:#b2c0b6}
+@media(max-width:520px){
+  #app .search-toolbar{margin:12px 0 9px}
+  #app .filter-panel{margin-bottom:19px;border-radius:17px}
+  #app .filter-panel-header{min-height:50px;padding:5px 12px}
+  #app .filter-panel-content{padding:10px 10px 12px}
+  #app .quick-views{gap:6px;margin-bottom:11px;padding-bottom:5px}
+  #app .quick-views .tab{min-height:40px;padding:8px 10px;font-size:11px;border-radius:11px}
+  #app .quick-views .tab span{font-size:14px}
+  #app .filter-select-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px 7px}
+  #app .filter-field label{font-size:10px}
+  #app .filter-select{min-height:42px;padding:8px 19px 8px 8px;font-size:11px}
+  #app .filter-priority{grid-column:1/-1;max-width:100%}
+  #app .listhead{margin-top:16px}
+}
+@media(max-width:360px){
+  #app .quick-views .tab{padding:8px 9px;font-size:10px}
+  #app .filter-select-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #app .filter-priority{grid-column:auto;max-width:none}
+}

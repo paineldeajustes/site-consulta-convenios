@@ -491,13 +491,6 @@ function renderAdjustmentOptionsFromCad(){
   const unique=new Map();
   for(const option of options)if(!unique.has(normalizeAdjustmentSearch(option.cv)))unique.set(normalizeAdjustmentSearch(option.cv),option);
   options=[...unique.values()];
-  if(!options.length&&!cadMetadataLoaded){
-    const convHeader=headers.find(h=>norm(h)==='CONVENIO');
-    if(convHeader){
-      const convs=[...new Set(allRows.map(row=>String(row[convHeader]??'').trim()).filter(Boolean))];
-      options=convs.map(cv=>({cv,ent:String(allRows.find(row=>String(row[convHeader]??'').trim()===cv)?.ENTIDADE||'').trim()}));
-    }
-  }
   window.CONVENIO_OPTIONS=options;
   $('conv').innerHTML='<option value="">Selecione um ajuste</option>'+options.map(option=>'<option value="'+esc(option.cv)+'">'+esc(formatAdjustmentNumber(option.cv))+'</option>').join('');
   $('conv').disabled=options.length===0;
@@ -1228,18 +1221,17 @@ function loadTextIntoPage(text, filename){
       console.error('Falha ao reconhecer cabeçalho do TXT', {headers, delimiter:parsed.delimiter, preview:String(text).slice(0,500)});
       return;
     }
-    const convs=[...new Set(allRows.map(r=>String(r[convHeader]??'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-    $('conv').innerHTML='<option value="">Selecione um ajuste</option>'+convs.map(c=>`<option value="${esc(c)}">${esc(formatAdjustmentNumber(c))}</option>`).join('');
-    $('conv').disabled=false;$('search').disabled=false;
+    $('conv').innerHTML='<option value="">Carregando CadConvenios.txt…</option>';
+    $('conv').disabled=true;
+    $('search').value='';
+    $('search').disabled=true;
+    window.CONVENIO_OPTIONS=[];
         $('status').hidden=true;
     $('conv').value='';$('search').value='';activeAdjustmentFilterCode='';resetColumnFilters();$('mConv').textContent='—';$('mEnt').textContent='—';renderCadMetadata('');$('mCadInicial').textContent='—';$('mCadAditamentos').textContent='—';$('mTotalCadastrado').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';$('mSaldo').textContent='—';$('saldoAjusteCard').classList.remove('negative-balance');$('mSaldoPagar').textContent='—';
         ['reconTable','cadTable','cadDetailTable','empTable','payTable'].forEach(id=>$(id).innerHTML='<div class="empty">Selecione um ajuste para visualizar os dados.</div>');
     $('dateFrom').disabled=true;$('dateTo').disabled=true;$('clearDates').disabled=true;$('export').disabled=true;
     $('payCount').textContent='0 registros';
-    window.CONVENIO_OPTIONS=convs.map(cv=>{
-      const row=allRows.find(r=>String(r[convHeader]??'').trim()===cv);
-      return {cv, ent:row?String(get(row,'ENTIDADE')||'').trim():''};
-    });
+    currentMovementRows=[];currentEmpenhos=[];currentPayments=[];movementDataLoadedFor='';
     renderOverview();
     $('status').hidden=true;
   }catch(err){
@@ -1631,26 +1623,39 @@ $('manualRefreshButton').addEventListener('click',async()=>{
   const button=$('manualRefreshButton');
   button.disabled=true;button.textContent='Atualizando…';
   $('status').hidden=false;
-  $('status').textContent='Solicitação autorizada. Importando RET_FONTES.txt e CadConvenios.txt do Google Drive…';
+  $('status').textContent='Solicitação autorizada. Atualizando cadastro, registros de ajustes e movimentos ORCOM…';
   try{
     const {data:{session},error:sessionError}=await supabaseClient.auth.getSession();
     if(sessionError||!session?.access_token)throw new Error('Sua sessão expirou. Entre novamente e tente de novo.');
     const results=[];
-    for(const [slug,label] of [['import-ret-fontes','RET_FONTES.txt'],['import-cad-convenios','CadConvenios.txt']]){
-      $('status').textContent=`Importando ${label} do Google Drive…`;
+    const importSteps=[
+      ['import-ret-fontes','RET_FONTES.txt'],
+      ['import-cad-convenios','CadConvenios.txt'],
+      ['import-orcom-movements','TXT_EMPENHO e TXT_PAGAMENTO (atuais e históricos)']
+    ];
+    for(const [slug,label] of importSteps){
+      $('status').textContent='Importando '+label+'…';
       try{
         const result=await callImportFunction(slug,session.access_token);
-        results.push({label,ok:true,count:result.row_count});
+        const files=Array.isArray(result.files)?result.files:[];
+        const imported=files.filter(file=>file.status==='imported').length;
+        const skipped=files.filter(file=>file.status==='skipped'||file.status==='unchanged').length;
+        const failed=files.filter(file=>file.status==='failed').length;
+        results.push({label,ok:true,count:Number(result.row_count||0),imported,skipped,failed,files});
       }catch(error){results.push({label,ok:false,error:error.message||String(error)});}
     }
+    movementDataLoadedFor='';
+    currentMovementRows=[];currentEmpenhos=[];currentPayments=[];
     await loadLatestFromSupabase();
     if(selectedAdjustment)chooseConv(selectedAdjustment);
     const failed=results.filter(result=>!result.ok);
     $('status').hidden=false;
     if(failed.length){
-      $('status').textContent='Atualização parcial. '+results.map(result=>result.ok?`${result.label}: importado (${Number(result.count||0).toLocaleString('pt-BR')} registros)`:`${result.label}: erro — ${result.error}`).join(' | ');
+      $('status').textContent='Atualização parcial. '+results.map(result=>result.ok
+        ?result.label+': '+Number(result.count||0).toLocaleString('pt-BR')+' registros processados'+(result.imported!==undefined?' · '+result.imported+' arquivos novos · '+result.skipped+' sem alteração/precedência · '+result.failed+' falhas':'')
+        :result.label+': erro — '+result.error).join(' | ');
     }else{
-      $('status').textContent='Atualização concluída com sucesso. '+results.map(result=>`${result.label}: ${Number(result.count||0).toLocaleString('pt-BR')} registros`).join(' · ');
+      $('status').textContent='Atualização concluída. '+results.map(result=>result.label+': '+Number(result.count||0).toLocaleString('pt-BR')+' registros'+(result.imported!==undefined?' · '+result.imported+' arquivos importados · '+result.skipped+' preservados sem alteração/precedência':'')).join(' | ');
     }
   }catch(error){
     $('status').hidden=false;

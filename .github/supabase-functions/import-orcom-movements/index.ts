@@ -530,7 +530,7 @@ async function importOneFile(
   }
   const importId = String(importRecord.id);
   try {
-    const batchSize = 300;
+    const batchSize = 1000;
     let linkedCount = 0;
     for (let start = 0; start < parsed.rows.length; start += batchSize) {
       const rows = parsed.rows.slice(start, start + batchSize);
@@ -618,6 +618,15 @@ Deno.serve(async (req: Request) => {
     }, 500);
   }
 
+  let requestBody: Record<string, unknown> = {};
+  try {
+    requestBody = await req.json();
+  } catch {
+    requestBody = {};
+  }
+  const requestedFileName = typeof requestBody.file_name === "string" ? requestBody.file_name.trim() : "";
+  const action = String(requestBody.action ?? (requestedFileName ? "import_file" : "list"));
+
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
@@ -642,7 +651,7 @@ Deno.serve(async (req: Request) => {
     if (!files.length) {
       return jsonResponse({
         success: false,
-        error: "Nenhum TXT_EMPENHO.txt, TXT_EMPENHO-AAAA.txt, TXT_PAGAMENTO.txt ou TXT_PAGAMENTO-AAAA.txt foi localizado na pasta do CadConvenios.txt.",
+        error: "Nenhum arquivo TXT_EMPENHO/TXT_PAGAMENTO atual ou histórico foi localizado na pasta do CadConvenios.txt.",
         folder_id_found: true,
         files: [],
       }, 200);
@@ -657,42 +666,61 @@ Deno.serve(async (req: Request) => {
       finalizedNamesByType.get(type)!.add(Number(match[2]));
     }
 
-    // Históricos definitivos entram primeiro; os correntes entram depois e são ignorados quando já há um final do mesmo exercício.
-    files.sort((a, b) => {
-      const aFinal = /^TXT_(EMPENHO|PAGAMENTO)-20\d{2}\.txt$/i.test(a.name) ? 1 : 0;
-      const bFinal = /^TXT_(EMPENHO|PAGAMENTO)-20\d{2}\.txt$/i.test(b.name) ? 1 : 0;
-      return bFinal - aFinal || a.name.localeCompare(b.name, "pt-BR");
-    });
-
-    const results: Record<string, unknown>[] = [];
-    for (const file of files) {
-      try {
-        results.push(await importOneFile(admin, file, accessToken, finalizedNamesByType));
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.error("Falha ao importar " + file.name + ":", message);
-        results.push({ file_name: file.name, status: "failed", error: message });
-      }
+    if (action === "list") {
+      const ordered = files.sort((a, b) => {
+        const aFinal = /^TXT_(EMPENHO|PAGAMENTO)-20\d{2}\.txt$/i.test(a.name) ? 1 : 0;
+        const bFinal = /^TXT_(EMPENHO|PAGAMENTO)-20\d{2}\.txt$/i.test(b.name) ? 1 : 0;
+        return bFinal - aFinal || a.name.localeCompare(b.name, "pt-BR");
+      });
+      return jsonResponse({
+        success: true,
+        folder_id_found: true,
+        files_found: ordered.length,
+        files: ordered.map((file) => ({
+          name: file.name,
+          modified_time: file.modifiedTime ?? null,
+          md5_checksum: file.md5Checksum ?? null,
+          size_bytes: Number(file.size ?? 0),
+        })),
+        message: "Lista de arquivos ORCOM localizada. Solicite a importação de cada arquivo individualmente.",
+      }, 200);
     }
 
-    const failures = results.filter((result) => result.status === "failed");
-    const imported = results.filter((result) => result.status === "imported");
-    const skipped = results.filter((result) => result.status === "skipped" || result.status === "unchanged");
-    const totalRows = imported.reduce((sum, result) => sum + Number(result.row_count ?? 0), 0);
+    if (action !== "import_file" || !requestedFileName) {
+      return jsonResponse({
+        success: false,
+        error: "Informe action='list' ou action='import_file' com o campo file_name.",
+      }, 400);
+    }
 
-    return jsonResponse({
-      success: failures.length === 0,
-      folder_id_found: true,
-      files_found: files.length,
-      imported_files: imported.length,
-      skipped_files: skipped.length,
-      failed_files: failures.length,
-      row_count: totalRows,
-      files: results,
-      message: failures.length
-        ? "Importação concluída parcialmente. Consulte o resultado individual de cada arquivo."
-        : "Arquivos de empenhos e pagamentos conferidos; versões novas importadas e arquivos inalterados preservados.",
-    }, 200);
+    const target = files.find((file) => file.name === requestedFileName);
+    if (!target || !pattern.test(target.name)) {
+      return jsonResponse({
+        success: false,
+        error: "O arquivo solicitado não existe na pasta autorizada ou não segue o padrão TXT_EMPENHO/TXT_PAGAMENTO.",
+        file_name: requestedFileName,
+      }, 404);
+    }
+
+    try {
+      const result = await importOneFile(admin, target, accessToken, finalizedNamesByType);
+      const failed = result.status === "failed";
+      return jsonResponse({
+        success: !failed,
+        file: result,
+        message: failed
+          ? "A importação do arquivo falhou; a última versão válida foi preservada."
+          : "Arquivo verificado. A importação nova foi concluída ou o arquivo permaneceu inalterado conforme sua versão anterior.",
+      }, 200);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("Falha ao importar " + requestedFileName + ":", message);
+      return jsonResponse({
+        success: false,
+        file_name: requestedFileName,
+        error: message,
+      }, 200);
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("Falha na importação dos movimentos ORCOM:", message);

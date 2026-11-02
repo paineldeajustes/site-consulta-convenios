@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#183f35">
-<meta name="clareza-build" content="2026-11-02.21">
+<meta name="clareza-build" content="2026-11-02.22">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Clareza">
@@ -107,7 +107,7 @@
         <div class="field"><label for="settingsDefaultContext">Ambiente padrão</label><select id="settingsDefaultContext"></select></div>
         <div class="field"><label for="settingsDefaultPriority">Prioridade padrão</label><select id="settingsDefaultPriority"><option value="baixa">Baixa</option><option value="media">Média</option><option value="alta">Alta</option><option value="urgente">Urgente</option></select></div>
       </div>
-      <div class="settings-subhead"><h3>Cores e nomes dos ambientes</h3><p>O cartão inteiro da tarefa usa a cor escolhida para o ambiente.</p></div>
+      <div class="settings-subhead"><h3>Nomes e cores dos contextos</h3><p>Você pode renomear e recolorir Trabalho, Casa, Pessoal e Outros. Esses quatro contextos são estruturais e não podem ser excluídos; os integrantes de cada grupo podem ser alterados separadamente.</p></div>
       <div id="contextSettingsList" class="context-settings-list"></div>
       <div class="settings-actions"><button id="saveHouseholdSettings" class="btn" type="button">Salvar configurações compartilhadas</button></div>
       <p id="householdSettingsMessage" class="msg" hidden></p>
@@ -130,13 +130,14 @@
       <p id="reminderSettingsMessage" class="msg" hidden></p>
     </section>
     <section class="settings-card">
-      <div class="settings-card-head"><div><h2>Categorias</h2><p>Crie e organize categorias reutilizáveis nas tarefas. A lista é compartilhada.</p></div><span class="settings-symbol" aria-hidden="true">⌘</span></div>
+      <div class="settings-card-head"><div><h2>Categorias compartilhadas</h2><p>Edite o nome e a cor ou exclua categorias. Excluir uma categoria não apaga as tarefas que já a utilizaram.</p></div><span class="settings-symbol" aria-hidden="true">⌘</span></div>
       <form id="newCategoryForm" class="category-create-row"><div class="field"><label for="newCategoryName">Nova categoria</label><input id="newCategoryName" maxlength="60" required placeholder="Ex.: Compras, Saúde, Projeto"></div><div class="field"><label for="newCategoryColor">Cor</label><input id="newCategoryColor" type="color" value="#eaf2ff"></div><button id="addCategoryBtn" class="btn" type="submit">Adicionar</button></form>
       <div id="categorySettingsList" class="category-settings-list"></div>
       <p id="categorySettingsMessage" class="msg" hidden></p>
     </section>
-    <section class="settings-card"><div class="settings-card-head"><div><h2>Exportar tarefas</h2><p>Exporte a agenda para Excel, backup ou impressão.</p></div><span class="settings-symbol" aria-hidden="true">⇩</span></div><div class="export-menu settings-export-menu" id="exportMenu"><button id="exportCsv" type="button">CSV para Excel</button><button id="exportJson" type="button">JSON (backup)</button><button id="exportPrint" type="button">Imprimir / PDF</button></div><p class="settings-help">A exportação inclui todas as tarefas visíveis para sua conta, com responsáveis, prazos, ambientes, situações e metadados dos anexos.</p></section>
-    <section class="settings-card"><div class="settings-card-head"><div><h2>Grupos de perfis por ambiente</h2><p>Defina quem pertence a Trabalho, Casa, Pessoal e Outros. As tarefas do grupo ficam visíveis aos seus integrantes.</p></div><span class="settings-role">Administrador</span></div><div id="environmentGroupSettings"><p class="settings-help">Carregando integrantes dos ambientes…</p></div><p id="environmentGroupMessage" class="msg" hidden></p></section>
+    <section class="settings-card"><div class="settings-card-head"><div><h2>Exportar tarefas</h2><p>Baixe sua agenda em uma planilha Excel editável (.xlsx).</p></div><span class="settings-symbol" aria-hidden="true">⇩</span></div><div class="export-menu settings-export-menu" id="exportMenu"><button id="exportExcel" type="button">Baixar planilha Excel (.xlsx)</button></div><p class="settings-help">A planilha reúne as tarefas visíveis para sua conta, responsáveis, prazos, contextos, categorias, status e nomes dos anexos.</p></section>
+    <section class="settings-card"><div class="settings-card-head"><div><h2>Integrantes dos grupos por contexto</h2><p>Inclua ou retire participantes de Trabalho, Casa, Pessoal e Outros. A alteração controla quem pode visualizar tarefas compartilhadas em cada contexto.</p></div><span class="settings-role">Administrador</span></div><div id="environmentGroupSettings"><p class="settings-help">Carregando integrantes dos ambientes…</p></div><p id="environmentGroupMessage" class="msg" hidden></p></section>
+    <section id="assigneeManagementSection" class="settings-card"><div class="settings-card-head"><div><h2>Responsáveis pelas tarefas</h2><p>Defina quem pode receber novas tarefas e personalize o nome exibido na agenda. Desativar alguém não remove seu acesso nem altera tarefas já atribuídas.</p></div><span class="settings-role">Administrador</span></div><div id="assigneeSettingsList"><p class="settings-help">Carregando participantes…</p></div><p id="assigneeSettingsMessage" class="msg" hidden></p></section>
     <section id="settingsAccessSection" class="settings-card">
       <div class="settings-card-head"><div><h2>Acessos e permissões</h2><p>Aprove ou recuse novos usuários que pedirem para entrar na agenda.</p></div><span id="settingsAccessRole" class="settings-role">Membro</span></div>
       <section id="accessAdminPanel" class="sharepanel" aria-label="Administração de acessos" hidden><div class="sharehead"><div><strong>Administração de acessos</strong><p class="sharecopy">Novos usuários só verão a agenda depois da sua aprovação. Você é o administrador.</p></div></div><div id="accessRequestsList" class="access-requests"><p class="sharecopy">Verificando solicitações…</p></div><p id="adminAccessMessage" class="msg" hidden></p></section>
@@ -405,7 +406,7 @@ if(!currentHousehold?.household_id){
 accessPending=false;accessRequestStatus="approved";
 const {data,error}=await sb.from("personal_tasks").select("*").eq("household_id",currentHousehold.household_id).is("deleted_at",null).order("completed",{ascending:true}).order("due_date",{ascending:true,nullsFirst:false}).order("created_at",{ascending:false});
 if(error)throw error;tasks=data||[];
-const {data:memberRows,error:memberError}=await sb.rpc("list_task_assignees");if(memberError)throw memberError;householdMembers=memberRows||[];
+const [{data:memberRows,error:memberError},{data:assigneeOptions,error:assigneeOptionsError}]=await Promise.all([sb.rpc("list_task_assignees"),sb.rpc("list_task_assignee_options")]);if(memberError)throw memberError;if(assigneeOptionsError)throw assigneeOptionsError;const assigneeMap=new Map((assigneeOptions||[]).map(x=>[x.user_id,x]));householdMembers=(memberRows||[]).map(m=>{const opt=assigneeMap.get(m.user_id);return {...m,profile_display_name:m.display_name,assignee_label:opt?.assignee_label||null,display_name:opt?.assignee_label||m.display_name,assignee_enabled:opt?.assignee_enabled!==false}});
 const taskIds=tasks.map(t=>t.id);
 if(taskIds.length){const {data:attachRows,error:attachError}=await sb.from("task_attachments").select("*").in("task_id",taskIds).order("created_at",{ascending:true});if(attachError)throw attachError;taskAttachments=attachRows||[]}else taskAttachments=[];
 if(window.ClarezaSettingsBridge?.load)await window.ClarezaSettingsBridge.load(false);
@@ -755,7 +756,7 @@ if(wasEditing&&editing.created_by!==user.id){
  return;
 }
 if(wasEditing){
- response=await sb.from("personal_tasks").update(input).eq("id",editing.id);
+ response=await sb.from("personal_tasks").update({...input,assignee_id:targetAssignee}).eq("id",editing.id);
  if(response.error)throw response.error;
  const {error:visibilityError}=await sb.rpc("set_task_visibility",{p_task_id:editing.id,p_visibility_mode:input.visibility_mode,p_visible_user_ids:window.ClarezaWorkflow?.getVisibleUserIds?.()||[]});
  if(visibilityError)throw visibilityError;

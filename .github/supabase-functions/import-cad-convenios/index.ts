@@ -270,15 +270,18 @@ Deno.serve(async (req) => {
       const index = columnIndex.get(normalize(name));
       return index === undefined ? "" : clean(row[index]);
     };
+    // Indexa as ocorrências de cada cabeçalho uma única vez.
+    // Evita percorrer todas as colunas novamente para cada um dos milhares de registros.
+    const columnOccurrences = new Map<string, number[]>();
+    header.forEach((field, index) => {
+      const key = normalize(field);
+      const indexes = columnOccurrences.get(key) ?? [];
+      indexes.push(index);
+      columnOccurrences.set(key, indexes);
+    });
     const getColumnOccurrence = (row: string[], name: string, occurrence = 0): string => {
-      let seen = 0;
-      const normalizedName = normalize(name);
-      for (let index = 0; index < header.length; index++) {
-        if (normalize(header[index]) !== normalizedName) continue;
-        if (seen === occurrence) return clean(row[index]);
-        seen++;
-      }
-      return "";
+      const index = columnOccurrences.get(normalize(name))?.[occurrence];
+      return index === undefined ? "" : clean(row[index]);
     };
     const extraFieldSpecs: [string, string, number][] = [
       ["DT-ASSINA", "DT-ASSINA", 0],

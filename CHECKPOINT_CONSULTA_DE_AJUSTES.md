@@ -78,3 +78,11 @@ Continue o projeto Painel de Ajustes pelo repositório paineldeajustes/site-cons
 ```
 
 Site: https://paineldeajustes.github.io/site-consulta-convenios/
+
+
+## Fechamento da retomada — 02/11/2026
+
+- HEAD atual de `main` nesta gravação: `a47bad8c7ddab033b01cf7f2abd57397abe673b1`.
+- GitHub Pages run final `41545871962` para o commit `a47bad8...`: `completed / success`. O run intermediário `41545785874` ficou `cancelled`, substituído pela publicação mais nova bem-sucedida.
+- Site acessível, mas aba inspecionada na tela de autenticação e sem sessão ativa. Testes internos pós-login permanecem pendentes; nenhuma credencial foi usada ou solicitada.
+- Não houve importação, alteração de dados ou deploy de Edge Function nesta retomada.

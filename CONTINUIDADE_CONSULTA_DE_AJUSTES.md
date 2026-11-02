@@ -210,3 +210,12 @@ A auditoria foi realizada diretamente no GitHub e no projeto Supabase `qkjudfvla
 - Continuam pendentes os testes autenticados no navegador, especialmente Safari/iPhone: login, carregamento da lista, busca, filtros ano/letra, ajuste com RET (00004/2021-SE), ajuste de 2026 sem linha RET, Limpar seleção, filtros de colunas, Overview, CSV e ficha/relatório.
 - A sintaxe e a publicação anterior foram verificadas; isso não substitui o teste real com usuário autenticado. Não declarar login, seleção e logout como funcionalmente aprovados até executar esses testes.
 - Próxima ação: conferir o resultado do Pages run `41545785874` e executar a bateria funcional em navegador autenticado. Não rodar importações para esse teste.
+
+
+## Fechamento da retomada — 02/11/2026 (20:36, horário de Brasília)
+
+- Commit HEAD de `main` após atualização dos dois documentos: `a47bad8c7ddab033b01cf7f2abd57397abe673b1`.
+- GitHub Pages: execução final `41545871962`, referente ao HEAD `a47bad8...`, terminou `completed / success` em 23:32:45 UTC (20:32:45 em São Paulo). A execução anterior `41545785874` do commit de sincronização foi cancelada pela execução mais nova; não representa falha da publicação final.
+- A aba aberta do site foi inspecionada: a página está acessível e apresenta a tela de autenticação. Não havia uma sessão autenticada nem foi fornecida senha nesta retomada; portanto, nenhum teste interno pós-login foi executado ou declarado aprovado.
+- A versão publicada do site preserva o último código de interface testado/sintaticamente validado no commit `f6fbe35...`; os commits seguintes atualizaram documentação e alinharam o arquivo-fonte RET_FONTES. Não foram alterados os dados importados nem as funções ativas.
+- Último workflow importador: `41524972727`, sucesso. Nenhum workflow importador foi acionado durante esta retomada.

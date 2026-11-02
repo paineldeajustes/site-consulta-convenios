@@ -1605,11 +1605,11 @@ document.addEventListener('click',event=>{
   if(button)openMovementDocument(button.getAttribute('data-open-document'),button.getAttribute('data-document-key'),button.getAttribute('data-document-label'));
 });
 
-async function callImportFunction(name,token){
+async function callImportFunction(name,token,payload={}){
   const response=await fetch(`${SUPABASE_URL}/functions/v1/${name}`,{
     method:'POST',
     headers:{apikey:SUPABASE_PUBLIC_KEY,Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
-    body:'{}'
+    body:JSON.stringify(payload)
   });
   let result={};
   try{result=await response.json();}catch{}
@@ -1628,35 +1628,64 @@ $('manualRefreshButton').addEventListener('click',async()=>{
     const {data:{session},error:sessionError}=await supabaseClient.auth.getSession();
     if(sessionError||!session?.access_token)throw new Error('Sua sessão expirou. Entre novamente e tente de novo.');
     const results=[];
-    const importSteps=[
-      ['import-ret-fontes','RET_FONTES.txt'],
-      ['import-cad-convenios','CadConvenios.txt'],
-      ['import-orcom-movements','TXT_EMPENHO e TXT_PAGAMENTO (atuais e históricos)']
-    ];
-    for(const [slug,label] of importSteps){
+    for(const [slug,label] of [['import-ret-fontes','RET_FONTES.txt'],['import-cad-convenios','CadConvenios.txt']]){
       $('status').textContent='Importando '+label+'…';
       try{
-        const result=await callImportFunction(slug,session.access_token);
-        const files=Array.isArray(result.files)?result.files:[];
-        const imported=files.filter(file=>file.status==='imported').length;
-        const skipped=files.filter(file=>file.status==='skipped'||file.status==='unchanged').length;
-        const failed=files.filter(file=>file.status==='failed').length;
-        results.push({label,ok:true,count:Number(result.row_count||0),imported,skipped,failed,files});
-      }catch(error){results.push({label,ok:false,error:error.message||String(error)});}
+        const result=await callImportFunction(slug,session.access_token,{});
+        results.push({label,ok:true,count:Number(result.row_count||0)});
+      }catch(error){
+        results.push({label,ok:false,error:error.message||String(error)});
+      }
     }
+
+    const movementResult={label:'Empenhos e pagamentos ORCOM',ok:true,files:[],count:0,imported:0,unchanged:0,skipped:0,failures:[]};
+    try{
+      $('status').textContent='Localizando os arquivos atuais e históricos de empenhos e pagamentos…';
+      const listing=await callImportFunction('import-orcom-movements',session.access_token,{action:'list'});
+      const files=Array.isArray(listing.files)?listing.files:[];
+      if(!files.length)throw new Error('Nenhum TXT_EMPENHO/TXT_PAGAMENTO foi encontrado na pasta do Google Drive.');
+      for(const file of files){
+        $('status').textContent='Importando/verificando '+file.name+'…';
+        try{
+          const result=await callImportFunction('import-orcom-movements',session.access_token,{action:'import_file',file_name:file.name});
+          const item=result.file||{};
+          movementResult.files.push(item);
+          movementResult.count+=Number(item.row_count||0);
+          if(item.status==='imported')movementResult.imported++;
+          else if(item.status==='unchanged')movementResult.unchanged++;
+          else if(item.status==='skipped')movementResult.skipped++;
+          else if(item.status==='failed'){
+            movementResult.ok=false;
+            movementResult.failures.push(file.name+': '+(item.error||'falha não especificada'));
+          }
+        }catch(error){
+          movementResult.ok=false;
+          movementResult.failures.push(file.name+': '+(error.message||String(error)));
+        }
+      }
+    }catch(error){
+      movementResult.ok=false;
+      movementResult.failures.push(error.message||String(error));
+    }
+    results.push(movementResult);
+
     movementDataLoadedFor='';
     currentMovementRows=[];currentEmpenhos=[];currentPayments=[];
     await loadLatestFromSupabase();
     if(selectedAdjustment)chooseConv(selectedAdjustment);
+
     const failed=results.filter(result=>!result.ok);
     $('status').hidden=false;
-    if(failed.length){
-      $('status').textContent='Atualização parcial. '+results.map(result=>result.ok
-        ?result.label+': '+Number(result.count||0).toLocaleString('pt-BR')+' registros processados'+(result.imported!==undefined?' · '+result.imported+' arquivos novos · '+result.skipped+' sem alteração/precedência · '+result.failed+' falhas':'')
-        :result.label+': erro — '+result.error).join(' | ');
-    }else{
-      $('status').textContent='Atualização concluída. '+results.map(result=>result.label+': '+Number(result.count||0).toLocaleString('pt-BR')+' registros'+(result.imported!==undefined?' · '+result.imported+' arquivos importados · '+result.skipped+' preservados sem alteração/precedência':'')).join(' | ');
-    }
+    const summaries=results.map(result=>{
+      if(!result.ok){
+        return result.label+': '+(result.failures?.join(' | ')||result.error||'falha');
+      }
+      if(result.files){
+        return result.label+': '+result.imported+' arquivo(s) atualizado(s), '+result.unchanged+' sem alteração, '+result.skipped+' com precedência histórica · '+result.count.toLocaleString('pt-BR')+' registros verificados';
+      }
+      return result.label+': '+result.count.toLocaleString('pt-BR')+' registros';
+    });
+    $('status').textContent=(failed.length?'Atualização parcial. ':'Atualização concluída com sucesso. ')+summaries.join(' | ');
   }catch(error){
     $('status').hidden=false;
     $('status').textContent='Não foi possível concluir a atualização manual: '+(error.message||String(error));

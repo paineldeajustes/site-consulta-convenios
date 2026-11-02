@@ -351,36 +351,51 @@ async function listMovementFilesByNames(accessToken: string): Promise<DriveFile[
     "name contains 'TXT_PAGAMENTO' and trashed = false",
   ];
   const files: DriveFile[] = [];
+  // Primeiro consulta os arquivos que a conta de serviço acessa no Meu Drive.
+  // Depois amplia para shared drives, que podem exigir o corpus allDrives.
   for (const q of queries) {
-    let pageToken = "";
-    do {
-      const params = new URLSearchParams({
-        q,
-        fields: "nextPageToken,files(id,name,parents,driveId,modifiedTime,md5Checksum,size)",
-        pageSize: "1000",
-        orderBy: "name",
-        supportsAllDrives: "true",
-        includeItemsFromAllDrives: "true",
-        corpora: "allDrives",
-      });
-      if (pageToken) params.set("pageToken", pageToken);
-      const response = await fetch(
-        "https://www.googleapis.com/drive/v3/files?" + params.toString(),
-        { headers: { Authorization: "Bearer " + accessToken } },
-      );
-      if (!response.ok) {
-        const detail = await response.text();
-        throw new Error("Falha ao localizar arquivos ORCOM pelo nome no Google Drive: " + response.status + " " + detail.slice(0, 300));
-      }
-      const page = await response.json();
-      if (Array.isArray(page.files)) files.push(...page.files);
-      pageToken = page.nextPageToken ?? "";
-    } while (pageToken);
+    for (const corpus of ["user", "allDrives"]) {
+      let pageToken = "";
+      do {
+        const params = new URLSearchParams({
+          q,
+          fields: "nextPageToken,files(id,name,parents,driveId,modifiedTime,md5Checksum,size)",
+          pageSize: "1000",
+          orderBy: "name",
+          supportsAllDrives: "true",
+          includeItemsFromAllDrives: "true",
+          corpora: corpus,
+        });
+        if (pageToken) params.set("pageToken", pageToken);
+        const response = await fetch(
+          "https://www.googleapis.com/drive/v3/files?" + params.toString(),
+          { headers: { Authorization: "Bearer " + accessToken } },
+        );
+        if (!response.ok) {
+          const detail = await response.text();
+          console.warn("Busca no corpus " + corpus + " para " + q + " falhou: " + response.status + " " + detail.slice(0, 200));
+          break;
+        }
+        const page = await response.json();
+        if (Array.isArray(page.files)) files.push(...page.files);
+        if (page.incompleteSearch) {
+          console.warn("A busca do Google Drive retornou incompleteSearch=true no corpus " + corpus + ".");
+        }
+        pageToken = page.nextPageToken ?? "";
+      } while (pageToken);
+    }
   }
   const allowed = /^TXT_(EMPENHO|PAGAMENTO)(?:-(20\d{2}))?\.txt$/i;
-  const byName = new Map<string, DriveFile>();
+  const byId = new Map<string, DriveFile>();
   for (const file of files) {
     if (!allowed.test(file.name)) continue;
+    const previous = byId.get(file.id);
+    if (!previous || String(file.modifiedTime ?? "") > String(previous.modifiedTime ?? "")) {
+      byId.set(file.id, file);
+    }
+  }
+  const byName = new Map<string, DriveFile>();
+  for (const file of byId.values()) {
     const previous = byName.get(file.name);
     if (!previous || String(file.modifiedTime ?? "") > String(previous.modifiedTime ?? "")) {
       byName.set(file.name, file);
@@ -388,7 +403,6 @@ async function listMovementFilesByNames(accessToken: string): Promise<DriveFile[
   }
   return [...byName.values()];
 }
-
 async function downloadDriveText(file: DriveFile, accessToken: string): Promise<string> {
   const response = await fetch(
     "https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(file.id) +

@@ -784,6 +784,12 @@ function sourceLabelFromFT(value){
   };
   return labels[code]||raw+' — Fonte não catalogada';
 }
+function sourceBroadLabelFromFT(value){
+  const raw=String(value??'').trim();
+  const code=String(Number(raw));
+  const labels={'1':'Municipal','91':'Municipal','2':'Estadual','92':'Estadual','5':'Federal','95':'Federal','3':'Fundos especiais','93':'Fundos especiais','4':'Administração indireta','94':'Administração indireta','6':'Outras fontes','96':'Outras fontes','7':'Operações de crédito','97':'Operações de crédito','8':'Emendas parlamentares municipais','98':'Emendas parlamentares municipais','19':'Recursos extraorçamentários'};
+  return labels[code]||sourceLabelFromFT(value);
+}
 function parseISODate(value){
   const raw=String(value??'').trim();
   const match=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -1321,8 +1327,21 @@ function showAppView(view){
 function chooseConv(value){
   const cv=String(value||'').trim();
   if(!cv)return;
-  const found=(window.CONVENIO_OPTIONS||[]).find(o=>o.cv===cv || norm(o.cv)===norm(cv));
-  if(found){$('conv').value=found.cv;$('search').value=formatAdjustmentNumber(found.cv);$('suggestions').hidden=true;render();updateFichaButtonVisibility();}
+  const found=(window.CONVENIO_OPTIONS||[]).find(o=>normalizeAdjustmentSearch(o.cv)===normalizeAdjustmentSearch(cv));
+  if(!found)return;
+  $('conv').value=found.cv;
+  $('search').value=formatAdjustmentNumber(found.cv);
+  $('suggestions').hidden=true;
+  const metadata=cadMetadataFor(found.cv);
+  const adjustmentKey=metadata?.join_key||normalizeAdjustmentSearch(formatAdjustmentNumber(found.cv));
+  if(movementDataLoadedFor!==adjustmentKey){
+    currentMovementRows=[];currentEmpenhos=[];currentPayments=[];
+    layoutInfo.hasPayments=false;
+    $('paySummary').hidden=true;
+  }
+  render();
+  updateFichaButtonVisibility();
+  loadMovementDataForAdjustment(found.cv);
 }
 function showSuggestions(){
   const panel=$('suggestions');

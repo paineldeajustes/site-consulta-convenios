@@ -153,3 +153,21 @@ A pasta de migrações deste repositório registra esta etapa do painel; o hist�
 ## Último commit de interface antes deste checkpoint
 
 \`ab32f016113c74077fe17ca266fb30e1e68b9ca0\` (a publicação deste commit deve ser confirmada no GitHub Actions após a atualização dos arquivos de continuidade).
+
+
+## Correção do login, inicialização e logout — 02/11/2026
+
+O teste real no Safari do iPhone mostrou a mensagem `Cannot access 'retFontesImportId' before initialization` após a autenticação. O usuário institucional conseguia autenticar, mas a carga da consulta falhava; como o listener de logout só era instalado no fim do script, a falha anterior também impedia o botão **Sair da conta** de funcionar.
+
+Correções gravadas em `index.html`:
+- Estados globais da consulta declarados antes das rotinas de autenticação e carga, eliminando a zona temporal de inicialização de `retFontesImportId` e das demais variáveis de estado.
+- Listener de logout instalado junto aos controles de autenticação, antes de qualquer carga de dados. Usa `signOut({scope:'local'})` e sempre limpa a interface local no bloco `finally`, mesmo quando houver erro na chamada de saída.
+- Restaurada como constante global a estrutura de 26 colunas `RET_SCHEMA`, que era definida somente dentro do parser antigo, mas passou a ser utilizada pela leitura sob demanda.
+- O botão Mostrar/Ocultar senha passou a ter listener independente; listeners de login e recuperação também foram antecipados.
+
+Commits:
+- `63aa410f1d0fbc8ba2850f95296cc839f66e38fa` — isolamento do botão de senha e antecipação dos handlers de autenticação.
+- `6950af805bac1f2d0100e412e931b32615c2dce0` — correção da ordem dos estados e listener de logout antecipado.
+- `f6fbe35c5d135b1773a5782be4f025f47edbf887` — restauração do esquema global de 26 colunas.
+
+GitHub Actions Pages run `41543569107`: `completed / success`, em 02/11/2026 às 23:13 UTC. O JavaScript inline passou na verificação de sintaxe. **Ainda é necessário testar o fluxo completo no Safari/iPhone**; a publicação concluída não substitui o teste real de login, carregamento dos ajustes e saída da conta.

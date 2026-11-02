@@ -414,8 +414,10 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC
 let currentSession=null;
 let currentProfile=null;
 let manualRefreshBusy=false;
+// Estrutura fixa das colunas do RET_FONTES.txt (empenhos e pagamentos).
+const RET_SCHEMA=['CONVENIO','ENTIDADE','TIPOAD','NUMEROAD','TPCAD','TPFOTE','VL-BEM','VL-CUSTEIO','VL-REFORMA','EMPENHO','VALOR-NE','VALOR CUSTEIO','VALOR CAPITAL','FONTE-NE','ANO','MES','DIA','OP','EMPENHO_1','VALOR-OP','VALOR CUSTEIO_2','VALOR CAPITAL_3','FONTE-NE_4','ANO_5','MES_6','DIA_7','Column1'];
 // Estados da aplicação declarados antes de qualquer rotina de autenticação/carga.
-let allRows=[],headers=[],currentRows=[],currentEmpenhos=[],currentPayments=[],currentMovementRows=[],layoutInfo={hasPayments:false,maxFields:0};
+let allRows=[],headers=RET_SCHEMA.slice(),currentRows=[],currentEmpenhos=[],currentPayments=[],currentMovementRows=[],layoutInfo={hasPayments:false,maxFields:RET_SCHEMA.length};
 let activeAdjustmentFilterCode='';
 let cadMetadataByKey=new Map(),cadMetadataLoaded=false,cadMetadataFinishedAt='';
 let selectionRows=[],retFontesImportId='',retRowsLoadedFor='',selectionRequestId=0,movementDataLoadedFor='',movementDataLoading=false;

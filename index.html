@@ -1645,10 +1645,26 @@ $('manualRefreshButton').addEventListener('click',async()=>{
       const files=Array.isArray(listing.files)?listing.files:[];
       if(!files.length)throw new Error('Nenhum TXT_EMPENHO/TXT_PAGAMENTO foi encontrado na pasta do Google Drive.');
       for(const file of files){
-        $('status').textContent='Importando/verificando '+file.name+'…';
+        $('status').textContent='Preparando '+file.name+'…';
         try{
-          const result=await callImportFunction('import-orcom-movements',session.access_token,{action:'import_file',file_name:file.name});
-          const item=result.file||{};
+          let result=await callImportFunction('import-orcom-movements',session.access_token,{action:'import_file',file_name:file.name});
+          let item=result.file||{};
+          let attempts=0;
+          while(['processing','busy','retry'].includes(item.status)&&attempts<300){
+            attempts++;
+            if(!item.import_id)throw new Error('A sessão de importação não retornou um identificador para continuar.');
+            const progress=Number(item.row_count||0);
+            const expected=Number(item.expected_row_count||0);
+            $('status').textContent='Importando '+file.name+' · '+progress.toLocaleString('pt-BR')+(expected?' de '+expected.toLocaleString('pt-BR')+' linhas':'')+' · bloco '+attempts+'…';
+            if(item.status==='busy'||item.status==='retry'){
+              await new Promise(resolve=>setTimeout(resolve,1500));
+            }
+            result=await callImportFunction('import-orcom-movements',session.access_token,{
+              action:'import_file',file_name:file.name,import_id:item.import_id
+            });
+            item=result.file||{};
+          }
+          if(['processing','busy','retry'].includes(item.status))throw new Error('Atingido o limite de blocos para este arquivo.');
           movementResult.files.push(item);
           movementResult.count+=Number(item.row_count||0);
           if(item.status==='imported')movementResult.imported++;
@@ -1657,6 +1673,9 @@ $('manualRefreshButton').addEventListener('click',async()=>{
           else if(item.status==='failed'){
             movementResult.ok=false;
             movementResult.failures.push(file.name+': '+(item.error||'falha não especificada'));
+          }else{
+            movementResult.ok=false;
+            movementResult.failures.push(file.name+': status inesperado ('+String(item.status||'vazio')+')');
           }
         }catch(error){
           movementResult.ok=false;

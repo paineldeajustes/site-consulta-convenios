@@ -461,6 +461,42 @@ async function importOneFile(
   accessToken: string,
   finalizedNamesByType: Map<string, Set<number>>,
 ): Promise<Record<string, unknown>> {
+  const filenameMatch = file.name.match(/^TXT_(EMPENHO|PAGAMENTO)(?:-(20\d{2}))?\.txt$/i);
+  if (!filenameMatch) throw new Error("Nome de arquivo fora do padrão permitido.");
+  const namedFinalized = Boolean(filenameMatch[2]);
+  const md5 = file.md5Checksum ?? null;
+  const modified = file.modifiedTime ?? null;
+  const size = Number(file.size ?? 0);
+
+  // Compara a versão do arquivo pelo nome e metadados antes do download integral.
+  const { data: namedImports, error: namedError } = await admin
+    .from("orcom_file_imports")
+    .select("id,file_name,exercise,drive_md5_checksum,drive_modified_at,file_size_bytes,is_finalized,row_count")
+    .eq("file_name", file.name)
+    .eq("status", "success")
+    .order("finished_at", { ascending: false })
+    .limit(10);
+  if (namedError) {
+    throw new Error("Não foi possível consultar o histórico de " + file.name + ": " + namedError.message);
+  }
+  const unchangedImport = (namedImports ?? []).find((item: Record<string, unknown>) =>
+    item.is_finalized === namedFinalized &&
+    (
+      (md5 && item.drive_md5_checksum === md5) ||
+      (!md5 && item.drive_modified_at === modified && Number(item.file_size_bytes ?? 0) === size)
+    )
+  );
+  if (unchangedImport) {
+    return {
+      file_name: file.name,
+      file_type: filenameMatch[1].toUpperCase() === "EMPENHO" ? "empenho" : "pagamento",
+      exercise: Number(unchangedImport.exercise),
+      status: "unchanged",
+      reason: "Os metadados do arquivo no Google Drive não mudaram desde a última importação bem-sucedida.",
+      row_count: Number(unchangedImport.row_count ?? 0),
+    };
+  }
+
   const content = await downloadDriveText(file, accessToken);
   const parsed = parseMovementFile(file, content);
 
@@ -484,28 +520,6 @@ async function importOneFile(
     .order("finished_at", { ascending: false })
     .limit(20);
   if (previousError) throw new Error("Não foi possível consultar a última importação de " + file.name + ": " + previousError.message);
-
-  const md5 = file.md5Checksum ?? null;
-  const modified = file.modifiedTime ?? null;
-  const size = Number(file.size ?? 0);
-  const sameImport = (previousImports ?? []).find((item: Record<string, unknown>) =>
-    item.file_name === file.name &&
-    item.is_finalized === parsed.finalized &&
-    (
-      (md5 && item.drive_md5_checksum === md5) ||
-      (!md5 && item.drive_modified_at === modified && Number(item.file_size_bytes ?? 0) === size)
-    )
-  );
-  if (sameImport) {
-    return {
-      file_name: file.name,
-      file_type: parsed.fileType,
-      exercise: parsed.exercise,
-      status: "unchanged",
-      reason: "O arquivo não sofreu alteração desde a última importação bem-sucedida.",
-      row_count: parsed.rows.length,
-    };
-  }
 
   const { data: importRecord, error: createError } = await admin
     .from("orcom_file_imports")

@@ -644,13 +644,34 @@ async function importOneFile(
       };
     }
     if (importRecord.status === "failed") {
+      // Um erro entre lotes de INSERT pode deixar parte do último bloco gravada.
+      // Ao retomar uma sessão falha, limpa somente os dados dessa importação e reinicia o arquivo
+      // desde o início; a última importação com status success permanece intacta.
+      const { error: cleanupError } = await admin
+        .from("orcom_movement_rows")
+        .delete()
+        .eq("import_id", String(importRecord.id));
+      if (cleanupError) throw new Error("Não foi possível limpar a tentativa anterior de " + file.name + ": " + cleanupError.message);
       const { error: resumeError } = await admin
         .from("orcom_file_imports")
-        .update({ status: "processing", finished_at: null, error_message: null, chunk_lock_until: null })
+        .update({
+          status: "processing",
+          row_count: 0,
+          linked_row_count: 0,
+          expected_row_count: 0,
+          next_row_number: 0,
+          finished_at: null,
+          error_message: null,
+          chunk_lock_until: null
+        })
         .eq("id", String(importRecord.id))
         .eq("status", "failed");
       if (resumeError) throw new Error("Não foi possível retomar a importação de " + file.name + ": " + resumeError.message);
       importRecord.status = "processing";
+      importRecord.row_count = 0;
+      importRecord.linked_row_count = 0;
+      importRecord.expected_row_count = 0;
+      importRecord.next_row_number = 0;
       importRecord.chunk_lock_until = null;
     }
     if (importRecord.status !== "processing") {

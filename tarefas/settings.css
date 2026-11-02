@@ -550,3 +550,28 @@ body[data-theme="dark"] .attachment-external-link{color:#a7d9b9}
   #app .filter-select-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #app .filter-priority{grid-column:auto;max-width:none}
 }
+
+
+/* Management controls: clear edit/delete actions and an explicit responsible directory. */
+.category-setting-actions{display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:108px}
+.category-setting-actions .btn{min-height:40px;padding:8px 10px;font-size:12px}
+.assignee-setting-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,1fr);gap:14px;padding:14px 0;border-top:1px solid var(--line);align-items:start}
+.assignee-setting-person{display:grid;gap:4px;min-width:0}
+.assignee-setting-person strong{font-size:14px;overflow-wrap:anywhere}
+.assignee-setting-person span,.assignee-setting-person small{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.assignee-setting-controls{display:grid;gap:8px;min-width:0}
+.assignee-setting-controls .field{margin:0}
+.assignee-setting-controls .field label{display:block;font-size:11px;font-weight:750;color:var(--muted);margin-bottom:5px}
+.assignee-setting-controls .field input{width:100%;min-height:42px;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:var(--paper);color:var(--ink)}
+.assignee-enabled-toggle{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink)}
+.assignee-enabled-toggle input{width:18px;height:18px;min-height:18px;accent-color:var(--green)}
+.assignee-setting-controls .btn{min-height:40px;font-size:12px}
+#app[data-theme="dark"] .assignee-setting-row{border-color:#344139}
+#app[data-theme="dark"] .assignee-setting-controls .field input{background:#17201b;color:#eaf0eb;border-color:#425146}
+@media(max-width:520px){
+ .category-setting-row{grid-template-columns:minmax(0,1fr) 58px!important;gap:8px}
+ .category-setting-row .category-setting-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;min-width:0}
+ .category-setting-actions .btn{width:100%}
+ .assignee-setting-row{grid-template-columns:minmax(0,1fr);gap:10px}
+ .assignee-setting-controls .btn{width:100%}
+}

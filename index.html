@@ -438,6 +438,79 @@ function cadMetadataFor(code){
   const key=normalizeAdjustmentSearch(formatAdjustmentNumber(code));
   return cadMetadataByKey.get(key)||null;
 }
+function formatCadCode(metadata){
+  if(!metadata)return '';
+  const number=String(metadata.number||'').replace(/\D/g,'').padStart(5,'0');
+  const year=String(metadata.year||'').replace(/\D/g,'').slice(-4);
+  const letter=String(metadata.letter||'').trim().toUpperCase();
+  if(number.length!==5||year.length!==4)return '';
+  return number+'/'+year+(letter?'-'+letter:'');
+}
+const CAD_EXTRA_FIELD_DEFINITIONS=[
+  ['DT-ASSINA','Data de assinatura'],['TP-PC','Tipo de prestação de contas'],['PROCESSO','Processo'],['TP-AJUSTE','Tipo do ajuste'],
+  ['CONC-RECEB','Concedente / recebedor'],['AJUSTE2','Identificação complementar'],['LEI','Lei'],['LEI-ESP','Lei específica'],
+  ['PROC-PCONTAS','Processo de prestação de contas'],['DT-INI','Data inicial'],['DT-FIM','Data final'],
+  ['INI+TA','Valor inicial + termos aditivos'],['ULT-TA','Último termo aditivo'],['OBJETO','Objeto'],
+  ['R-SOCIAL','Razão social'],['ENDERECO','Endereço'],['BAIRRO','Bairro'],['CIDADE','Cidade'],
+  ['CPF/CNPJ','CPF/CNPJ'],['DIRETORIA','Diretoria / responsável'],['CPF','CPF do responsável'],
+  ['DT-INI_1','Data inicial (ocorrência 2)'],['DT-FIM_2','Data final (ocorrência 2)'],
+  ['CONSELHO1','Conselho 1'],['CONSELHO2','Conselho 2'],['CONSELHO3','Conselho 3'],['CONSELHO4','Conselho 4'],
+  ['DT-INI_3','Data inicial (ocorrência 3)'],['DT-FIM_4','Data final (ocorrência 3)'],
+  ['IRREGULAR','Indicador de irregularidade'],['MOTIVO','Motivo'],['CEP','CEP'],['TEL','Telefone'],
+  ['EMAIL-ENT','E-mail da entidade'],['CARGO-DIR','Cargo do dirigente'],['EMAIL-DIR','E-mail do dirigente'],
+  ['TP2_AJ','Tipo complementar do ajuste'],['COD-FORNEC','Código do fornecedor'],['SDO-CONVENIO','Saldo do convênio'],
+  ['CA1','CA1'],['CA2','CA2']
+];
+const CAD_DATE_FIELDS=new Set(['DT-ASSINA','DT-INI','DT-FIM','DT-INI_1','DT-FIM_2','DT-INI_3','DT-FIM_4']);
+function renderCadExtraFields(metadata){
+  const container=$('cadExtraFieldsGrid');
+  const details=$('cadExtraDetails');
+  if(!metadata){
+    container.innerHTML='<div class="empty">Selecione um ajuste para consultar os demais campos.</div>';
+    details.open=false;
+    return;
+  }
+  const extra=metadata.extra_fields||{};
+  container.innerHTML=CAD_EXTRA_FIELD_DEFINITIONS.map(([key,label])=>{
+    let value=String(extra[key]??'').trim();
+    if(CAD_DATE_FIELDS.has(key)&&value)value=formatCadDate(value);
+    if(key==='TP-AJUSTE'&&value)value=value+' — '+cadTypeLabel(value);
+    if(!value)value='Não informado';
+    return '<div class="cad-extra-field"><span>'+esc(label)+' · '+esc(key)+'</span><strong>'+esc(value)+'</strong></div>';
+  }).join('');
+}
+function renderAdjustmentOptionsFromCad(){
+  const selected=$('conv').value;
+  let options=[];
+  for(const metadata of cadMetadataByKey.values()){
+    const cv=formatCadCode(metadata);
+    if(!cv)continue;
+    options.push({cv,ent:String(metadata.entity||metadata.extra_fields?.['R-SOCIAL']||'').trim()});
+  }
+  options.sort((a,b)=>formatAdjustmentNumber(a.cv).localeCompare(formatAdjustmentNumber(b.cv),'pt-BR',{numeric:true}));
+  const unique=new Map();
+  for(const option of options)if(!unique.has(normalizeAdjustmentSearch(option.cv)))unique.set(normalizeAdjustmentSearch(option.cv),option);
+  options=[...unique.values()];
+  if(!options.length&&!cadMetadataLoaded){
+    const convHeader=headers.find(h=>norm(h)==='CONVENIO');
+    if(convHeader){
+      const convs=[...new Set(allRows.map(row=>String(row[convHeader]??'').trim()).filter(Boolean))];
+      options=convs.map(cv=>({cv,ent:String(allRows.find(row=>String(row[convHeader]??'').trim()===cv)?.ENTIDADE||'').trim()}));
+    }
+  }
+  window.CONVENIO_OPTIONS=options;
+  $('conv').innerHTML='<option value="">Selecione um ajuste</option>'+options.map(option=>'<option value="'+esc(option.cv)+'">'+esc(formatAdjustmentNumber(option.cv))+'</option>').join('');
+  $('conv').disabled=options.length===0;
+  $('search').disabled=options.length===0;
+  const normalizedSelected=normalizeAdjustmentSearch(selected);
+  const retained=options.find(option=>normalizeAdjustmentSearch(option.cv)===normalizedSelected);
+  $('conv').value=retained?retained.cv:'';
+  if(retained)$('search').value=formatAdjustmentNumber(retained.cv);
+  if(!options.length){
+    $('status').hidden=false;
+    $('status').textContent='Aguardando a importação válida de CadConvenios.txt para montar a seleção dos ajustes.';
+  }
+}
 function parseCadDateValue(value){
   const raw=String(value??'').trim();
   let year,month,day;
@@ -486,13 +559,31 @@ function renderCadMetadata(code){
   $('cadMetaSigned').textContent=metadata?formatCadDate(metadata.signed_date):'—';
   $('cadMetaValidity').textContent=metadata?formatCadDate(metadata.last_validity):'—';
   $('cadMetaObject').textContent=metadata?(metadata.object_full||metadata.object||'Não informado'):(code?'Não há dados cadastrais carregados para este ajuste.':'Selecione um ajuste para consultar o objeto cadastrado.');
+  renderCadExtraFields(metadata);
   renderAdjustmentStatus(code,metadata);
+}
+async function loadMovementSummaryFromSupabase(){
+  movementSummaryByKey=new Map();
+  try{
+    const records=await supabaseGetAll('orcom_adjustment_movement_summary?select=adjustment_key,total_empenhado,total_pago_bruto,total_pago_valido,quantidade_empenhos,quantidade_movimentos_pagamento&order=adjustment_key.asc',1000);
+    for(const record of records){
+      movementSummaryByKey.set(normalizeAdjustmentSearch(record.adjustment_key),record);
+    }
+  }catch(error){
+    console.warn('Não foi possível carregar o resumo dos movimentos ORCOM.',error);
+  }
 }
 async function loadCadMetadataFromSupabase(){
   cadMetadataByKey=new Map();cadMetadataLoaded=false;cadMetadataFinishedAt='';
   try{
     const imports=await supabaseGet('ret_fontes_imports?select=id,file_name,status,row_count,finished_at&file_name=eq.CadConvenios.txt&status=eq.success&order=finished_at.desc&limit=1');
-    if(!imports.length){renderCadMetadata($('conv').value);renderOverview();return;}
+    if(!imports.length){
+      renderAdjustmentOptionsFromCad();
+      await loadMovementSummaryFromSupabase();
+      renderCadMetadata($('conv').value);
+      renderOverview();
+      return;
+    }
     const latest=imports[0];
     const records=await supabaseGetAll(`ret_fontes_rows?select=fields&import_id=eq.${encodeURIComponent(latest.id)}&order=row_number.asc`,1000);
     for(const record of records){
@@ -505,6 +596,8 @@ async function loadCadMetadataFromSupabase(){
   }catch(error){
     console.warn('Não foi possível carregar o cadastro complementar CadConvenios.txt.',error);
   }
+  renderAdjustmentOptionsFromCad();
+  await loadMovementSummaryFromSupabase();
   renderCadMetadata($('conv').value);
   renderOverview();
 }
@@ -540,9 +633,10 @@ async function loadLatestFromSupabase(){
   }
 }
 
-let allRows=[], headers=[], currentRows=[], currentEmpenhos=[], currentPayments=[], layoutInfo={hasPayments:false,maxFields:0};
+let allRows=[], headers=[], currentRows=[], currentEmpenhos=[], currentPayments=[], currentMovementRows=[], layoutInfo={hasPayments:false,maxFields:0};
 let activeAdjustmentFilterCode='';
 let cadMetadataByKey=new Map(),cadMetadataLoaded=false,cadMetadataFinishedAt='';
+let movementSummaryByKey=new Map(),movementDataLoadedFor='',movementDataLoading=false;
 const money = n => {
   const value=Number(n)||0;
   const cents=Math.round(Math.abs(value)*100);

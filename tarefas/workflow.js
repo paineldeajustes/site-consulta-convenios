@@ -24,7 +24,7 @@ impossible_task:"Tarefa informada como inexequível"
 const labelAction={
 created:"Tarefa criada",accepted:"Prazo aceito",proposed_date:"Proposta de nova data",
 impossible_deadline:"Prazo impossível",impossible_task:"Tarefa inexequível",
-accepted_late:"Nova data aceita",reaffirmed:"Prazo original mantido"
+accepted_late:"Nova data aceita",reaffirmed:"Prazo original mantido",reassigned:"Responsável alterado"
 };
 function toast(s){api()?.toast?.(s)}
 function showError(s){const el=$("taskError");el.textContent=s;el.hidden=false}
@@ -45,10 +45,11 @@ function localISO(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(
 function populateAssignees(task){
  const select=$("taskAssignee");if(!select)return;
  const list=members(),user=currentUser();const chosen=task?.assignee_id||user?.id||"";
- select.innerHTML=list.map(m=>'<option value="'+m.user_id+'">'+escapeHtml(m.display_name||m.email)+(m.user_id===user?.id?" (você)":"")+'</option>').join("");
- if(!list.some(m=>m.user_id===chosen)&&user){const opt=document.createElement("option");opt.value=user.id;opt.textContent=user.user_metadata?.full_name||user.email||"Você";select.appendChild(opt)}
+ const options=list.filter(m=>m.assignee_enabled!==false||m.user_id===chosen||m.user_id===user?.id);
+ select.innerHTML=options.map(m=>'<option value="'+m.user_id+'" '+(m.assignee_enabled===false&&m.user_id!==user?.id?"disabled":"")+'>'+escapeHtml(m.display_name||m.email)+(m.user_id===user?.id?" (você)":"")+(m.assignee_enabled===false&&m.user_id===chosen?" · desativado (atribuição atual)":"")+'</option>').join("");
+ if(!options.some(m=>m.user_id===chosen)&&user){const opt=document.createElement("option");opt.value=user.id;opt.textContent=user.user_metadata?.full_name||user.email||"Você";select.appendChild(opt)}
  select.value=chosen;
- select.disabled=!!task;
+ select.disabled=!!task&&task.created_by!==user?.id;
 }
 function statusWorkflow(task){
  const panel=$("workflowPanel");if(!task){panel.hidden=true;return}
@@ -343,7 +344,7 @@ async function onOpenTask(task){
  $("deleteTask").hidden=!task;
  $("taskFiles").disabled=!isCreator;$("taskFiles").hidden=!isCreator;
  if(task){
-  const taskAssignee=$("taskAssignee");if(task.assignee_id)taskAssignee.value=task.assignee_id;taskAssignee.disabled=true;
+  const taskAssignee=$("taskAssignee");if(task.assignee_id)taskAssignee.value=task.assignee_id;taskAssignee.disabled=task.created_by!==me;
   $("attachmentSection").hidden=false;await renderExistingAttachments(task);statusWorkflow(task);await renderChangeRequests(task);
  }else{
   $("taskAssignee").disabled=false;$("taskAssignee").value=currentUser()?.id||"";
@@ -450,44 +451,45 @@ function onTasksLoaded(){
   }
  }
 }
-function csvDownload(){
- const list=allTasks(),memberList=members(),att=attachments();
- const headers=["ID","Tarefa","Detalhes","Prazo vigente","Horário","Prazo original","Responsável","Criador","Prioridade","Contexto","Categoria","Status do fluxo","Data proposta","Justificativa","Concluída","Data de criação","Anexos"];
- const rows=list.map(t=>{
-  const assignee=memberList.find(m=>m.user_id===t.assignee_id),creator=memberList.find(m=>m.user_id===t.created_by);
-  return [t.id,t.title,t.notes,t.due_date,fmtTime(t.due_time),t.original_due_date||"",assignee?.display_name||assignee?.email,creator?.display_name||t.created_by_name,t.priority,t.context,t.category,labelStatus[t.workflow_status]||t.workflow_status,t.proposed_due_date,t.final_reason||t.proposal_reason,t.completed?"Sim":"Não",t.created_at,att.filter(a=>a.task_id===t.id).map(a=>a.file_name).join(", ")];
+async function loadXlsxLibrary(){
+ if(window.XLSX)return window.XLSX;
+ if(window.__clarezaXlsxPromise)return window.__clarezaXlsxPromise;
+ window.__clarezaXlsxPromise=new Promise((resolve,reject)=>{
+  const script=document.createElement("script");
+  script.src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
+  script.async=true;
+  script.onload=()=>window.XLSX?resolve(window.XLSX):reject(new Error("A biblioteca Excel não foi carregada."));
+  script.onerror=()=>reject(new Error("Não foi possível carregar o exportador Excel. Confira sua conexão e tente novamente."));
+  document.head.appendChild(script);
  });
- const escape=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
- const csv="\uFEFF"+[headers,...rows].map(row=>row.map(escape).join(";")).join("\r\n");
- downloadBlob(csv,"clareza-tarefas-"+localISO(new Date())+".csv","text/csv;charset=utf-8");
+ return window.__clarezaXlsxPromise;
 }
-function downloadBlob(content,name,type){
- const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");
- a.href=url;a.download=name;a.style.display="none";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
-}
-async function exportJson(){
- const list=allTasks(),ids=list.map(t=>t.id);let history=[];
- if(ids.length){
-  try{const {data,error}=await db().from("task_workflow_history").select("*").in("task_id",ids).order("created_at",{ascending:true});if(error)throw error;history=data||[]}
-  catch(err){toast("Não consegui incluir o histórico no backup: "+(err.message||"erro"));return}
+async function exportExcel(){
+ const button=$("exportExcel");
+ if(button){button.disabled=true;button.textContent="Preparando Excel…"}
+ try{
+  const XLSX=await loadXlsxLibrary();
+  const list=allTasks(),memberList=members(),att=attachments();
+  const headers=["ID","Tarefa","Detalhes","Prazo vigente","Horário","Prazo original","Responsável","Criador","Prioridade","Contexto","Categoria","Status do fluxo","Data proposta","Justificativa","Concluída","Data de criação","Anexos"];
+  const rows=list.map(t=>{
+   const assignee=memberList.find(m=>m.user_id===t.assignee_id),creator=memberList.find(m=>m.user_id===t.created_by);
+   return [t.id,t.title,t.notes,t.due_date,fmtTime(t.due_time),t.original_due_date||"",assignee?.display_name||assignee?.email,creator?.display_name||t.created_by_name,t.priority,t.context,t.category,labelStatus[t.workflow_status]||t.workflow_status,t.proposed_due_date,t.final_reason||t.proposal_reason,t.completed?"Sim":"Não",t.created_at,att.filter(a=>a.task_id===t.id).map(a=>a.file_name).join(", ")];
+  });
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+  ws["!cols"]=[{wch:38},{wch:34},{wch:55},{wch:15},{wch:12},{wch:15},{wch:25},{wch:25},{wch:13},{wch:16},{wch:22},{wch:34},{wch:15},{wch:48},{wch:12},{wch:22},{wch:38}];
+  if(rows.length)ws["!autofilter"]={ref:"A1:Q"+(rows.length+1)};
+  XLSX.utils.book_append_sheet(wb,ws,"Tarefas");
+  wb.Props={Title:"Clareza — Tarefas",Subject:"Exportação da agenda",Author:"Clareza"};
+  XLSX.writeFile(wb,"clareza-tarefas-"+localISO(new Date())+".xlsx",{compression:true});
+  toast("Planilha Excel gerada com "+rows.length+" tarefa(s).");
+ }catch(err){
+  toast(err.message||"Não foi possível gerar a planilha Excel.");
+ }finally{
+  if(button){button.disabled=false;button.textContent="Baixar planilha Excel (.xlsx)"}
  }
- const payload={exported_at:new Date().toISOString(),application:"Clareza",tasks:list,attachments:attachments(),workflow_history:history};
- downloadBlob(JSON.stringify(payload,null,2),"clareza-backup-"+localISO(new Date())+".json","application/json");
 }
-function exportPrint(){
- const list=allTasks(),memberList=members(),att=attachments();
- const rows=list.map(t=>{
-  const assignee=memberList.find(m=>m.user_id===t.assignee_id);
-  const files=att.filter(a=>a.task_id===t.id).map(a=>a.file_name).join(", ");
-  return '<article><h2>'+escapeHtml(t.title)+'</h2><p>'+escapeHtml(t.notes||"")+'</p><p><b>Prazo:</b> '+fmtDate(t.due_date)+' '+fmtTime(t.due_time)+' · <b>Responsável:</b> '+escapeHtml(assignee?.display_name||"Não definido")+'</p><p><b>Contexto:</b> '+escapeHtml(t.context)+' · <b>Prioridade:</b> '+escapeHtml(t.priority)+' · <b>Status:</b> '+escapeHtml(labelStatus[t.workflow_status]||t.workflow_status)+'</p>'+(files?'<p><b>Anexos:</b> '+escapeHtml(files)+'</p>':"")+'</article>';
- }).join("");
- const w=window.open("","_blank");if(!w){toast("Permita pop-ups para exportar PDF.");return}
- w.document.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Clareza — Exportação</title><style>body{font:14px Arial,sans-serif;max-width:900px;margin:25px auto;color:#20372d}h1{font-size:24px}article{padding:15px 0;border-bottom:1px solid #ccd5ce;page-break-inside:avoid}h2{font-size:17px}p{line-height:1.5}small{color:#627368}@media print{button{display:none}}</style></head><body><h1>Clareza — Exportação de tarefas</h1><p>Gerado em '+new Date().toLocaleString("pt-BR")+'</p>'+rows+'<script>window.onload=()=>window.print()<\/script></body></html>');
- w.document.close();
-}
-$("exportCsv").addEventListener("click",()=>csvDownload());
-$("exportJson").addEventListener("click",()=>exportJson());
-$("exportPrint").addEventListener("click",()=>exportPrint());
+$("exportExcel").addEventListener("click",exportExcel);
 window.ClarezaWorkflow={
  currentTaskId:null,voiceCreated:false,
  onOpenTask:async task=>{

@@ -345,6 +345,50 @@ async function listMovementFiles(folderId: string, accessToken: string): Promise
   return files;
 }
 
+async function listMovementFilesByNames(accessToken: string): Promise<DriveFile[]> {
+  const queries = [
+    "name contains 'TXT_EMPENHO' and trashed = false",
+    "name contains 'TXT_PAGAMENTO' and trashed = false",
+  ];
+  const files: DriveFile[] = [];
+  for (const q of queries) {
+    let pageToken = "";
+    do {
+      const params = new URLSearchParams({
+        q,
+        fields: "nextPageToken,files(id,name,parents,driveId,modifiedTime,md5Checksum,size)",
+        pageSize: "1000",
+        orderBy: "name",
+        supportsAllDrives: "true",
+        includeItemsFromAllDrives: "true",
+        corpora: "allDrives",
+      });
+      if (pageToken) params.set("pageToken", pageToken);
+      const response = await fetch(
+        "https://www.googleapis.com/drive/v3/files?" + params.toString(),
+        { headers: { Authorization: "Bearer " + accessToken } },
+      );
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error("Falha ao localizar arquivos ORCOM pelo nome no Google Drive: " + response.status + " " + detail.slice(0, 300));
+      }
+      const page = await response.json();
+      if (Array.isArray(page.files)) files.push(...page.files);
+      pageToken = page.nextPageToken ?? "";
+    } while (pageToken);
+  }
+  const allowed = /^TXT_(EMPENHO|PAGAMENTO)(?:-(20\d{2}))?\.txt$/i;
+  const byName = new Map<string, DriveFile>();
+  for (const file of files) {
+    if (!allowed.test(file.name)) continue;
+    const previous = byName.get(file.name);
+    if (!previous || String(file.modifiedTime ?? "") > String(previous.modifiedTime ?? "")) {
+      byName.set(file.name, file);
+    }
+  }
+  return [...byName.values()];
+}
+
 async function downloadDriveText(file: DriveFile, accessToken: string): Promise<string> {
   const response = await fetch(
     "https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(file.id) +
@@ -682,8 +726,27 @@ Deno.serve(async (req: Request) => {
   try {
     const serviceAccount = JSON.parse(serviceAccountJson);
     const accessToken = await getGoogleAccessToken(serviceAccount);
-    const folderId = await findDriveFolderId(accessToken, serviceAccountJson);
-    const listedFiles = await listMovementFiles(folderId, accessToken);
+    let listedFiles: DriveFile[] = [];
+    let folderDiscoveryError = "";
+    try {
+      const folderId = await findDriveFolderId(accessToken, serviceAccountJson);
+      listedFiles = await listMovementFiles(folderId, accessToken);
+    } catch (error) {
+      folderDiscoveryError = error instanceof Error ? error.message : String(error);
+      console.warn("A pasta não retornou o vínculo de pasta-pai; tentando localizar os arquivos ORCOM pelos nomes:", folderDiscoveryError);
+      listedFiles = await listMovementFilesByNames(accessToken);
+    }
+    const currentNames = new Set(listedFiles.map((file) => file.name));
+    if (!currentNames.has("TXT_EMPENHO.txt") || !currentNames.has("TXT_PAGAMENTO.txt")) {
+      const accountEmail = String(serviceAccount.client_email ?? "não identificado");
+      throw new Error(
+        "Não foi possível localizar os dois arquivos correntes TXT_EMPENHO.txt e TXT_PAGAMENTO.txt na conta de serviço. " +
+        "O Google Drive também não permitiu descobrir a pasta Arquivos. " +
+        "Compartilhe a pasta G:\\Meu Drive\\SF\\IA\\Arquivos com a conta de serviço " + accountEmail +
+        " (ou configure GOOGLE_DRIVE_FOLDER_ID). " +
+        (folderDiscoveryError ? "Detalhe: " + folderDiscoveryError : "")
+      );
+    }
     const pattern = /^TXT_(EMPENHO|PAGAMENTO)(?:-(20\d{2}))?\.txt$/i;
     const matching = listedFiles.filter((file) => pattern.test(file.name));
 

@@ -378,6 +378,19 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
   <div class="footer">Consulte os dados da última importação concluída. As informações devem ser conferidas com os registros oficiais antes de uso administrativo.</div>
   </div>
 </main>
+<script>
+(() => {
+  const field = document.getElementById('loginPassword');
+  const button = document.getElementById('togglePassword');
+  if (!field || !button) return;
+  button.addEventListener('click', () => {
+    const visible = field.type === 'password';
+    field.type = visible ? 'text' : 'password';
+    button.textContent = visible ? 'Ocultar' : 'Mostrar';
+    button.setAttribute('aria-label', visible ? 'Ocultar senha' : 'Mostrar senha');
+  });
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -401,6 +414,115 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC
 let currentSession=null;
 let currentProfile=null;
 let manualRefreshBusy=false;
+
+let accountMode='login';
+let recoveryMode=false;
+function setAccountMode(mode){
+  accountMode=mode;
+  const creating=mode==='signup';
+  $('loginTitle').textContent=creating?'Criar acesso':'Bem-vindo de volta';
+  $('loginSubtitle').textContent=creating?'Crie uma senha para o e-mail autorizado pela administração. Somente contas previamente liberadas terão acesso aos dados.':'Entre com seu e-mail e senha para acessar as informações dos ajustes e suas ferramentas autorizadas.';
+  $('confirmPasswordField').hidden=!creating;
+  $('confirmPassword').required=creating;
+  $('loginPassword').autocomplete=creating?'new-password':'current-password';
+  $('forgotPassword').hidden=creating;
+  $('loginButton').textContent=creating?'Criar acesso':'Entrar no sistema';
+  $('accountModeHint').textContent=creating?'Já possui conta?':'Primeiro acesso?';
+  $('accountModeToggle').textContent=creating?'Voltar para entrar':'Criar minha senha';
+  $('loginPassword').value='';
+  $('confirmPassword').value='';
+  showAuthMessage('');
+}
+$('accountModeToggle').addEventListener('click',()=>setAccountMode(accountMode==='login'?'signup':'login'));
+$('loginForm').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const button=$('loginButton');
+  const email=$('loginEmail').value.trim().toLowerCase();
+  const password=$('loginPassword').value;
+  button.disabled=true;button.textContent=accountMode==='signup'?'Criando acesso…':'Validando acesso…';
+  showAuthMessage('');
+  try{
+    if(accountMode==='signup'){
+      if(password.length<8)throw new Error('A senha precisa ter pelo menos 8 caracteres.');
+      if(password!==$('confirmPassword').value)throw new Error('As senhas informadas não são iguais.');
+      const {data,error}=await supabaseClient.auth.signUp({
+        email,password,
+        options:{emailRedirectTo:AUTH_REDIRECT_URL}
+      });
+      if(error)throw error;
+      if(data.session){
+        const allowed=await activateSession(data.session);
+        if(allowed)showAuthMessage('Seu acesso foi criado com sucesso.','success');
+      }else{
+        setAccountMode('login');
+        $('loginEmail').value=email;
+        showAuthMessage('Solicitação recebida. Confira a caixa de entrada do e-mail para confirmar a conta e depois entre no sistema. Se o e-mail não chegar, verifique a configuração de e-mail do Supabase.','success');
+      }
+    }else{
+      const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+      if(error)throw error;
+      const allowed=await activateSession(data.session);
+      if(allowed)showAuthMessage('');
+    }
+  }catch(error){
+    const creating=accountMode==='signup';
+    showLogin(creating?(error.message||'Não foi possível criar o acesso. Verifique o e-mail e tente novamente.'):'Não foi possível entrar. Confira o e-mail e a senha ou use “Esqueci minha senha”.','error');
+    console.warn('Falha na autenticação do painel',error);
+  }finally{
+    button.disabled=false;
+    button.textContent=accountMode==='signup'?'Criar acesso':'Entrar no sistema';
+  }
+});
+$('forgotPassword').addEventListener('click',async()=>{
+  const email=$('loginEmail').value.trim().toLowerCase();
+  if(!email){
+    showAuthMessage('Informe seu e-mail acima para receber as instruções de redefinição da senha.','info');
+    $('loginEmail').focus();return;
+  }
+  const button=$('forgotPassword');
+  button.disabled=true;
+  try{
+    const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{
+      redirectTo:AUTH_REDIRECT_URL
+    });
+    if(error)throw error;
+    showAuthMessage('Se esse e-mail estiver cadastrado, você receberá uma mensagem com as instruções para redefinir a senha.','success');
+  }catch(error){
+    showAuthMessage('Não foi possível solicitar a redefinição. Verifique a configuração de URLs de autenticação e tente novamente.','error');
+    console.warn('Falha ao solicitar redefinição de senha',error);
+  }finally{button.disabled=false;}
+});
+$('resetPasswordForm').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const password=$('newPassword').value;
+  const confirmation=$('newPasswordConfirm').value;
+  if(password.length<8){showAuthMessage('A senha precisa ter pelo menos 8 caracteres.','error');return;}
+  if(password!==confirmation){showAuthMessage('As senhas informadas não são iguais.','error');return;}
+  const button=$('saveNewPassword');button.disabled=true;button.textContent='Salvando…';
+  try{
+    const {error}=await supabaseClient.auth.updateUser({password});
+    if(error)throw error;
+    recoveryMode=false;
+    $('resetPasswordPanel').hidden=true;
+    $('loginForm').hidden=false;
+    showLogin('Senha atualizada. Entre com a nova senha.','success');
+    await supabaseClient.auth.signOut();
+    $('newPassword').value='';$('newPasswordConfirm').value='';
+  }catch(error){
+    showAuthMessage('Não foi possível salvar a nova senha. Abra novamente o link mais recente de recuperação e tente de novo.','error');
+    console.warn('Falha ao atualizar senha',error);
+  }finally{button.disabled=false;button.textContent='Salvar nova senha';}
+});
+supabaseClient.auth.onAuthStateChange((event,session)=>{
+  if(event==='PASSWORD_RECOVERY'){
+    recoveryMode=true;
+    $('appShell').hidden=true;$('loginScreen').hidden=false;
+    $('loginForm').hidden=true;$('resetPasswordPanel').hidden=false;
+    showAuthMessage('Link de recuperação validado. Defina sua nova senha abaixo.','info');
+  }else if(event==='SIGNED_OUT'&&!recoveryMode){
+    currentSession=null;currentProfile=null;
+  }
+});
 
 async function supabaseGet(path){
   const {data:{session}}=await supabaseClient.auth.getSession();
@@ -1597,121 +1719,7 @@ async function activateSession(session){
   await loadLatestFromSupabase();
   return true;
 }
-let accountMode='login';
-let recoveryMode=false;
-function setAccountMode(mode){
-  accountMode=mode;
-  const creating=mode==='signup';
-  $('loginTitle').textContent=creating?'Criar acesso':'Bem-vindo de volta';
-  $('loginSubtitle').textContent=creating?'Crie uma senha para o e-mail autorizado pela administração. Somente contas previamente liberadas terão acesso aos dados.':'Entre com seu e-mail e senha para acessar as informações dos ajustes e suas ferramentas autorizadas.';
-  $('confirmPasswordField').hidden=!creating;
-  $('confirmPassword').required=creating;
-  $('loginPassword').autocomplete=creating?'new-password':'current-password';
-  $('forgotPassword').hidden=creating;
-  $('loginButton').textContent=creating?'Criar acesso':'Entrar no sistema';
-  $('accountModeHint').textContent=creating?'Já possui conta?':'Primeiro acesso?';
-  $('accountModeToggle').textContent=creating?'Voltar para entrar':'Criar minha senha';
-  $('loginPassword').value='';
-  $('confirmPassword').value='';
-  showAuthMessage('');
-}
-$('accountModeToggle').addEventListener('click',()=>setAccountMode(accountMode==='login'?'signup':'login'));
-$('loginForm').addEventListener('submit',async event=>{
-  event.preventDefault();
-  const button=$('loginButton');
-  const email=$('loginEmail').value.trim().toLowerCase();
-  const password=$('loginPassword').value;
-  button.disabled=true;button.textContent=accountMode==='signup'?'Criando acesso…':'Validando acesso…';
-  showAuthMessage('');
-  try{
-    if(accountMode==='signup'){
-      if(password.length<8)throw new Error('A senha precisa ter pelo menos 8 caracteres.');
-      if(password!==$('confirmPassword').value)throw new Error('As senhas informadas não são iguais.');
-      const {data,error}=await supabaseClient.auth.signUp({
-        email,password,
-        options:{emailRedirectTo:AUTH_REDIRECT_URL}
-      });
-      if(error)throw error;
-      if(data.session){
-        const allowed=await activateSession(data.session);
-        if(allowed)showAuthMessage('Seu acesso foi criado com sucesso.','success');
-      }else{
-        setAccountMode('login');
-        $('loginEmail').value=email;
-        showAuthMessage('Solicitação recebida. Confira a caixa de entrada do e-mail para confirmar a conta e depois entre no sistema. Se o e-mail não chegar, verifique a configuração de e-mail do Supabase.','success');
-      }
-    }else{
-      const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
-      if(error)throw error;
-      const allowed=await activateSession(data.session);
-      if(allowed)showAuthMessage('');
-    }
-  }catch(error){
-    const creating=accountMode==='signup';
-    showLogin(creating?(error.message||'Não foi possível criar o acesso. Verifique o e-mail e tente novamente.'):'Não foi possível entrar. Confira o e-mail e a senha ou use “Esqueci minha senha”.','error');
-    console.warn('Falha na autenticação do painel',error);
-  }finally{
-    button.disabled=false;
-    button.textContent=accountMode==='signup'?'Criar acesso':'Entrar no sistema';
-  }
-});
-$('togglePassword').addEventListener('click',()=>{
-  const field=$('loginPassword');
-  const visible=field.type==='password';
-  field.type=visible?'text':'password';
-  $('togglePassword').textContent=visible?'Ocultar':'Mostrar';
-  $('togglePassword').setAttribute('aria-label',visible?'Ocultar senha':'Mostrar senha');
-});
-$('forgotPassword').addEventListener('click',async()=>{
-  const email=$('loginEmail').value.trim().toLowerCase();
-  if(!email){
-    showAuthMessage('Informe seu e-mail acima para receber as instruções de redefinição da senha.','info');
-    $('loginEmail').focus();return;
-  }
-  const button=$('forgotPassword');
-  button.disabled=true;
-  try{
-    const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{
-      redirectTo:AUTH_REDIRECT_URL
-    });
-    if(error)throw error;
-    showAuthMessage('Se esse e-mail estiver cadastrado, você receberá uma mensagem com as instruções para redefinir a senha.','success');
-  }catch(error){
-    showAuthMessage('Não foi possível solicitar a redefinição. Verifique a configuração de URLs de autenticação e tente novamente.','error');
-    console.warn('Falha ao solicitar redefinição de senha',error);
-  }finally{button.disabled=false;}
-});
-$('resetPasswordForm').addEventListener('submit',async event=>{
-  event.preventDefault();
-  const password=$('newPassword').value;
-  const confirmation=$('newPasswordConfirm').value;
-  if(password.length<8){showAuthMessage('A senha precisa ter pelo menos 8 caracteres.','error');return;}
-  if(password!==confirmation){showAuthMessage('As senhas informadas não são iguais.','error');return;}
-  const button=$('saveNewPassword');button.disabled=true;button.textContent='Salvando…';
-  try{
-    const {error}=await supabaseClient.auth.updateUser({password});
-    if(error)throw error;
-    recoveryMode=false;
-    $('resetPasswordPanel').hidden=true;
-    $('loginForm').hidden=false;
-    showLogin('Senha atualizada. Entre com a nova senha.','success');
-    await supabaseClient.auth.signOut();
-    $('newPassword').value='';$('newPasswordConfirm').value='';
-  }catch(error){
-    showAuthMessage('Não foi possível salvar a nova senha. Abra novamente o link mais recente de recuperação e tente de novo.','error');
-    console.warn('Falha ao atualizar senha',error);
-  }finally{button.disabled=false;button.textContent='Salvar nova senha';}
-});
-supabaseClient.auth.onAuthStateChange((event,session)=>{
-  if(event==='PASSWORD_RECOVERY'){
-    recoveryMode=true;
-    $('appShell').hidden=true;$('loginScreen').hidden=false;
-    $('loginForm').hidden=true;$('resetPasswordPanel').hidden=false;
-    showAuthMessage('Link de recuperação validado. Defina sua nova senha abaixo.','info');
-  }else if(event==='SIGNED_OUT'&&!recoveryMode){
-    currentSession=null;currentProfile=null;
-  }
-});
+
 $('logoutButton').addEventListener('click',async()=>{
   $('logoutButton').disabled=true;
   try{await supabaseClient.auth.signOut();}finally{

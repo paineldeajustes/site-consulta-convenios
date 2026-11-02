@@ -1357,12 +1357,12 @@ $('tabDetail').addEventListener('click',()=>showAppView('detail'));
 $('tabOverview').addEventListener('click',()=>showAppView('overview'));
 $('overviewSearch').addEventListener('input',renderOverview);
 $('overviewBalanceFilter').addEventListener('change',renderOverview);
-$('conv').addEventListener('change',()=>{if($('conv').value){$('search').value=formatAdjustmentNumber($('conv').value);$('suggestions').hidden=true;}render();});
+$('conv').addEventListener('change',()=>{if($('conv').value)chooseConv($('conv').value);});
 $('search').addEventListener('input',()=>{
   const val=$('search').value.trim();
   const normalizedVal=normalizeAdjustmentSearch(val);
   const exact=(window.CONVENIO_OPTIONS||[]).find(o=>normalizeAdjustmentSearch(o.cv)===normalizedVal || normalizeAdjustmentSearch(formatAdjustmentNumber(o.cv))===normalizedVal);
-  if(exact){$('conv').value=exact.cv;render();}
+  if(exact)chooseConv(exact.cv);
   showSuggestions();
 });
 $('search').addEventListener('keydown',e=>{

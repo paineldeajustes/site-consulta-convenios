@@ -57,3 +57,24 @@ Correções em `index.html`:
 - Botão Mostrar/Ocultar senha isolado e eventos de autenticação antecipados.
 
 Último commit de código: `f6fbe35c5d135b1773a5782be4f025f47edbf887`. GitHub Pages run `41543569107`: `completed / success` em 02/11/2026 23:13 UTC. Sintaxe dos scripts validada; **pendente teste funcional no Safari do iPhone** para confirmar login, carregamento dos ajustes, botão de senha e logout.
+
+
+## Auditoria de continuidade — 02/11/2026 (20:30, horário de Brasília)
+
+- HEAD atual de `main`: `4cc6c3ad740c6785af9dc7d9b0e2ded6496e9243`. O último commit sincronizou a cópia do GitHub de `import-ret-fontes/index.ts` com a Edge Function ativa versão 13. Comparação posterior confirmou correspondência exata; não houve redeploy da função.
+- Edge Functions ativas: `import-ret-fontes` v13, `import-cad-convenios` v11 e `import-orcom-movements` v21. As cópias de Cad e ORCOM já coincidiam com as implantações.
+- Projeto Supabase `qkjudfvlaatdcaosadun`: `ACTIVE_HEALTHY`; quatro migrações do recurso de seleção constam no histórico.
+- Importações preservadas: 14/14 ORCOM em `success`, 449.304 linhas válidas, 28.000 linhas residuais de três imports `failed` antigos. Último workflow de importação `41524972727` terminou com sucesso; os 14 arquivos ORCOM foram registrados como `unchanged`, sem nova carga. RET_FONTES=1.153 linhas e CadConvenios=8.318 linhas na última versão válida.
+- View de seleção: 1.237 ajustes elegíveis. Duas entradas antigas `processing` de CadConvenios, IDs `43ed7b0f-d3bc-4183-9c27-05c7fd05302d` e `2178bf01-1091-4d87-95d5-89019e053f04`, permanecem com zero linhas; não foram alteradas.
+- Publicação Pages: run `41543819632` para o commit anterior terminou em sucesso. A atualização de fonte gerou o Pages run `41545785874`, que estava em fila no momento desta atualização; conferir seu desfecho.
+- Sem mudanças no banco e sem importações disparadas nesta retomada. O commit de sincronização usou `[skip ci]` para evitar a execução do workflow importador.
+- Pendente: testes funcionais autenticados em navegador (principalmente Safari/iPhone) para login, seleção, filtros, RET existente/ausente, limpar seleção, Overview, CSV, ficha e logout. Não considerar a interface funcionalmente aprovada apenas pela compilação/publicação.
+- Alertas não tratados: funções `SECURITY DEFINER` ligadas ao Clareza, proteção de senhas vazadas desabilitada, cinco FKs sem índices e 23 índices sem uso observado. Avaliar isoladamente, sem mudança automática.
+
+### Comando para retomar
+
+```text
+Continue o projeto Painel de Ajustes pelo repositório paineldeajustes/site-consulta-convenios. Leia CONTINUIDADE_CONSULTA_DE_AJUSTES.md e CHECKPOINT_CONSULTA_DE_AJUSTES.md. Confira o resultado do Pages run 41545785874, valide login e toda a navegação da Consulta de Ajustes em navegador autenticado, sem rodar importações concluídas. Preserve os dados success e não altere ORCOM nem o aplicativo Clareza sem análise específica.
+```
+
+Site: https://paineldeajustes.github.io/site-consulta-convenios/

@@ -171,3 +171,42 @@ Commits:
 - `f6fbe35c5d135b1773a5782be4f025f47edbf887` — restauração do esquema global de 26 colunas.
 
 GitHub Actions Pages run `41543569107`: `completed / success`, em 02/11/2026 às 23:13 UTC. O JavaScript inline passou na verificação de sintaxe. **Ainda é necessário testar o fluxo completo no Safari/iPhone**; a publicação concluída não substitui o teste real de login, carregamento dos ajustes e saída da conta.
+
+
+## Auditoria real e sincronização de fonte — 02/11/2026 (20:30, horário de Brasília)
+
+A auditoria foi realizada diretamente no GitHub e no projeto Supabase `qkjudfvlaatdcaosadun`. Nenhuma importação foi iniciada nesta retomada e nenhuma linha do banco foi alterada.
+
+### GitHub e publicação
+- Branch `main`: commit `4cc6c3ad740c6785af9dc7d9b0e2ded6496e9243` (`Sync deployed RET_FONTES function source [skip ci]`).
+- O commit `608c62289867d637565c4b66a358ecac547164d7` já havia registrado os ajustes de login/logout; seu pai anterior era o commit de código `f6fbe35c5d135b1773a5782be4f025f47edbf887`.
+- O commit de sincronização atualizou somente o arquivo-fonte `.github/supabase-functions/import-ret-fontes/index.ts`; o HTML do site não foi alterado nesta sincronização.
+- A publicação Pages do commit anterior `608c622...` terminou com sucesso: run `41543819632` (build e deploy bem-sucedidos).
+- O novo commit de sincronização gerou a execução Pages `41545785874`, inicialmente em fila. Conferir seu resultado antes de considerar a última publicação concluída.
+- O workflow `Importar RET_FONTES diariamente` não foi disparado pelo commit de sincronização. A mensagem `[skip ci]` foi usada como proteção adicional.
+
+### Edge Functions e alinhamento de código
+- `import-ret-fontes`: ativa, versão 13. O código implantado já continha correções que faltavam na cópia do GitHub: validação do token usando chave pública e cliente Auth separado do cliente administrativo; normalização de linhas RET que tenham de 24 a 27 campos, completando apenas colunas finais vazias. A cópia do GitHub foi sincronizada com o código implantado; comparação posterior confirmou igualdade exata.
+- `import-cad-convenios`: ativa, versão 11; fonte no GitHub coincide com a implantação.
+- `import-orcom-movements`: ativa, versão 21; fonte no GitHub coincide com a implantação.
+- As três funções de importação permanecem com `verify_jwt=false`; a própria implementação valida segredo interno do workflow ou sessão administrativa. Não alterar sem revisar o fluxo de autenticação.
+- A função RET não foi redeployada nesta retomada; apenas o código já implantado foi refletido no repositório.
+
+### Estado efetivo das importações
+- ORCOM: 14 arquivos com status `success`; as contagens físicas por arquivo continuam iguais às do checkpoint. O total de linhas associadas a imports bem-sucedidos é 449.304.
+- Há três imports ORCOM antigos com status `failed` que mantêm 28.000 linhas residuais (12.000 + 8.000 + 8.000). Permanecem excluídos da consulta; não foram apagados.
+- O último workflow de importação concluído com sucesso foi o run `41524972727`, em 02/11/2026. Seus logs registram CadConvenios concluído com 8.318 registros, RET_FONTES com 1.153 registros e todos os 14 TXT ORCOM como `unchanged`; portanto, os movimentos foram verificados, sem nova carga.
+- A última importação bem-sucedida de `RET_FONTES.txt` tem 1.153 linhas; a de `CadConvenios.txt`, 8.318 linhas. Ambas têm correspondência entre `row_count` e linhas físicas da respectiva importação.
+- A tabela de histórico RET/Cad contém duas entradas antigas `processing` de `CadConvenios.txt`, ambas com zero linhas e sem `finished_at`: IDs `43ed7b0f-d3bc-4183-9c27-05c7fd05302d` e `2178bf01-1091-4d87-95d5-89019e053f04`. Não foram modificadas; investigar limpeza de estado órfão em etapa separada, sem apagar linhas válidas.
+- A view `public.orcom_adjustment_selection` segue retornando 1.237 ajustes elegíveis.
+
+### Banco, migrações e alertas
+- O projeto está `ACTIVE_HEALTHY`, PostgreSQL 17.11, região `sa-east-1`.
+- As quatro migrações da seleção e otimização listadas acima constam no histórico do Supabase.
+- A contagem física de `orcom_movement_rows` é 477.304 linhas: 449.304 relacionadas a imports `success` e 28.000 resíduos de imports `failed`.
+- Advisors identificaram alertas de segurança em funções `SECURITY DEFINER` relacionadas ao Clareza e proteção contra senhas vazadas desabilitada; os avisos de performance incluem cinco chaves estrangeiras sem índice e 23 índices sem uso observado. Nenhuma dessas configurações foi alterada nesta retomada, para não afetar o outro aplicativo ou o painel sem análise específica.
+
+### Pendências de validação funcional
+- Continuam pendentes os testes autenticados no navegador, especialmente Safari/iPhone: login, carregamento da lista, busca, filtros ano/letra, ajuste com RET (00004/2021-SE), ajuste de 2026 sem linha RET, Limpar seleção, filtros de colunas, Overview, CSV e ficha/relatório.
+- A sintaxe e a publicação anterior foram verificadas; isso não substitui o teste real com usuário autenticado. Não declarar login, seleção e logout como funcionalmente aprovados até executar esses testes.
+- Próxima ação: conferir o resultado do Pages run `41545785874` e executar a bateria funcional em navegador autenticado. Não rodar importações para esse teste.

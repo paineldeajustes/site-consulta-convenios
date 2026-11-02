@@ -601,6 +601,50 @@ async function loadCadMetadataFromSupabase(){
   renderCadMetadata($('conv').value);
   renderOverview();
 }
+async function loadMovementDataForAdjustment(code){
+  const metadata=cadMetadataFor(code);
+  const adjustmentKey=metadata?.join_key||normalizeAdjustmentSearch(formatAdjustmentNumber(code));
+  if(!adjustmentKey)return;
+  if(movementDataLoadedFor===adjustmentKey)return;
+  movementDataLoading=true;
+  currentMovementRows=[];currentEmpenhos=[];currentPayments=[];
+  layoutInfo.hasPayments=false;
+  render();
+  $('status').hidden=false;
+  $('status').textContent='Consultando os empenhos e pagamentos do ajuste '+formatAdjustmentNumber(code)+' em todos os exercícios importados…';
+  try{
+    const records=await supabaseGetAll(
+      'orcom_movement_rows?select=id,import_id,row_number,file_type,exercise,adjustment_key,document_key,document_number,fields,amount,category_code,source_code,transaction_kind,date_value,is_valid_payment&adjustment_key=eq.'+
+      encodeURIComponent(adjustmentKey)+'&order=file_type.asc,exercise.asc,row_number.asc',
+      1000
+    );
+    if($('conv').value!==code)return;
+    currentMovementRows=records.map(record=>({...record,fields:movementFields(record)}));
+    currentEmpenhos=currentMovementRows
+      .filter(record=>record.file_type==='empenho')
+      .map(buildEmpenhoItem);
+    currentPayments=currentMovementRows
+      .filter(record=>record.file_type==='pagamento'&&['O','R'].includes(String(record.transaction_kind||'').toUpperCase()))
+      .map(buildPaymentItem)
+      .sort((a,b)=>(b.dt?.getTime()||0)-(a.dt?.getTime()||0));
+    layoutInfo.hasPayments=currentMovementRows.some(record=>record.file_type==='pagamento');
+    movementDataLoadedFor=adjustmentKey;
+    render();
+    $('status').hidden=false;
+    $('status').textContent=
+      currentEmpenhos.length.toLocaleString('pt-BR')+' registros de empenho e '+
+      currentPayments.length.toLocaleString('pt-BR')+' movimentos de pagamento carregados, considerando todos os exercícios disponíveis.';
+  }catch(error){
+    console.error('Falha ao consultar movimentos ORCOM do ajuste',error);
+    if($('conv').value===code){
+      $('status').hidden=false;
+      $('status').textContent='Não foi possível carregar os empenhos e pagamentos deste ajuste: '+(error?.message||String(error));
+    }
+  }finally{
+    movementDataLoading=false;
+  }
+}
+
 async function loadLatestFromSupabase(){
   if(!SUPABASE_PUBLIC_KEY || SUPABASE_PUBLIC_KEY === 'COLE_SUA_CHAVE_PUBLICA_AQUI'){
     $('status').hidden=false;
@@ -947,17 +991,10 @@ function resetColumnFilters(){
 function renderEmpenhoTable(rows){
   const container=$('empTable');
   if(!rows.length){
-    container.innerHTML='<div class="empty">Nenhum empenho encontrado para este ajuste.</div>';
+    container.innerHTML='<div class="empty">Nenhum empenho encontrado para este ajuste nos arquivos importados.</div>';
     return;
   }
-  const items=rows.map(row=>({
-    year:String(get(row,'ANO')||'Não informado').trim(),
-    empenho:String(get(row,'EMPENHO')||'Não informado').trim(),
-    source:sourceLabel(get(row,'FONTE-NE')),
-    c:num(get(row,'VALOR CUSTEIO')),
-    cap:num(get(row,'VALOR CAPITAL'))
-  })).map(item=>({...item,total:item.c+item.cap}));
-
+  const items=rows.map(row=>({...row,total:Number(row.total)||0}));
   const filtered=items.filter(item=>
     filterMatches(item.year,$('empFilterYear').value)&&
     filterMatches(item.empenho,$('empFilterNumber').value)&&
@@ -969,27 +1006,22 @@ function renderEmpenhoTable(rows){
     container.innerHTML='<div class="empty">Nenhum empenho encontrado para os filtros selecionados.</div>';
     return;
   }
-
   const byYear=new Map();
   for(const item of filtered){
     if(!byYear.has(item.year))byYear.set(item.year,[]);
     byYear.get(item.year).push(item);
   }
-  const years=[...byYear.keys()].sort((a,b)=>{
-    const na=Number(a),nb=Number(b);
-    if(Number.isFinite(na)&&Number.isFinite(nb))return na-nb;
-    return a.localeCompare(b,'pt-BR');
-  });
-  let html='<table><thead><tr><th>Ano</th><th>Empenho</th><th>Fonte</th><th>Custeio</th><th>Capital</th><th>Total</th></tr></thead><tbody>';
-  let grandC=0,grandCap=0,grandTotal=0;
+  const years=[...byYear.keys()].sort((a,b)=>Number(a)-Number(b));
+  let html='<table><thead><tr><th>Ano</th><th>Empenho</th><th>Fonte</th><th>Custeio</th><th>Capital</th><th>Outros</th><th>Total</th></tr></thead><tbody>';
+  let grandC=0,grandCap=0,grandOther=0,grandTotal=0;
   for(const year of years){
     const details=byYear.get(year);
     const totalC=details.reduce((sum,item)=>sum+item.c,0);
     const totalCap=details.reduce((sum,item)=>sum+item.cap,0);
+    const totalOther=details.reduce((sum,item)=>sum+item.other,0);
     const total=details.reduce((sum,item)=>sum+item.total,0);
-    grandC+=totalC;grandCap+=totalCap;grandTotal+=total;
-    html+=`<tr class="year-total"><td colspan="3">TOTAL DO ANO ${esc(year)}</td><td class="num">${esc(money(totalC))}</td><td class="num">${esc(money(totalCap))}</td><td class="num">${esc(money(total))}</td></tr>`;
-
+    grandC+=totalC;grandCap+=totalCap;grandOther+=totalOther;grandTotal+=total;
+    html+='<tr class="year-total"><td colspan="3">TOTAL DO ANO '+esc(year)+'</td><td class="num">'+esc(money(totalC))+'</td><td class="num">'+esc(money(totalCap))+'</td><td class="num">'+esc(money(totalOther))+'</td><td class="num">'+esc(money(total))+'</td></tr>';
     const bySource=new Map();
     for(const item of details){
       if(!bySource.has(item.source))bySource.set(item.source,[]);
@@ -997,89 +1029,92 @@ function renderEmpenhoTable(rows){
     }
     const sources=[...bySource.keys()].sort((a,b)=>a.localeCompare(b,'pt-BR'));
     for(const source of sources){
-      const sourceItems=bySource.get(source).sort((a,b)=>a.empenho.localeCompare(b.empenho,'pt-BR'));
-      html+=`<tr class="source-group"><td colspan="6">FONTE: ${esc(source)} · ${sourceItems.length.toLocaleString('pt-BR')} empenho(s)</td></tr>`;
+      const sourceItems=bySource.get(source).sort((a,b)=>a.empenho.localeCompare(b.empenho,'pt-BR',{numeric:true}));
+      html+='<tr class="source-group"><td colspan="7">FONTE: '+esc(source)+' · '+sourceItems.length.toLocaleString('pt-BR')+' registro(s)</td></tr>';
       for(const item of sourceItems){
-        html+=`<tr class="emp-detail"><td>${esc(item.year)}</td><td>${esc(item.empenho)}</td><td>${esc(item.source)}</td><td class="num">${esc(money(item.c))}</td><td class="num">${esc(money(item.cap))}</td><td class="num">${esc(money(item.total))}</td></tr>`;
+        const link=item.documentKey
+          ?'<button type="button" class="document-link" data-open-document="empenho" data-document-key="'+esc(item.documentKey)+'" data-document-label="'+esc(item.empenho)+'">'+esc(item.empenho)+'</button>'
+          :esc(item.empenho);
+        const status=item.annulment?' · Anulação':'';
+        html+='<tr class="emp-detail"><td>'+esc(item.year)+'</td><td>'+link+esc(status)+'</td><td>'+esc(item.source)+'</td><td class="num">'+esc(money(item.c))+'</td><td class="num">'+esc(money(item.cap))+'</td><td class="num">'+esc(money(item.other))+'</td><td class="num">'+esc(money(item.total))+'</td></tr>';
       }
     }
   }
-  html+='</tbody><tfoot><tr><td colspan="3">TOTAL GERAL ('+filtered.length.toLocaleString('pt-BR')+' empenhos)</td><td class="num">'+esc(money(grandC))+'</td><td class="num">'+esc(money(grandCap))+'</td><td class="num">'+esc(money(grandTotal))+'</td></tr></tfoot></table>';
+  html+='</tbody><tfoot><tr><td colspan="3">TOTAL GERAL ('+filtered.length.toLocaleString('pt-BR')+' registros)</td><td class="num">'+esc(money(grandC))+'</td><td class="num">'+esc(money(grandCap))+'</td><td class="num">'+esc(money(grandOther))+'</td><td class="num">'+esc(money(grandTotal))+'</td></tr></tfoot></table>';
   container.innerHTML=html;
 }
 function render(){
   const cv=$('conv').value;
   updateFichaButtonVisibility();
-  if(!cv){return;}
+  if(!cv)return;
   if(activeAdjustmentFilterCode!==cv){
     resetColumnFilters();
     activeAdjustmentFilterCode=cv;
   }
-  currentRows=allRows.filter(r=>String(get(r,'CONVENIO')).trim()===cv);
-  const ent=currentRows.map(r=>String(get(r,'ENTIDADE')).trim()).find(Boolean)||'—';
-  $('mConv').textContent=formatAdjustmentNumber(cv); $('mEnt').textContent=ent;
+  const normalizedCode=normalizeAdjustmentSearch(formatAdjustmentNumber(cv));
+  currentRows=allRows.filter(row=>
+    normalizeAdjustmentSearch(formatAdjustmentNumber(get(row,'CONVENIO')))===normalizedCode
+  );
+  const metadata=cadMetadataFor(cv);
+  const entity=metadata?.entity||metadata?.extra_fields?.['R-SOCIAL']||
+    currentRows.map(row=>String(get(row,'ENTIDADE')).trim()).find(Boolean)||'—';
+  $('mConv').textContent=formatAdjustmentNumber(cv);
+  $('mEnt').textContent=entity;
   renderCadMetadata(cv);
-    // Conciliação consolidada somente por fonte: soma custeio e capital para facilitar a leitura.
-  const recMap = new Map();
-  function recAdd(source, field, value){
-    const key=sourceLabel(source);
-    if(!recMap.has(key)) recMap.set(key,{source:key,initial:0,additions:0,registered:0,emp:0,paid:0});
-    recMap.get(key)[field] += value;
+
+  const recMap=new Map();
+  function recAdd(source,field,value){
+    const key=String(source||'Não informada');
+    if(!recMap.has(key))recMap.set(key,{source:key,initial:0,additions:0,registered:0,emp:0,paid:0});
+    recMap.get(key)[field]+=Number(value)||0;
   }
-  for(const r of currentRows){
-    const tpcad=norm(get(r,'TPCAD'));
-    const source=get(r,'TPFOTE');
-    if(String(source??'').trim() && (tpcad==='V'||tpcad==='A')){
-      const initialField=tpcad==='V'?'initial':'additions';
-      const registeredValue=num(get(r,'VL-CUSTEIO'))+num(get(r,'VL-REFORMA'))+num(get(r,'VL-BEM'));
-      recAdd(source,initialField,registeredValue);
-    }
-    if(String(get(r,'EMPENHO')).trim()!==''){
-      recAdd(get(r,'FONTE-NE'),'emp',num(get(r,'VALOR CUSTEIO'))+num(get(r,'VALOR CAPITAL')));
-    }
-    if(String(get(r,'OP')).trim()!==''){
-      const payC=num(get(r,'VALOR CUSTEIO_2'));
-      const payCap=num(get(r,'VALOR CAPITAL_3'));
-      const components=payC+payCap;
-      const rawTotal=String(get(r,'VALOR-OP')??'').trim();
-      // VALOR-OP é a referência principal para o total pago. Só usa a soma
-      // dos componentes quando o total da OP não estiver preenchido.
-      const paid=rawTotal!==''?num(rawTotal):components;
-      recAdd(get(r,'FONTE-NE_4')||get(r,'FONTE-NE'),'paid',paid);
+  for(const row of currentRows){
+    const tpcad=norm(get(row,'TPCAD'));
+    const source=get(row,'TPFOTE');
+    if(String(source??'').trim()&&(tpcad==='V'||tpcad==='A')){
+      const field=tpcad==='V'?'initial':'additions';
+      recAdd(sourceLabel(source),field,num(get(row,'VL-CUSTEIO'))+num(get(row,'VL-REFORMA'))+num(get(row,'VL-BEM')));
     }
   }
-  const recon=[...recMap.values()].map(x=>({...x,registered:x.initial+x.additions,uncommitted:x.initial+x.additions-x.emp,empPaidBalance:x.emp-x.paid}))
-    .sort((a,b)=>a.source.localeCompare(b.source,'pt-BR'));
+  for(const item of currentEmpenhos){
+    recAdd(sourceBroadLabelFromFT(item.record.source_code), 'emp', item.total);
+  }
+  for(const item of currentPayments){
+    if(item.valid)recAdd(sourceBroadLabelFromFT(item.record.source_code),'paid',item.total);
+  }
+  const recon=[...recMap.values()].map(item=>({
+    ...item,
+    registered:item.initial+item.additions,
+    uncommitted:item.initial+item.additions-item.emp,
+    empPaidBalance:item.emp-item.paid
+  })).sort((a,b)=>a.source.localeCompare(b.source,'pt-BR'));
   renderReconVertical(recon);
-  // Cadastro: agregação por fonte. Custeio inclui reforma conforme definição fornecida no dicionário de teste.
-  const cad=aggregate(currentRows.filter(r=>String(get(r,'TPFOTE')).trim()!==''),r=>sourceLabel(get(r,'TPFOTE')),r=>{
-    const c=num(get(r,'VL-CUSTEIO'))+num(get(r,'VL-REFORMA'));
-    const cap=num(get(r,'VL-BEM'));return {c,cap,total:c+cap};
-  });
+
+  const cad=aggregate(
+    currentRows.filter(row=>String(get(row,'TPFOTE')).trim()!==''),
+    row=>sourceLabel(get(row,'TPFOTE')),
+    row=>{
+      const c=num(get(row,'VL-CUSTEIO'))+num(get(row,'VL-REFORMA'));
+      const cap=num(get(row,'VL-BEM'));
+      return {c,cap,total:c+cap};
+    }
+  );
   makeTable('cadTable',[
-    {label:'Fonte',get:r=>r.key},{label:'Custeio',num:true,get:r=>money(r.c)},
-    {label:'Capital',num:true,get:r=>money(r.cap)},{label:'Total',num:true,get:r=>money(r.total)}
+    {label:'Fonte',get:row=>row.key},
+    {label:'Custeio',num:true,get:row=>money(row.c)},
+    {label:'Capital',num:true,get:row=>money(row.cap)},
+    {label:'Total',num:true,get:row=>money(row.total)}
   ],cad,'Não há valores cadastrados com fonte preenchida.');
   renderCadAmendments(currentRows);
-  // Empenhos: one source row per record; no deduplication is applied.
-  const emps=currentRows.filter(r=>String(get(r,'EMPENHO')).trim()!=='');
-  currentEmpenhos=emps;
   renderEmpenhoTable(currentEmpenhos);
-    // Payments, preserve every row, because OP duplication rule not yet confirmed.
-  currentPayments=currentRows.filter(r=>String(get(r,'OP')).trim()!=='').map(r=>{
-    const dt=dateParts(r,'pay');
-    return {raw:r,dt,op:String(get(r,'OP')).trim(),ne:String(get(r,'EMPENHO_1')).trim(),
-      source:sourceLabel(get(r,'FONTE-NE_4')||get(r,'FONTE-NE')),c:num(get(r,'VALOR CUSTEIO_2')),
-      cap:num(get(r,'VALOR CAPITAL_3')),total:paymentTotal(r)};
-  }).sort((a,b)=>(b.dt?.getTime()||0)-(a.dt?.getTime()||0));
-  const totalEmpenhado=emps.reduce((s,r)=>s+num(get(r,'VALOR-NE')),0);
-  const totalInicial=recon.reduce((s,r)=>s+r.initial,0);
-  const totalAditamentos=recon.reduce((s,r)=>s+r.additions,0);
+
+  const totalEmpenhado=currentEmpenhos.reduce((sum,item)=>sum+item.total,0);
+  const totalInicial=recon.reduce((sum,item)=>sum+item.initial,0);
+  const totalAditamentos=recon.reduce((sum,item)=>sum+item.additions,0);
   const totalCadastrado=totalInicial+totalAditamentos;
-  const totalPago=currentPayments.reduce((s,r)=>s+r.total,0);
+  const totalPago=currentPayments.filter(item=>item.valid).reduce((sum,item)=>sum+item.total,0);
   const saldoAjuste=totalCadastrado-totalEmpenhado;
   const saldoAPagar=totalEmpenhado-totalPago;
-
   $('mCadInicial').textContent=money(totalInicial);
   $('mCadAditamentos').textContent=money(totalAditamentos);
   $('mTotalCadastrado').textContent=money(totalCadastrado);
@@ -1088,15 +1123,19 @@ function render(){
   $('saldoAjusteCard').classList.toggle('negative-balance',isNegativeMoney(saldoAjuste));
   $('mPago').textContent=layoutInfo.hasPayments?money(totalPago):'Não disponível';
   $('mSaldoPagar').textContent=layoutInfo.hasPayments?money(saldoAPagar):'Não disponível';
+
   $('dateFrom').value='';$('dateTo').value='';
   configurePaymentFilters();
-  $('dateFrom').disabled=!layoutInfo.hasPayments;$('dateTo').disabled=!layoutInfo.hasPayments;$('clearDates').disabled=!layoutInfo.hasPayments;$('export').disabled=!layoutInfo.hasPayments;
+  $('dateFrom').disabled=!layoutInfo.hasPayments;
+  $('dateTo').disabled=!layoutInfo.hasPayments;
+  $('clearDates').disabled=!layoutInfo.hasPayments;
+  $('export').disabled=!layoutInfo.hasPayments;
   renderPayments();
 }
 function configurePaymentFilters(){
   const yearControl=$('yearFilter');
-  const years=[...new Set(currentPayments.map(p=>p.dt?p.dt.getFullYear():null).filter(Boolean))].sort((a,b)=>b-a);
-  yearControl.innerHTML='<option value="">Todos os anos</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  const years=[...new Set(currentPayments.map(item=>item.dt?item.dt.getFullYear():null).filter(Boolean))].sort((a,b)=>b-a);
+  yearControl.innerHTML='<option value="">Todos os anos</option>'+years.map(year=>'<option value="'+year+'">'+year+'</option>').join('');
   yearControl.value='';
   $('quadrimFilter').value='';
   yearControl.disabled=!layoutInfo.hasPayments;
@@ -1109,37 +1148,63 @@ function getFilteredPayments(){
   const to=$('dateTo').value?new Date($('dateTo').value+'T23:59:59'):null;
   const selectedYear=$('yearFilter').value;
   const selectedQuad=$('quadrimFilter').value;
-  return currentPayments.filter(p=>
-    (!from||(p.dt&&p.dt>=from))&&
-    (!to||(p.dt&&p.dt<=to))&&
-    (!selectedYear||(p.dt&&p.dt.getFullYear()===Number(selectedYear)))&&
-    (!selectedQuad||(p.dt&&Math.floor(p.dt.getMonth()/4)+1===Number(selectedQuad)))&&
-    filterMatches(p.op,$('payFilterOP').value)&&
-    filterMatches(p.ne,$('payFilterEmpenho').value)&&
-    filterMatches(p.source,$('payFilterFonte').value)&&
-    moneyMatches(p.c,$('payFilterCusteio').value)&&
-    moneyMatches(p.cap,$('payFilterCapital').value)
+  return currentPayments.filter(item=>
+    (!from||(item.dt&&item.dt>=from))&&
+    (!to||(item.dt&&item.dt<=to))&&
+    (!selectedYear||(item.dt&&item.dt.getFullYear()===Number(selectedYear)))&&
+    (!selectedQuad||(item.dt&&Math.floor(item.dt.getMonth()/4)+1===Number(selectedQuad)))&&
+    filterMatches(item.op,$('payFilterOP').value)&&
+    filterMatches(item.ne,$('payFilterEmpenho').value)&&
+    filterMatches(item.source,$('payFilterFonte').value)&&
+    moneyMatches(item.c,$('payFilterCusteio').value)&&
+    moneyMatches(item.cap,$('payFilterCapital').value)
   );
+}
+function paymentSituation(item){
+  if(item.cancel)return 'Cancelamento';
+  if(item.annulment)return 'Anulação';
+  if(norm(item.accountingAdjustment)==='S')return 'Acerto orçamentário';
+  if(item.valid)return 'Válido no líquido';
+  if(!item.dt)return 'Sem data de baixa válida';
+  return 'Não computado no líquido';
 }
 function renderPayments(){
   const rows=getFilteredPayments();
-  $('payCount').textContent=`${rows.length} de ${currentPayments.length} registros exibidos`;
-  makeTable('payTable',[
-    {label:'Data do pagamento',get:r=>fmtDate(r.dt)},
-    {label:'OP',get:r=>r.op},{label:'Empenho',get:r=>r.ne},{label:'Fonte',get:r=>r.source},
-    {label:'Custeio',num:true,get:r=>money(r.c)},{label:'Capital',num:true,get:r=>money(r.cap)},
-    {label:'Total pago',num:true,get:r=>money(r.total)}
-  ],rows,layoutInfo.hasPayments?'Nenhum pagamento encontrado para os filtros selecionados.':'O arquivo carregado não possui o bloco de pagamentos (OP/VALOR-OP).');
-  // Rodapé totalizador acompanha exatamente os registros que passaram pelos filtros.
-  const table=$('payTable').querySelector('table');
-  if(table && rows.length){
-    const totalC=rows.reduce((sum,row)=>sum+row.c,0);
-    const totalCap=rows.reduce((sum,row)=>sum+row.cap,0);
-    const totalPaid=rows.reduce((sum,row)=>sum+row.total,0);
-    const tfoot=document.createElement('tfoot');
-    tfoot.innerHTML=`<tr><td colspan="4">TOTAL DOS PAGAMENTOS (${rows.length.toLocaleString('pt-BR')} registros)</td><td class="num">${esc(money(totalC))}</td><td class="num">${esc(money(totalCap))}</td><td class="num">${esc(money(totalPaid))}</td></tr>`;
-    table.appendChild(tfoot);
+  $('payCount').textContent=rows.length.toLocaleString('pt-BR')+' de '+currentPayments.length.toLocaleString('pt-BR')+' movimentos O/R';
+  const gross=rows.reduce((sum,item)=>sum+item.total,0);
+  const net=rows.filter(item=>item.valid).reduce((sum,item)=>sum+item.total,0);
+  const exceptions=rows.filter(item=>!item.valid).length;
+  $('paySummary').hidden=rows.length===0;
+  $('paySummary').innerHTML=rows.length?[
+    ['Movimento bruto (com sinais)','pay-summary-card',money(gross)],
+    ['Total líquido válido','pay-summary-card net',money(net)],
+    ['Cancelamentos, anulações ou exceções','pay-summary-card warning',exceptions.toLocaleString('pt-BR')+' registro(s)']
+  ].map(([label,cls,value])=>'<div class="'+cls+'"><span>'+label+'</span><strong>'+value+'</strong></div>').join(''):'';
+  if(!rows.length){
+    $('payTable').innerHTML='<div class="empty">'+(currentPayments.length?'Nenhum pagamento encontrado para os filtros selecionados.':'Nenhum movimento O/R encontrado para este ajuste nos arquivos importados.')+'</div>';
+    return;
   }
+  let html='<table><thead><tr><th>Data do pagamento (dt-bo)</th><th>OP</th><th>Empenho</th><th>Fonte</th><th>Custeio</th><th>Capital</th><th>Outros</th><th>Total do movimento</th><th>Situação</th></tr></thead><tbody>';
+  for(const item of rows){
+    const date=item.dt?item.dt.toLocaleDateString('pt-BR'):'—';
+    const opLink=item.documentKey
+      ?'<button type="button" class="document-link" data-open-document="pagamento" data-document-key="'+esc(item.documentKey)+'" data-document-label="'+esc(item.op)+'">'+esc(item.op)+'</button>'
+      :esc(item.op);
+    const empLink=item.linkedEmpKey
+      ?'<button type="button" class="document-link" data-open-document="empenho" data-document-key="'+esc(item.linkedEmpKey)+'" data-document-label="'+esc(item.ne)+'">'+esc(item.ne)+'</button>'
+      :esc(item.ne||'—');
+    const situation=paymentSituation(item);
+    html+='<tr><td>'+esc(date)+'</td><td>'+opLink+'</td><td>'+empLink+'</td><td>'+esc(item.source)+'</td>'+
+      '<td class="num">'+esc(money(item.c))+'</td><td class="num">'+esc(money(item.cap))+'</td><td class="num">'+esc(money(item.other))+'</td>'+
+      '<td class="num">'+esc(money(item.total))+'</td><td>'+esc(situation)+'</td></tr>';
+  }
+  const totalC=rows.reduce((sum,item)=>sum+item.c,0);
+  const totalCap=rows.reduce((sum,item)=>sum+item.cap,0);
+  const totalOther=rows.reduce((sum,item)=>sum+item.other,0);
+  html+='</tbody><tfoot><tr><td colspan="4">TOTAL BRUTO DOS MOVIMENTOS ('+rows.length.toLocaleString('pt-BR')+' linhas)</td>'+
+    '<td class="num">'+esc(money(totalC))+'</td><td class="num">'+esc(money(totalCap))+'</td><td class="num">'+esc(money(totalOther))+'</td><td class="num">'+esc(money(gross))+'</td><td>—</td></tr>'+
+    '<tr><td colspan="7">TOTAL LÍQUIDO VÁLIDO (O/R, valor positivo, dt-bo válida, sem cancelamento/anulação/acerto)</td><td class="num">'+esc(money(net))+'</td><td>—</td></tr></tfoot></table>';
+  $('payTable').innerHTML=html;
 }
 
 function loadTextIntoPage(text, filename){

@@ -431,10 +431,19 @@ let activeAdjustmentFilterCode='';
 let cadMetadataByKey=new Map(),cadMetadataLoaded=false,cadMetadataFinishedAt='';
 let selectionRows=[],retFontesImportId='',retRowsLoadedFor='',selectionRequestId=0,movementDataLoadedFor='',movementDataLoading=false;
 const MOVEMENT_PAGE_SIZE=100;
+const MOVEMENT_CACHE_LIMIT=20;
 let empCurrentPage=1,payCurrentPage=1;
 // Cache em memória: cada ajuste consultado é carregado uma vez por sessão. Nunca persiste no armazenamento do navegador.
 const movementDataCache=new Map();
 const retRowsCache=new Map();
+function cacheMovementData(key,value){
+  movementDataCache.delete(key);
+  movementDataCache.set(key,value);
+  while(movementDataCache.size>MOVEMENT_CACHE_LIMIT){
+    const oldestKey=movementDataCache.keys().next().value;
+    movementDataCache.delete(oldestKey);
+  }
+}
 
 let accountMode='login';
 let recoveryMode=false;
@@ -863,6 +872,7 @@ async function loadMovementDataForAdjustment(code,requestId){
   if(!adjustmentKey)return;
   if(movementDataCache.has(adjustmentKey)){
     const cached=movementDataCache.get(adjustmentKey);
+    movementDataCache.delete(adjustmentKey);movementDataCache.set(adjustmentKey,cached);
     currentMovementRows=cached.rows;
     currentEmpenhos=cached.empenhos;
     currentPayments=cached.payments;
@@ -889,7 +899,7 @@ async function loadMovementDataForAdjustment(code,requestId){
     .sort((a,b)=>(b.dt?.getTime()||0)-(a.dt?.getTime()||0));
   layoutInfo.hasPayments=currentPayments.length>0;
   movementDataLoadedFor=adjustmentKey;
-  movementDataCache.set(adjustmentKey,{
+  cacheMovementData(adjustmentKey,{
     rows:currentMovementRows,
     empenhos:currentEmpenhos,
     payments:currentPayments
@@ -1555,6 +1565,7 @@ function loadTextIntoPage(text, filename){
         $('status').hidden=true;
     $('conv').value='';$('search').value='';activeAdjustmentFilterCode='';resetColumnFilters();$('mConv').textContent='—';$('mEnt').textContent='—';renderCadMetadata('');$('mCadInicial').textContent='—';$('mCadAditamentos').textContent='—';$('mTotalCadastrado').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';$('mSaldo').textContent='—';$('saldoAjusteCard').classList.remove('negative-balance');$('mSaldoPagar').textContent='—';
         ['reconTable','cadTable','cadDetailTable','empTable','payTable'].forEach(id=>$(id).innerHTML='<div class="empty">Selecione um ajuste para visualizar os dados.</div>');
+    $('empPagination').innerHTML='';$('payPagination').innerHTML='';
     $('dateFrom').disabled=true;$('dateTo').disabled=true;$('clearDates').disabled=true;$('export').disabled=true;
     $('payCount').textContent='0 registros';
     currentMovementRows=[];currentEmpenhos=[];currentPayments=[];movementDataLoadedFor='';

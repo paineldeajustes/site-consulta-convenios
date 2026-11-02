@@ -414,9 +414,35 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC
 let currentSession=null;
 let currentProfile=null;
 let manualRefreshBusy=false;
+// Estados da aplicação declarados antes de qualquer rotina de autenticação/carga.
+let allRows=[],headers=[],currentRows=[],currentEmpenhos=[],currentPayments=[],currentMovementRows=[],layoutInfo={hasPayments:false,maxFields:0};
+let activeAdjustmentFilterCode='';
+let cadMetadataByKey=new Map(),cadMetadataLoaded=false,cadMetadataFinishedAt='';
+let selectionRows=[],retFontesImportId='',retRowsLoadedFor='',selectionRequestId=0,movementDataLoadedFor='',movementDataLoading=false;
 
 let accountMode='login';
 let recoveryMode=false;
+$('logoutButton').addEventListener('click',async()=>{
+  const button=$('logoutButton');
+  button.disabled=true;
+  try{
+    const {error}=await supabaseClient.auth.signOut({scope:'local'});
+    if(error)throw error;
+  }catch(error){
+    console.error('Falha ao encerrar a sessão local',error);
+  }finally{
+    currentSession=null;currentProfile=null;recoveryMode=false;
+    $('conv').innerHTML='<option value="">Entre para carregar os ajustes</option>';
+    $('conv').disabled=true;
+    $('search').disabled=true;
+    $('loginPassword').value='';
+    $('loginForm').hidden=false;
+    $('resetPasswordPanel').hidden=true;
+    showLogin('Você saiu da sua conta.','info');
+    button.disabled=false;
+  }
+});
+
 function setAccountMode(mode){
   accountMode=mode;
   const creating=mode==='signup';
@@ -863,10 +889,6 @@ async function loadLatestFromSupabase(){
   }
 }
 
-let allRows=[], headers=RET_SCHEMA.slice(), currentRows=[], currentEmpenhos=[], currentPayments=[], currentMovementRows=[], layoutInfo={hasPayments:false,maxFields:RET_SCHEMA.length};
-let activeAdjustmentFilterCode='';
-let cadMetadataByKey=new Map(),cadMetadataLoaded=false,cadMetadataFinishedAt='';
-let selectionRows=[],retFontesImportId='',retRowsLoadedFor='',selectionRequestId=0,movementDataLoadedFor='',movementDataLoading=false;
 const money = n => {
   const value=Number(n)||0;
   const cents=Math.round(Math.abs(value)*100);
@@ -1720,17 +1742,6 @@ async function activateSession(session){
   return true;
 }
 
-$('logoutButton').addEventListener('click',async()=>{
-  $('logoutButton').disabled=true;
-  try{await supabaseClient.auth.signOut();}finally{
-    currentSession=null;currentProfile=null;
-    $('conv').innerHTML='<option value="">Entre para carregar os ajustes</option>';
-    $('conv').disabled=true;$('search').disabled=true;
-    showLogin('Você saiu da sua conta.','info');
-    $('loginPassword').value='';
-    $('logoutButton').disabled=false;
-  }
-});
 
 function closeDocumentModal(){
   $('documentModal').hidden=true;

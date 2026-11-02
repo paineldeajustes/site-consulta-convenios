@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#183f35">
-<meta name="clareza-build" content="2026-10-29.20">
+<meta name="clareza-build" content="2026-11-02.21">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Clareza">
@@ -57,16 +57,30 @@
     </section>
     <section id="pushPanel" class="pushpanel" aria-label="Notificações de prazo"><div class="pushrow"><div><strong>Notificações de prazos</strong><p id="pushStatus">Ative os avisos neste dispositivo para receber lembretes mesmo quando o Clareza estiver fechado.</p></div><div class="push-actions"><button id="enablePush" class="btn secondary" type="button">Ativar avisos</button><button id="testPush" class="btn ghost" type="button" hidden>Testar aviso</button></div></div></section>
     
-    <div class="toolbar"><div class="search"><input id="search" type="search" placeholder="Buscar uma tarefa..." aria-label="Buscar tarefas"></div><button id="filters" class="filterbtn" type="button">Filtros ▾</button></div>
+    <div class="toolbar search-toolbar"><div class="search"><input id="search" type="search" placeholder="Buscar uma tarefa..." aria-label="Buscar tarefas"></div></div>
+    <section id="filterPanel" class="filter-panel" aria-label="Filtros e visualizações de tarefas">
+      <div class="filter-panel-header">
+        <button id="filters" class="filter-toggle" type="button" aria-controls="filtersContent" aria-expanded="true"><span class="filter-symbol" aria-hidden="true">☷</span><span>Filtros</span><span id="filterChevron" class="filter-chevron" aria-hidden="true">⌃</span></button>
+        <button id="clearFilters" class="filter-clear" type="button">Limpar</button>
+      </div>
+      <div id="filtersContent" class="filter-panel-content">
+        <nav class="tabs quick-views" aria-label="Visualização das tarefas">
+          <button class="tab active" data-view="pendentes" type="button"><span aria-hidden="true">◷</span> Pendentes</button>
+          <button class="tab" data-view="hoje" type="button"><span aria-hidden="true">▣</span> Hoje</button>
+          <button class="tab" data-view="proximas" type="button"><span aria-hidden="true">▦</span> Próximas</button>
+          <button class="tab" data-view="atrasadas" type="button"><span aria-hidden="true">!</span> Atrasadas</button>
+          <button class="tab" data-view="concluidas" type="button"><span aria-hidden="true">✓</span> Concluídas</button>
+          <button class="tab" data-view="todas" type="button"><span aria-hidden="true">▤</span> Todas</button>
+        </nav>
+        <div id="filterExtras" class="filter-select-grid">
+          <div class="filter-field"><label for="environmentFilter">Contexto / grupo</label><select id="environmentFilter" class="filter-select" aria-label="Filtrar por contexto ou grupo"><option value="todos">Todos</option><option value="trabalho">Trabalho</option><option value="casa">Casa</option><option value="pessoal">Pessoal</option><option value="outros">Outros</option></select></div>
+          <div class="filter-field"><label for="categoryFilter">Categoria</label><select id="categoryFilter" class="filter-select" aria-label="Filtrar por categoria"><option value="todas">Todas</option></select></div>
+          <div class="filter-field"><label for="assigneeFilter">Responsável</label><select id="assigneeFilter" class="filter-select" aria-label="Filtrar por responsável"><option value="todos">Todos</option></select></div>
+          <div class="filter-field filter-priority"><label for="priorityFilter">Prioridade</label><select id="priorityFilter" class="filter-select" aria-label="Filtrar por prioridade"><option value="todas">Todas</option><option value="urgente">Urgente</option><option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option></select></div>
+        </div>
+      </div>
+    </section>
     <section id="notificationsPanel" class="notifications-panel" hidden aria-label="Central de notificações"><div class="notifications-head"><div><strong>Notificações</strong><p>Toque em uma notificação para abrir a tarefa e a ação necessária.</p></div><button id="closeNotifications" class="btn ghost" type="button">Fechar</button></div><div id="notificationsList"></div></section>
-    <div id="filterExtras" hidden style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px">
-      <select id="environmentFilter" class="filterbtn" aria-label="Filtrar por ambiente"><option value="todos">Todos os ambientes</option><option value="trabalho">Trabalho</option><option value="casa">Casa</option><option value="pessoal">Pessoal</option><option value="outros">Outros</option></select>
-      <select id="priorityFilter" class="filterbtn" aria-label="Filtrar por prioridade"><option value="todas">Todas as prioridades</option><option value="urgente">Urgente</option><option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option></select>
-      <select id="categoryFilter" class="filterbtn" aria-label="Filtrar por categoria"><option value="todas">Todas as categorias</option></select>
-    </div>
-    <nav class="tabs" aria-label="Filtro de tarefas">
-      <button class="tab active" data-view="pendentes">Pendentes</button><button class="tab" data-view="hoje">Hoje</button><button class="tab" data-view="atrasadas">Atrasadas</button><button class="tab" data-view="proximas">Próximas</button><button class="tab" data-view="concluidas">Concluídas</button><button class="tab" data-view="todas">Todas</button>
-    </nav>
     <div class="listhead"><h2 id="listTitle">Suas tarefas</h2><div class="listhead-right"><span id="refreshStatus" class="refreshstatus" aria-live="polite">Sincronizando…</span><button id="refreshApp" class="refreshbtn" type="button" aria-label="Atualizar agenda e verificar novas versões" title="Atualizar agenda e verificar atualizações"><span class="refreshglyph" aria-hidden="true">↻</span><span>Atualizar</span></button><span id="taskCount" class="count">0 itens</span></div></div>
     <section id="taskList" class="tasks" aria-live="polite"></section>
     <section id="emptyState" class="empty" hidden><div class="symbol">✦</div><h3 id="emptyTitle">Tudo começa com uma tarefa</h3><p id="emptyText">Adicione sua primeira tarefa para organizar o que importa.</p><div style="margin-top:16px"><button id="emptyAdd" class="btn">＋ Criar primeira tarefa</button></div></section>
@@ -414,6 +428,12 @@ if($("environmentFilter")){
  $("environmentFilter").innerHTML='<option value="todos">Todos os ambientes</option>'+["trabalho","casa","pessoal","outros"].map(k=>{const o=options.find(x=>x.key===k);return '<option value="'+k+'">'+esc(o?.label||({trabalho:"Trabalho",casa:"Casa",pessoal:"Pessoal",outros:"Outros"}[k]))+'</option>'}).join("");
  if(["todos","trabalho","casa","pessoal","outros"].includes(prevEnv))$("environmentFilter").value=prevEnv;
 }
+if($("assigneeFilter")){
+ const previousAssignee=$("assigneeFilter").value||"todos";
+ const members=[...(householdMembers||[])].sort((a,b)=>String(a.display_name||a.name||a.email||"").localeCompare(String(b.display_name||b.name||b.email||""),"pt-BR"));
+ $("assigneeFilter").innerHTML='<option value="todos">Todos</option>'+members.map(m=>'<option value="'+esc(m.user_id)+'">'+esc(m.display_name||m.name||m.email||"Usuário")+'</option>').join("");
+ if(members.some(m=>m.user_id===previousAssignee))$("assigneeFilter").value=previousAssignee;
+}
 }
 function getDisplayName(){
 const full=String(user?.user_metadata?.full_name||"").trim();
@@ -588,12 +608,13 @@ $("statOverdue").textContent=pending.filter(overdue).length;
 $("statDone").textContent=done.length;
 $("overdueStat").classList.toggle("warn",pending.some(overdue));
 updateCategories();
-const q=normalize($("search").value.trim()),p=$("priorityFilter").value,c=$("categoryFilter").value,env=$("environmentFilter").value;
+const q=normalize($("search").value.trim()),p=$("priorityFilter").value,c=$("categoryFilter").value,env=$("environmentFilter").value,assignee=$("assigneeFilter").value;
 let list=tasks.filter(t=>{
 if(q&&!normalize([t.title,t.notes,t.category].join(" ")).includes(q))return false;
 if(p!=="todas"&&t.priority!==p)return false;
 if(c!=="todas"&&(t.category||"")!==c)return false;
 if(env!=="todos"&&t.context!==env)return false;
+if(assignee!=="todos"&&(t.assignee_id||"")!==assignee)return false;
 switch(view){case"pendentes":return!t.completed;case"hoje":return dueToday(t);case"atrasadas":return overdue(t);case"proximas":return!t.completed&&t.due_date&&t.due_date>today;case"concluidas":return t.completed;default:return true}
 });
 list.sort((a,b)=>{if(a.completed!==b.completed)return a.completed?1:-1;const ad=a.due_date||"9999-99-99",bd=b.due_date||"9999-99-99";if(ad!==bd)return ad<bd?-1:1;const r={urgente:0,alta:1,media:2,baixa:3};if(r[a.priority]!==r[b.priority])return r[a.priority]-r[b.priority];return String(b.created_at).localeCompare(String(a.created_at))});
@@ -651,8 +672,22 @@ const empty=list.length===0;$("emptyState").hidden=!empty;$("taskList").hidden=e
 if(empty){$("emptyTitle").textContent=tasks.length===0?"Tudo começa com uma tarefa":"Nada por aqui";$("emptyText").textContent=tasks.length===0?"Adicione sua primeira tarefa para organizar o que importa.":"Experimente outro filtro ou adicione uma nova tarefa."}
 }
 document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{view=t.dataset.view;render()}));
-$("search").addEventListener("input",render);$("priorityFilter").addEventListener("change",render);$("categoryFilter").addEventListener("change",render);$("environmentFilter").addEventListener("change",render);
-$("filters").addEventListener("click",()=>{$("filterExtras").hidden=!$("filterExtras").hidden;$("filters").textContent=$("filterExtras").hidden?"Filtros ▾":"Filtros ▴"});
+$("search").addEventListener("input",render);$("priorityFilter").addEventListener("change",render);$("categoryFilter").addEventListener("change",render);$("environmentFilter").addEventListener("change",render);$("assigneeFilter").addEventListener("change",render);
+$("filters").addEventListener("click",()=>{
+ const content=$("filtersContent"),open=content.hidden;
+ content.hidden=!open;
+ $("filters").setAttribute("aria-expanded",String(open));
+ $("filterChevron").textContent=open?"⌃":"⌄";
+});
+$("clearFilters").addEventListener("click",()=>{
+ $("search").value="";
+ $("environmentFilter").value="todos";
+ $("categoryFilter").value="todas";
+ $("priorityFilter").value="todas";
+ $("assigneeFilter").value="todos";
+ view="pendentes";
+ render();
+});
 function setViewAndScroll(nextView){
  view=nextView;
  document.querySelectorAll(".tab").forEach(el=>el.classList.toggle("active",el.dataset.view===view));

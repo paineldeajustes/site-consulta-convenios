@@ -459,7 +459,7 @@ async function loadXlsxLibrary(){
   script.src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
   script.async=true;
   script.onload=()=>window.XLSX?resolve(window.XLSX):reject(new Error("A biblioteca Excel não foi carregada."));
-  script.onerror=()=>reject(new Error("Não foi possível carregar o exportador Excel. Confira sua conexão e tente novamente."));
+  script.onerror=()=>{window.__clarezaXlsxPromise=null;reject(new Error("Não foi possível carregar o exportador Excel. Confira sua conexão e tente novamente."))};
   document.head.appendChild(script);
  });
  return window.__clarezaXlsxPromise;

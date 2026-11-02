@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#183f35">
-<meta name="clareza-build" content="2026-11-02.23">
+<meta name="clareza-build" content="2026-11-02.24">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Clareza">
@@ -107,7 +107,7 @@
         <div class="field"><label for="settingsDefaultContext">Ambiente padrão</label><select id="settingsDefaultContext"></select></div>
         <div class="field"><label for="settingsDefaultPriority">Prioridade padrão</label><select id="settingsDefaultPriority"><option value="baixa">Baixa</option><option value="media">Média</option><option value="alta">Alta</option><option value="urgente">Urgente</option></select></div>
       </div>
-      <div class="settings-subhead"><h3>Nomes e cores dos contextos</h3><p>Você pode renomear e recolorir Trabalho, Casa, Pessoal e Outros. Esses quatro contextos são estruturais e não podem ser excluídos; os integrantes de cada grupo podem ser alterados separadamente.</p></div>
+      <div class="settings-subhead"><h3>Nomes e cores dos contextos</h3><p>Você pode renomear, recolorir e desativar contextos para novas tarefas. Os quatro contextos estruturais não são apagados: tarefas antigas e históricos são preservados. Os integrantes de cada grupo podem ser incluídos ou retirados separadamente.</p></div>
       <div id="contextSettingsList" class="context-settings-list"></div>
       <div class="settings-actions"><button id="saveHouseholdSettings" class="btn" type="button">Salvar configurações compartilhadas</button></div>
       <p id="householdSettingsMessage" class="msg" hidden></p>
@@ -130,14 +130,14 @@
       <p id="reminderSettingsMessage" class="msg" hidden></p>
     </section>
     <section class="settings-card">
-      <div class="settings-card-head"><div><h2>Categorias compartilhadas</h2><p>Edite o nome e a cor ou exclua categorias. Excluir uma categoria não apaga as tarefas que já a utilizaram.</p></div><span class="settings-symbol" aria-hidden="true">⌘</span></div>
+      <div class="settings-card-head"><div><h2>Categorias compartilhadas</h2><p>Crie, renomeie e exclua categorias compartilhadas. Ao renomear, as tarefas vinculadas acompanham o novo nome; ao excluir, elas são mantidas sem categoria.</p></div><span class="settings-symbol" aria-hidden="true">⌘</span></div>
       <form id="newCategoryForm" class="category-create-row"><div class="field"><label for="newCategoryName">Nova categoria</label><input id="newCategoryName" maxlength="60" required placeholder="Ex.: Compras, Saúde, Projeto"></div><div class="field"><label for="newCategoryColor">Cor</label><input id="newCategoryColor" type="color" value="#eaf2ff"></div><button id="addCategoryBtn" class="btn" type="submit">Adicionar</button></form>
       <div id="categorySettingsList" class="category-settings-list"></div>
       <p id="categorySettingsMessage" class="msg" hidden></p>
     </section>
     <section class="settings-card"><div class="settings-card-head"><div><h2>Exportar tarefas</h2><p>Baixe sua agenda em uma planilha Excel editável (.xlsx).</p></div><span class="settings-symbol" aria-hidden="true">⇩</span></div><div class="export-menu settings-export-menu" id="exportMenu"><button id="exportExcel" type="button">Baixar planilha Excel (.xlsx)</button></div><p class="settings-help">A planilha reúne as tarefas visíveis para sua conta, responsáveis, prazos, contextos, categorias, status e nomes dos anexos.</p></section>
     <section class="settings-card"><div class="settings-card-head"><div><h2>Integrantes dos grupos por contexto</h2><p>Inclua ou retire participantes de Trabalho, Casa, Pessoal e Outros. A alteração controla quem pode visualizar tarefas compartilhadas em cada contexto.</p></div><span class="settings-role">Administrador</span></div><div id="environmentGroupSettings"><p class="settings-help">Carregando integrantes dos ambientes…</p></div><p id="environmentGroupMessage" class="msg" hidden></p></section>
-    <section id="assigneeManagementSection" class="settings-card"><div class="settings-card-head"><div><h2>Responsáveis pelas tarefas</h2><p>Defina quem pode receber novas tarefas e personalize o nome exibido na agenda. Desativar alguém não remove seu acesso nem altera tarefas já atribuídas.</p></div><span class="settings-role">Administrador</span></div><div id="assigneeSettingsList"><p class="settings-help">Carregando participantes…</p></div><p id="assigneeSettingsMessage" class="msg" hidden></p></section>
+    <section id="assigneeManagementSection" class="settings-card"><div class="settings-card-head"><div><h2>Responsáveis pelas tarefas</h2><p>Personalize o nome exibido e ative ou desative cada pessoa para novas atribuições. Desativar não remove o acesso à agenda nem altera tarefas já atribuídas.</p></div><span class="settings-role">Administrador</span></div><div id="assigneeSettingsList"><p class="settings-help">Carregando participantes…</p></div><p id="assigneeSettingsMessage" class="msg" hidden></p></section>
     <section id="settingsAccessSection" class="settings-card">
       <div class="settings-card-head"><div><h2>Acessos e permissões</h2><p>Aprove ou recuse novos usuários que pedirem para entrar na agenda.</p></div><span id="settingsAccessRole" class="settings-role">Membro</span></div>
       <section id="accessAdminPanel" class="sharepanel" aria-label="Administração de acessos" hidden><div class="sharehead"><div><strong>Administração de acessos</strong><p class="sharecopy">Novos usuários só verão a agenda depois da sua aprovação. Você é o administrador.</p></div></div><div id="accessRequestsList" class="access-requests"><p class="sharecopy">Verificando solicitações…</p></div><p id="adminAccessMessage" class="msg" hidden></p></section>
@@ -151,7 +151,7 @@
       </form>
       <p id="passwordSettingsMessage" class="msg" hidden></p>
     </section>
-    <section class="settings-card settings-about"><h2>Sobre o Clareza</h2><p>Seus dados são salvos na agenda compartilhada e as configurações são aplicadas sem alteração de código.</p><p id="settingsVersionText">Versão do aplicativo: 2026-10-29.17</p></section>
+    <section class="settings-card settings-about"><h2>Sobre o Clareza</h2><p>Seus dados são salvos na agenda compartilhada e as configurações são aplicadas sem alteração de código.</p><p id="settingsVersionText">Versão do aplicativo: 2026-11-02.24</p></section>
   </main>
 
 </div>

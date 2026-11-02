@@ -22,7 +22,7 @@ concurrency:
 jobs:
   importar:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 120
     steps:
       - name: Verificar configuração do segredo
         env:

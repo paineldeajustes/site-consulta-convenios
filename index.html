@@ -78,6 +78,47 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 .emp-detail td:nth-child(2){padding-left:24px;color:#344054}
 .negative-value{background:#fff1f0!important;color:#b91c1c!important;font-weight:800!important}
 .cad-meta-grid{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px}
+
+.cad-extra-details{margin-top:16px;border:1px solid #d9e2ee;border-radius:12px;background:#fbfcfe;padding:0 14px}
+.cad-extra-details summary{cursor:pointer;list-style:none;padding:14px 0;color:#174a78;font-weight:800}
+.cad-extra-details summary::-webkit-details-marker{display:none}
+.cad-extra-details summary:after{content:"＋";float:right;color:#176b75;font-size:18px;line-height:16px}
+.cad-extra-details[open] summary:after{content:"−"}
+.cad-extra-details .hint{margin:0 0 12px}
+.cad-extra-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:0 0 14px}
+.cad-extra-field{border:1px solid #e2e8f0;background:#fff;border-radius:9px;padding:9px 10px;min-width:0}
+.cad-extra-field span{display:block;font-size:11px;color:#667085;margin-bottom:5px;letter-spacing:.15px}
+.cad-extra-field strong{display:block;font-size:13px;line-height:1.35;color:#173b61;overflow-wrap:anywhere;white-space:pre-wrap}
+.pay-summary{display:grid;grid-template-columns:repeat(3,minmax(140px,1fr));gap:10px;margin:0 0 12px}
+.pay-summary-card{border:1px solid #dce5ef;background:#f8fafc;border-radius:10px;padding:10px 12px}
+.pay-summary-card span{display:block;font-size:11px;color:#667085;margin-bottom:5px}
+.pay-summary-card strong{display:block;font-size:16px;color:#173b61;font-weight:800}
+.pay-summary-card.net{background:#effaf4;border-color:#b8e4c8}
+.pay-summary-card.net strong{color:#166534}
+.pay-summary-card.warning{background:#fff8eb;border-color:#f5d9a6}
+.pay-summary-card.warning strong{color:#995c00}
+.document-link{border:0;background:transparent;color:#185a92;padding:0;font:inherit;font-weight:700;text-decoration:underline;text-decoration-color:#9ab9d5;text-underline-offset:3px;cursor:pointer}
+.document-link:hover{color:#0b3d68;text-decoration-color:currentColor}
+.document-modal{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px}
+.document-modal[hidden]{display:none}
+.document-modal-backdrop{position:absolute;inset:0;border:0;border-radius:0;background:rgba(15,23,42,.58);cursor:default}
+.document-modal-card{position:relative;z-index:1;width:min(100%,1050px);max-height:min(90vh,900px);display:flex;flex-direction:column;background:#fff;border-radius:16px;box-shadow:0 24px 70px rgba(15,23,42,.28);overflow:hidden}
+.document-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:20px 24px;border-bottom:1px solid #e4eaf1;background:#f8fafc}
+.document-modal-header h2{margin:2px 0 5px;color:#12345a;font-size:21px}
+.document-modal-header .hint{margin:0}
+.document-modal-header .eyebrow{margin:0;color:#176b75;font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:800}
+.document-modal-close{width:38px;height:38px;flex:0 0 auto;border:1px solid #d4deea;border-radius:10px;background:#fff;color:#334155;font-size:26px;line-height:1;cursor:pointer}
+.document-modal-body{padding:18px 24px 24px;overflow:auto}
+.document-record-card{border:1px solid #e1e8f0;border-radius:12px;padding:14px;margin-bottom:14px}
+.document-record-title{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:0 0 12px}
+.document-record-title strong{color:#12345a}
+.document-field-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.document-field{min-width:0;padding:9px;border-radius:8px;background:#f8fafc;border:1px solid #e7edf4}
+.document-field span{display:block;color:#667085;font-size:10px;margin-bottom:4px;font-weight:700;overflow-wrap:anywhere}
+.document-field strong{display:block;color:#243b53;font-size:12px;font-weight:600;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:900px){.cad-extra-grid,.document-field-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.pay-summary{grid-template-columns:1fr}.cad-extra-grid,.document-field-grid{grid-template-columns:1fr}.document-modal{padding:8px}.document-modal-card{max-height:95vh}.document-modal-header,.document-modal-body{padding:14px}.document-modal-header h2{font-size:18px}}
+
 .cad-meta-item{border:1px solid #e1e7ef;background:#fbfcfe;border-radius:10px;padding:12px;min-width:0}
 .cad-meta-item span,.cad-meta-object>span{font-size:12px;color:#667085;display:block;margin-bottom:6px}
 .cad-meta-item strong{font-size:14px;color:#12345a;overflow-wrap:anywhere}
@@ -248,6 +289,11 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
       <div class="cad-meta-item"><span>Última vigência</span><strong id="cadMetaValidity">—</strong></div>
     </div>
     <div class="cad-meta-object"><span>Objeto</span><p id="cadMetaObject">Selecione um ajuste para consultar o objeto cadastrado.</p></div>
+    <details id="cadExtraDetails" class="cad-extra-details">
+      <summary>Consultar mais dados cadastrais do CadConvenios.txt</summary>
+      <p class="hint">Campos complementares do cadastro original, preservando as ocorrências repetidas de datas.</p>
+      <div id="cadExtraFieldsGrid" class="cad-extra-grid"><div class="empty">Selecione um ajuste para consultar os demais campos.</div></div>
+    </details>
   </section>
 
   <section class="panel">
@@ -294,6 +340,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
       <div><label for="payFilterCusteio">Custeio</label><input id="payFilterCusteio" type="search" placeholder="Filtrar custeio" autocomplete="off"></div>
       <div><label for="payFilterCapital">Capital</label><input id="payFilterCapital" type="search" placeholder="Filtrar capital" autocomplete="off"></div>
     </div>
+    <div id="paySummary" class="pay-summary" hidden></div>
     <div id="payTable" class="table-wrap"><div class="empty">Sem dados para exibir.</div></div>
   </section>
   </div>
@@ -309,6 +356,16 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
     <div id="overviewSummary" class="status">Aguardando dados do Supabase.</div>
     <div id="overviewTable" class="table-wrap"><div class="empty">A lista será exibida após o carregamento da base.</div></div>
   </section>
+  <div id="documentModal" class="document-modal" hidden role="dialog" aria-modal="true" aria-labelledby="documentModalTitle">
+    <button type="button" class="document-modal-backdrop" data-close-document aria-label="Fechar detalhes"></button>
+    <section class="document-modal-card">
+      <header class="document-modal-header">
+        <div><p class="eyebrow">Consulta de documento ORCOM</p><h2 id="documentModalTitle">Detalhes do documento</h2><p id="documentModalSubtitle" class="hint"></p></div>
+        <button type="button" id="closeDocumentModal" class="document-modal-close" aria-label="Fechar">×</button>
+      </header>
+      <div id="documentModalBody" class="document-modal-body"></div>
+    </section>
+  </div>
   <div class="footer">Consulte os dados da última importação concluída. As informações devem ser conferidas com os registros oficiais antes de uso administrativo.</div>
   </div>
 </main>

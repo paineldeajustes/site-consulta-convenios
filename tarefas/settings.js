@@ -40,15 +40,22 @@ function offsetsFromUi(prefix){
  return result;
 }
 function applyContextOptions(opts){
- const list=Array.isArray(opts)&&opts.length?opts:defaults.context_options;
- const sorted=["trabalho","casa","pessoal","outros"].map(k=>list.find(x=>x.key===k)||defaults.context_options.find(x=>x.key===k));
+ const stored=Array.isArray(opts)&&opts.length?opts:defaults.context_options;
+ const all=["trabalho","casa","pessoal","outros"].map(key=>{
+  const base=defaults.context_options.find(o=>o.key===key);
+  const saved=stored.find(o=>o.key===key)||base;
+  return {...base,...saved,enabled:saved.enabled!==false};
+ });
+ let active=all.filter(o=>o.enabled);
+ if(!active.length)active=all;
  for(const id of ["taskContext","settingsDefaultContext"]){
   const select=$(id);if(!select)continue;
   const previous=select.value;
-  select.innerHTML=sorted.map(o=>'<option value="'+o.key+'">'+String(o.label||o.key).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+'</option>').join("");
-  if(sorted.some(o=>o.key===previous))select.value=previous;
+  select.innerHTML=active.map(o=>'<option value="'+o.key+'">'+escapeHtml(o.label||o.key)+'</option>').join("");
+  select.value=active.some(o=>o.key===previous)?previous:active[0].key;
  }
 }
+
 function applyTheme(theme,compact){
  const app=$("app");if(!app)return;
  let actual=theme||"light";
@@ -118,7 +125,8 @@ function populate(){
  $("newCategoryForm").hidden=!isOwner();
  $("settingsAccessSection").hidden=!isOwner();
  $("assigneeManagementSection").hidden=!isOwner();
- $("contextSettingsList").innerHTML=(h.context_options||defaults.context_options).map(o=>'<div class="context-setting-row owner-setting" data-context="'+o.key+'"><div><label for="contextLabel_'+o.key+'">Nome exibido</label><input type="text" id="contextLabel_'+o.key+'" maxlength="32" value="'+escapeHtml(o.label)+'" '+(isOwner()?"":"disabled")+'></div><div><label for="contextColor_'+o.key+'">Cor do cartão</label><input type="color" id="contextColor_'+o.key+'" value="'+safeColor(o.color,"#edf1f2")+'" '+(isOwner()?"":"disabled")+'></div></div>').join("");
+ $("contextSettingsList").innerHTML=(h.context_options||defaults.context_options).map(o=>'<div class="context-setting-row owner-setting" data-context="'+o.key+'"><div><label for="contextLabel_'+o.key+'">Nome exibido</label><input type="text" id="contextLabel_'+o.key+'" maxlength="32" value="'+escapeHtml(o.label)+'" '+(isOwner()?"":"disabled")+'></div><div><label for="contextColor_'+o.key+'">Cor do cartão</label><input type="color" id="contextColor_'+o.key+'" value="'+safeColor(o.color,"#edf1f2")+'" '+(isOwner()?"":"disabled")+'></div><label class="context-enabled-toggle"><input type="checkbox" id="contextEnabled_'+o.key+'" '+(o.enabled===false?"":"checked")+' '+(isOwner()?"":"disabled")+'><span>Disponível para novas tarefas</span></label></div>').join("");
+ applyContextOptions(h.context_options);
  renderCategories();
  renderMemberSettings();
 }
@@ -135,27 +143,39 @@ function renderMemberSettings(){
  if(!isOwner()){list.innerHTML='<p class="settings-help">Somente o administrador pode alterar quem recebe novas atribuições.</p>';return}
  if(!memberSettings.length){list.innerHTML='<p class="settings-help">Nenhum participante encontrado.</p>';return}
  list.innerHTML=memberSettings.map(m=>{
-  const isSelf=m.role==="owner";
-  return '<article class="assignee-setting-row" data-member-id="'+m.user_id+'"><div class="assignee-setting-person"><strong>'+escapeHtml(m.assignee_label||m.display_name)+'</strong><span>'+escapeHtml(m.email||"")+'</span><small>'+(m.role==="owner"?"Administrador":"Participante")+' · '+Number(m.active_assigned_count||0)+' tarefa(s) em andamento atribuída(s)</small></div><div class="assignee-setting-controls"><div class="field"><label>Nome exibido na agenda</label><input type="text" maxlength="60" data-member-label value="'+escapeHtml(m.assignee_label||"")+'" placeholder="'+escapeHtml(m.display_name||"Nome do participante")+'"></div><label class="assignee-enabled-toggle"><input type="checkbox" data-member-enabled '+(m.can_be_assignee?"checked":"")+' '+(isSelf?"disabled":"")+'><span>Pode receber novas tarefas</span></label><button type="button" class="btn secondary" data-member-save>Salvar responsável</button></div></article>';
+  const isSelf=m.role==="owner",active=m.can_be_assignee!==false;
+  return '<article class="assignee-setting-row" data-member-id="'+m.user_id+'"><div class="assignee-setting-person"><strong>'+escapeHtml(m.assignee_label||m.display_name)+'</strong><span>'+escapeHtml(m.email||"")+'</span><small>'+(m.role==="owner"?"Administrador":"Participante")+' · '+Number(m.active_assigned_count||0)+' tarefa(s) em andamento atribuída(s)</small><span class="assignee-status '+(active?"is-active":"is-inactive")+'">'+(active?"Ativo para novas atribuições":"Desativado para novas atribuições")+'</span></div><div class="assignee-setting-controls"><div class="field"><label>Nome exibido na agenda</label><input type="text" maxlength="60" data-member-label value="'+escapeHtml(m.assignee_label||"")+'" placeholder="'+escapeHtml(m.display_name||"Nome do participante")+'"></div><label class="assignee-enabled-toggle"><input type="checkbox" data-member-enabled '+(active?"checked":"")+' '+(isSelf?"disabled":"")+'><span>Pode receber novas tarefas</span></label><button type="button" class="btn secondary" data-member-save>Salvar responsável</button></div></article>';
  }).join("");
 }
 function contextOptionsFromForm(){
  return ["trabalho","casa","pessoal","outros"].map(key=>{
   const old=(shared?.context_options||defaults.context_options).find(o=>o.key===key)||defaults.context_options.find(o=>o.key===key);
-  return {key,label:$("contextLabel_"+key).value.trim()||old.label,color:safeColor($("contextColor_"+key).value,old.color)};
+  return {
+   key,
+   label:$("contextLabel_"+key).value.trim()||old.label,
+   color:safeColor($("contextColor_"+key).value,old.color),
+   enabled:$("contextEnabled_"+key)?.checked!==false
+  };
  });
 }
+
 async function saveShared(){
  if(!isOwner()){message("householdSettingsMessage","Somente o administrador pode alterar estas opções.",true);return}
  const name=$("settingsHouseholdName").value.trim();
  if(!name){message("householdSettingsMessage","Informe um nome para a agenda.",true);return}
  const offsets=offsetsFromUi("settings");
+ const contextOptions=contextOptionsFromForm();
+ const activeContexts=contextOptions.filter(o=>o.enabled);
+ if(!activeContexts.length){message("householdSettingsMessage","Mantenha pelo menos um contexto ativo para criar novas tarefas.",true);return}
+ const requestedDefault=$("settingsDefaultContext").value;
+ const defaultContext=activeContexts.some(o=>o.key===requestedDefault)?requestedDefault:activeContexts[0].key;
+ $("settingsDefaultContext").value=defaultContext;
  const args={
-  p_display_name:name,p_default_context:$("settingsDefaultContext").value,p_default_priority:$("settingsDefaultPriority").value,
+  p_display_name:name,p_default_context:defaultContext,p_default_priority:$("settingsDefaultPriority").value,
   p_default_notification_offsets:offsets,
   p_overdue_morning_enabled:$("settingsOverdueMorning").checked,p_overdue_morning_time:$("settingsMorningTime").value||"09:00",
   p_overdue_afternoon_enabled:$("settingsOverdueAfternoon").checked,p_overdue_afternoon_time:$("settingsAfternoonTime").value||"15:00",
-  p_confirm_before_complete:$("settingsConfirmComplete").checked,p_context_options:contextOptionsFromForm()
+  p_confirm_before_complete:$("settingsConfirmComplete").checked,p_context_options:contextOptions
  };
  const buttons=[$("saveHouseholdSettings"),$("saveReminderSettings")];buttons.forEach(b=>{b.disabled=true});
  try{
@@ -200,6 +220,9 @@ $("newCategoryForm").addEventListener("submit",async e=>{
  e.preventDefault();if(!isOwner())return;
  const name=$("newCategoryName").value.trim(),color=safeColor($("newCategoryColor").value,"#eaf2ff");
  if(!name)return;
+ if(categories.some(c=>String(c.name||"").trim().toLocaleLowerCase("pt-BR")===name.toLocaleLowerCase("pt-BR"))){
+  message("categorySettingsMessage","Já existe uma categoria com esse nome.",true);return;
+ }
  const button=$("addCategoryBtn");button.disabled=true;
  try{
   const h=household();const {error}=await client().from("task_categories").insert({household_id:h.household_id,name,color,created_by:user().id});
@@ -215,12 +238,14 @@ $("assigneeSettingsList").addEventListener("click",async e=>{
  if(!targetId)return;
  const label=row.querySelector("[data-member-label]").value.trim()||null;
  const enabled=row.querySelector("[data-member-enabled]").checked;
+ const current=memberSettings.find(m=>m.user_id===targetId);
  if(label&&label.length>60){message("assigneeSettingsMessage","O nome exibido deve ter até 60 caracteres.",true);return}
+ if(!enabled&&current?.can_be_assignee!==false&&Number(current?.active_assigned_count||0)>0&&!confirm("Desativar para novas tarefas? As "+Number(current.active_assigned_count)+" atribuição(ões) em andamento serão preservadas."))return;
  button.disabled=true;button.textContent="Salvando…";
  try{
   const {error}=await client().rpc("save_task_member_settings",{p_target_user_id:targetId,p_can_be_assignee:enabled,p_assignee_label:label});
   if(error)throw error;
-  message("assigneeSettingsMessage","Responsável atualizado. A disponibilidade vale para novas atribuições; tarefas existentes foram preservadas.");
+  message("assigneeSettingsMessage",enabled?"Responsável atualizado e disponível para novas tarefas.":"Responsável desativado para novas tarefas. Acesso à agenda e atribuições existentes foram preservados.");
   await load(true);
   if(window.ClarezaApp?.reloadTasks)await window.ClarezaApp.reloadTasks();
  }catch(err){message("assigneeSettingsMessage",err.message||"Não foi possível atualizar o responsável.",true);button.disabled=false;button.textContent="Salvar responsável"}
@@ -231,16 +256,31 @@ $("categorySettingsList").addEventListener("click",async e=>{
  if(e.target.closest("[data-category-save]")){
   const name=row.querySelector("[data-category-name]").value.trim(),color=safeColor(row.querySelector("[data-category-color]").value,"#edf1f2");
   if(!name){message("categorySettingsMessage","Informe o nome da categoria.",true);return}
-  const b=e.target.closest("[data-category-save]");b.disabled=true;
-  try{const {error}=await client().from("task_categories").update({name,color,updated_at:new Date().toISOString()}).eq("id",id);if(error)throw error;message("categorySettingsMessage","Categoria atualizada.");await load(true);if(window.ClarezaApp?.reloadTasks)await window.ClarezaApp.reloadTasks()}
-  catch(err){message("categorySettingsMessage",err.message||"Não foi possível salvar a categoria.",true);b.disabled=false}
+  if(categories.some(c=>c.id!==id&&String(c.name||"").trim().toLocaleLowerCase("pt-BR")===name.toLocaleLowerCase("pt-BR"))){
+   message("categorySettingsMessage","Já existe uma categoria com esse nome.",true);return;
+  }
+  const b=e.target.closest("[data-category-save]");b.disabled=true;b.textContent="Salvando…";
+  try{
+   const {data,error}=await client().rpc("manage_task_category",{p_category_id:id,p_action:"rename",p_name:name,p_color:color});
+   if(error)throw error;
+   const count=Number(data?.updated_tasks||0);
+   message("categorySettingsMessage","Categoria atualizada"+(count?" e aplicada a "+count+" tarefa(s).":"."));
+   await load(true);if(window.ClarezaApp?.reloadTasks)await window.ClarezaApp.reloadTasks();
+  }catch(err){message("categorySettingsMessage",err.message||"Não foi possível salvar a categoria.",true);b.disabled=false;b.textContent="Salvar"}
  }
  if(e.target.closest("[data-category-delete]")){
   const name=row.querySelector("[data-category-name]").value;
-  if(!confirm('Excluir a categoria "'+name+'"? As tarefas existentes não serão apagadas.'))return;
-  const b=e.target.closest("[data-category-delete]");b.disabled=true;
-  try{const {error}=await client().from("task_categories").delete().eq("id",id);if(error)throw error;message("categorySettingsMessage","Categoria excluída. As tarefas antigas continuam preservadas.");await load(true);if(window.ClarezaApp?.reloadTasks)await window.ClarezaApp.reloadTasks()}
-  catch(err){message("categorySettingsMessage",err.message||"Não foi possível excluir a categoria.",true);b.disabled=false}
+  const usage=(window.ClarezaApp?.getTasks?.()||[]).filter(t=>String(t.category||"")===name).length;
+  const detail=usage?" "+usage+" tarefa(s) ficarão sem categoria, mas serão mantidas.":"";
+  if(!confirm('Excluir a categoria "'+name+'"?'+detail))return;
+  const b=e.target.closest("[data-category-delete]");b.disabled=true;b.textContent="Excluindo…";
+  try{
+   const {data,error}=await client().rpc("manage_task_category",{p_category_id:id,p_action:"delete"});
+   if(error)throw error;
+   const count=Number(data?.uncategorized_tasks||0);
+   message("categorySettingsMessage","Categoria excluída. "+count+" tarefa(s) foram mantidas sem categoria.");
+   await load(true);if(window.ClarezaApp?.reloadTasks)await window.ClarezaApp.reloadTasks();
+  }catch(err){message("categorySettingsMessage",err.message||"Não foi possível excluir a categoria.",true);b.disabled=false;b.textContent="Excluir"}
  }
 });
 $("changePasswordForm").addEventListener("submit",async e=>{

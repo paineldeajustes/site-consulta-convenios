@@ -552,6 +552,7 @@ body[data-theme="dark"] .attachment-external-link{color:#a7d9b9}
 }
 
 
+.category-setting-row{grid-template-columns:minmax(0,1fr) 58px minmax(112px,auto)!important}
 /* Management controls: clear edit/delete actions and an explicit responsible directory. */
 .category-setting-actions{display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:108px}
 .category-setting-actions .btn{min-height:40px;padding:8px 10px;font-size:12px}

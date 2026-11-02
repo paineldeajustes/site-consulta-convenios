@@ -889,6 +889,19 @@ async function importOneFile(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const isRetryable = /Google|Drive|Falha ao baixar|timeout|temporariamente|429|500|503/i.test(message);
+    if (isRetryable) {
+      // Se algum INSERT do bloco tiver sido aceito antes de um timeout, remove somente
+      // as linhas do bloco atual. Os blocos anteriores já confirmados permanecem intactos.
+      const committedOffset = Number(lockedRecord!.next_row_number ?? 0);
+      const { error: cleanupChunkError } = await admin
+        .from("orcom_movement_rows")
+        .delete()
+        .eq("import_id", String(lockedRecord!.id))
+        .gt("row_number", committedOffset + 1);
+      if (cleanupChunkError) {
+        console.error("Não foi possível limpar o bloco incompleto de " + file.name + ":", cleanupChunkError.message);
+      }
+    }
     await admin.from("orcom_file_imports")
       .update({
         chunk_lock_until: null,

@@ -384,12 +384,45 @@ Deno.serve(async (req) => {
       .eq("id", importId);
     if (finishError) throw new Error("Os dados foram gravados, mas não foi possível finalizar o registro da importação.");
 
+    // Preserva o histórico de execuções, mas mantém apenas a versão cadastral corrente.
+    const { data: previousImports, error: historyError } = await admin
+      .from("ret_fontes_imports")
+      .select("id")
+      .eq("file_name", "CadConvenios.txt")
+      .neq("id", importId);
+    if (historyError) {
+      console.error("CadConvenios importado, mas não foi possível localizar versões antigas:", historyError.message);
+      return jsonResponse({
+        success: false,
+        import_id: importId,
+        row_count: records.length,
+        error: "CadConvenios foi importado, mas a limpeza das versões anteriores não foi concluída: " + historyError.message,
+      }, 500);
+    }
+    const previousIds = (previousImports || []).map((item) => item.id);
+    if (previousIds.length) {
+      const { error: cleanupError } = await admin
+        .from("ret_fontes_rows")
+        .delete()
+        .in("import_id", previousIds);
+      if (cleanupError) {
+        console.error("CadConvenios importado, mas a limpeza física das versões antigas falhou:", cleanupError.message);
+        return jsonResponse({
+          success: false,
+          import_id: importId,
+          row_count: records.length,
+          error: "CadConvenios foi importado, mas a limpeza das versões anteriores falhou: " + cleanupError.message,
+        }, 500);
+      }
+    }
+
     return jsonResponse({
       success: true,
       import_id: importId,
       row_count: records.length,
       source_lines: lines.length - 1,
-      message: "Importação cadastral concluída.",
+      deleted_previous_imports: previousIds.length,
+      message: "Importação cadastral concluída; somente a versão corrente permanece armazenada.",
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

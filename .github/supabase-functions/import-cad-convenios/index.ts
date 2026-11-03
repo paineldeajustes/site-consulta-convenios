@@ -416,13 +416,27 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Atualiza o snapshot do painel após substituir o cadastro. A função lê RET_FONTES
+    // e o catálogo numérico permanente; não depende dos antigos arquivos TXT de movimento.
+    let snapshotRefresh: unknown = null;
+    const { data: snapshotData, error: snapshotError } = await admin.rpc(
+      "refresh_orcom_adjustment_selection_snapshot",
+    );
+    if (snapshotError) {
+      console.error("CadConvenios foi importado, mas o snapshot não pôde ser atualizado:", snapshotError.message);
+      snapshotRefresh = { success: false, error: snapshotError.message };
+    } else {
+      snapshotRefresh = snapshotData;
+    }
+
     return jsonResponse({
       success: true,
       import_id: importId,
       row_count: records.length,
       source_lines: lines.length - 1,
       deleted_previous_imports: previousIds.length,
-      message: "Importação cadastral concluída; somente a versão corrente permanece armazenada.",
+      snapshot_refresh: snapshotRefresh,
+      message: "Importação cadastral concluída; catálogo preservado e resumo atualizado com RET_FONTES.",
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

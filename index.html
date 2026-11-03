@@ -868,9 +868,10 @@ async function loadCadMetadataFromSupabase(options={}){
     renderOverview();
     renderAdjustmentPagination('selectionPagination');
     renderAdjustmentPagination('overviewPagination');
+    const snapshotDate=result.snapshot_refreshed_at||cadMetadataFinishedAt;
     $('fileMeta').textContent=
       selectionTotalCount.toLocaleString('pt-BR')+' ajustes elegíveis · página '+selectionPage+
-      (cadMetadataFinishedAt?' · cadastro atualizado em '+new Date(cadMetadataFinishedAt).toLocaleString('pt-BR'):'');
+      (snapshotDate?' · resumo consolidado em '+new Date(snapshotDate).toLocaleString('pt-BR'):'');
     $('status').hidden=false;
     $('status').textContent=selectionTotalCount
       ?'Seleção pronta. Os ajustes são carregados em páginas de 100; use a busca para localizar qualquer registro.'
@@ -1945,6 +1946,35 @@ $('manualRefreshButton').addEventListener('click',async()=>{
       movementResult.failures.push(error.message||String(error));
     }
     results.push(movementResult);
+
+    // Só substitui o snapshot quando todas as fontes terminaram sem erro.
+    // Se uma importação falhar, a projeção anterior permanece disponível.
+    const allImportsOk=results.every(result=>result.ok);
+    if(allImportsOk){
+      $('status').textContent='Importações concluídas. Atualizando o resumo consolidado para a consulta…';
+      try{
+        const snapshotResult=await callImportFunction('import-orcom-movements',session.access_token,{
+          action:'refresh_adjustment_selection_snapshot'
+        });
+        results.push({
+          label:'Resumo consolidado dos ajustes',
+          ok:true,
+          count:Number(snapshotResult.snapshot?.row_count||0)
+        });
+      }catch(error){
+        results.push({
+          label:'Resumo consolidado dos ajustes',
+          ok:false,
+          error:error.message||String(error)
+        });
+      }
+    }else{
+      results.push({
+        label:'Resumo consolidado dos ajustes',
+        ok:false,
+        error:'Não atualizado porque houve falha em uma importação; a versão anterior foi preservada.'
+      });
+    }
 
     currentMovementRows=[];currentEmpMovementRows=[];currentPayMovementRows=[];
     currentEmpenhos=[];currentPayments=[];movementContext=null;empPageResult=null;payPageResult=null;

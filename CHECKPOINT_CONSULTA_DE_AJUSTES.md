@@ -182,3 +182,18 @@ Site: https://paineldeajustes.github.io/site-consulta-convenios/
 - Teste funcional autenticado do site ainda pendente.
 
 Site: https://paineldeajustes.github.io/site-consulta-convenios/
+
+## Fechamento validado — 03/11/2026
+
+- Importação diária de teste: GitHub Actions run `41560414958` concluído com sucesso, incluindo a atualização do snapshot e do catálogo.
+- GitHub Pages run `41560414120` concluído com sucesso.
+- Edge Functions ativas e sincronizadas: RET v14, Cad v12 e ORCOM v27.
+- Catálogo Supabase: tabela com uma coluna `adjustment_number` e 1.237 números. Snapshot: 1.237 linhas.
+- Interface: seletor único nativo com rolagem e digitação; metadados carregados somente após selecionar o número; Visão geral sob demanda; botão de atualização manual removido; skin refinada.
+- RET/Cad: 9.471 linhas físicas atuais (8.318 + 1.153); import history preservado.
+- ORCOM: 449.304 movimentos válidos; 3 imports failed com zero linhas físicas; MD5 preservado para detectar arquivos inalterados.
+- Banco PostgreSQL: 983 MB (1.030.821.555 bytes), ante 1.134 MB medidos antes da limpeza — redução aproximada de 151 MB. RET/Cad 52 MB; ORCOM 910 MB; snapshot 3 MB; catálogo 200 KB.
+- Função de refresh corrigida para `statement_timeout = '120s'` e predicados explícitos em DELETE. A execução automática subsequente passou integralmente.
+- Ambos os blocos JavaScript inline compilam sem erro. Falta o teste de interação por uma sessão autenticada real.
+
+Site: https://paineldeajustes.github.io/site-consulta-convenios/

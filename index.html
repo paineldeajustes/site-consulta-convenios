@@ -431,7 +431,7 @@ const RET_SCHEMA=['CONVENIO','ENTIDADE','TIPOAD','NUMEROAD','TPCAD','TPFOTE','VL
 let allRows=[],headers=RET_SCHEMA.slice(),currentRows=[],currentEmpenhos=[],currentPayments=[],currentMovementRows=[],layoutInfo={hasPayments:false,maxFields:RET_SCHEMA.length};
 let activeAdjustmentFilterCode='';
 let cadMetadataByKey=new Map(),cadMetadataLoaded=false,cadMetadataFinishedAt='';
-let selectionRows=[],retFontesImportId='',retRowsLoadedFor='',selectionRequestId=0,selectionLoadRequestId=0;
+let selectionRows=[],retFontesImportId='',retFontesImportPromise=null,retRowsLoadedFor='',selectionRequestId=0,selectionLoadRequestId=0;
 let selectionPage=1,selectionTotalCount=0,selectionFacets={years:[],letters:[]},currentSelectedOption=null;
 let movementContext=null,movementContextCache=new Map();
 let currentEmpMovementRows=[],currentPayMovementRows=[],empPageResult=null,payPageResult=null;
@@ -903,6 +903,7 @@ function retRowsToObjects(records){
 }
 async function loadRetRowsForAdjustment(code,requestId){
   currentRows=[];
+  if(!retFontesImportId&&retFontesImportPromise)await retFontesImportPromise;
   const metadata=cadMetadataFor(code);
   const compact=retCompactKey(metadata);
   if(!retFontesImportId||!compact){
@@ -1007,20 +1008,17 @@ async function loadLatestFromSupabase(){
     empPageResult=null;payPageResult=null;empCurrentPage=1;payCurrentPage=1;retRowsLoadedFor='';
     // A primeira página da seleção é carregada em paralelo com a identificação da última versão RET.
     const selectionRequest=loadCadMetadataFromSupabase({page:1,search:$('search').value||''});
-    const retImportRequest=supabaseGet(
+    retFontesImportPromise=supabaseGet(
       'ret_fontes_imports?select=id,file_name,status,row_count,finished_at&file_name=eq.RET_FONTES.txt&status=eq.success&order=finished_at.desc&limit=1'
-    );
-    const [selectionResult,imports]=await Promise.all([selectionRequest,retImportRequest]);
-    if(!imports?.length)throw new Error('Não há importação concluída de RET_FONTES.txt.');
-    retFontesImportId=imports[0].id;
-    // O usuário pode selecionar um ajuste enquanto os metadados são localizados.
-    if($('conv').value&&currentSelectedOption){
-      const selectedCode=$('conv').value;
-      const requestId=selectionRequestId;
-      await loadRetRowsForAdjustment(selectedCode,requestId);
-      if(requestId===selectionRequestId&&$('conv').value===selectedCode)render();
-    }
+    ).then(imports=>{
+      if(!imports?.length)throw new Error('Não há importação concluída de RET_FONTES.txt.');
+      retFontesImportId=imports[0].id;
+      return imports;
+    });
+    await Promise.all([selectionRequest,retFontesImportPromise]);
+    retFontesImportPromise=null;
   }catch(error){
+    retFontesImportPromise=null;
     $('status').hidden=false;$('status').textContent='Não foi possível carregar a consulta: '+(error?.message||String(error));
     console.error('Falha ao carregar a seleção de ajustes.',error);
   }

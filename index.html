@@ -278,6 +278,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
       <div><label for="adjustmentLetterFilter">Letra</label><select id="adjustmentLetterFilter" disabled><option value="">Todas as letras</option></select></div>
     </div>
     <div class="selection-actions"><button id="clearAdjustmentSelection" type="button" class="account-button" disabled>Limpar seleção</button><span class="hint">A lista contém somente ajustes concedidos com pagamentos O/R registrados a partir de 2020.</span></div>
+    <div id="selectionPagination" class="table-pagination" aria-label="Paginação da seleção de ajustes"></div>
     <div id="status" class="status">Conectando ao Supabase e carregando a base mais recente…</div>
   </section>
 
@@ -373,6 +374,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
     </div>
     <div id="overviewSummary" class="status">Aguardando dados do Supabase.</div>
     <div id="overviewTable" class="table-wrap"><div class="empty">A lista será exibida após o carregamento da base.</div></div>
+    <div id="overviewPagination" class="table-pagination" aria-label="Paginação da visão geral dos ajustes"></div>
   </section>
   <div id="documentModal" class="document-modal" hidden role="dialog" aria-modal="true" aria-labelledby="documentModalTitle">
     <button type="button" class="document-modal-backdrop" data-close-document aria-label="Fechar detalhes"></button>
@@ -429,19 +431,20 @@ const RET_SCHEMA=['CONVENIO','ENTIDADE','TIPOAD','NUMEROAD','TPCAD','TPFOTE','VL
 let allRows=[],headers=RET_SCHEMA.slice(),currentRows=[],currentEmpenhos=[],currentPayments=[],currentMovementRows=[],layoutInfo={hasPayments:false,maxFields:RET_SCHEMA.length};
 let activeAdjustmentFilterCode='';
 let cadMetadataByKey=new Map(),cadMetadataLoaded=false,cadMetadataFinishedAt='';
-let selectionRows=[],retFontesImportId='',retRowsLoadedFor='',selectionRequestId=0,movementDataLoadedFor='',movementDataLoading=false;
+let selectionRows=[],retFontesImportId='',retRowsLoadedFor='',selectionRequestId=0,selectionLoadRequestId=0;
+let selectionPage=1,selectionTotalCount=0,selectionFacets={years:[],letters:[]},currentSelectedOption=null;
+let movementContext=null,movementContextCache=new Map();
+let currentEmpMovementRows=[],currentPayMovementRows=[],empPageResult=null,payPageResult=null;
 const MOVEMENT_PAGE_SIZE=100;
 const MOVEMENT_CACHE_LIMIT=20;
 let empCurrentPage=1,payCurrentPage=1;
-// Cache em memória: cada ajuste consultado é carregado uma vez por sessão. Nunca persiste no armazenamento do navegador.
-const movementDataCache=new Map();
 const retRowsCache=new Map();
-function cacheMovementData(key,value){
-  movementDataCache.delete(key);
-  movementDataCache.set(key,value);
-  while(movementDataCache.size>MOVEMENT_CACHE_LIMIT){
-    const oldestKey=movementDataCache.keys().next().value;
-    movementDataCache.delete(oldestKey);
+function cacheMovementContext(key,value){
+  movementContextCache.delete(key);
+  movementContextCache.set(key,value);
+  while(movementContextCache.size>MOVEMENT_CACHE_LIMIT){
+    const oldestKey=movementContextCache.keys().next().value;
+    movementContextCache.delete(oldestKey);
   }
 }
 
@@ -457,9 +460,11 @@ $('logoutButton').addEventListener('click',async()=>{
     console.error('Falha ao encerrar a sessão local',error);
   }finally{
     currentSession=null;currentProfile=null;recoveryMode=false;
-    movementDataCache.clear();retRowsCache.clear();
-    currentRows=[];currentMovementRows=[];currentEmpenhos=[];currentPayments=[];
-    empCurrentPage=1;payCurrentPage=1;movementDataLoadedFor='';retRowsLoadedFor='';
+    movementContextCache.clear();retRowsCache.clear();
+    currentRows=[];currentMovementRows=[];currentEmpMovementRows=[];currentPayMovementRows=[];
+    currentEmpenhos=[];currentPayments=[];movementContext=null;empPageResult=null;payPageResult=null;
+    selectionRows=[];cadMetadataByKey.clear();window.CONVENIO_OPTIONS=[];
+    empCurrentPage=1;payCurrentPage=1;retRowsLoadedFor='';
     $('conv').innerHTML='<option value="">Entre para carregar os ajustes</option>';
     $('conv').disabled=true;
     $('search').disabled=true;
@@ -587,6 +592,22 @@ async function supabaseGet(path){
   if(!response.ok) throw new Error(`Supabase respondeu ${response.status}: ${await response.text()}`);
   return response.json();
 }
+async function supabaseRpc(name,payload){
+  const {data:{session}}=await supabaseClient.auth.getSession();
+  if(!session?.access_token)throw new Error('Sua sessão expirou. Entre novamente no sistema.');
+  const response=await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`,{
+    method:'POST',
+    headers:{
+      apikey:SUPABASE_PUBLIC_KEY,
+      Authorization:`Bearer ${session.access_token}`,
+      'Content-Type':'application/json',
+      Accept:'application/json'
+    },
+    body:JSON.stringify(payload||{})
+  });
+  if(!response.ok)throw new Error(`Supabase respondeu ${response.status}: ${await response.text()}`);
+  return response.json();
+}
 
 async function supabaseGetAll(path, pageSize=1000){
   const results=[];
@@ -637,16 +658,9 @@ const CAD_EXTRA_FIELD_DEFINITIONS=[
   ['PROC-PCONTAS','Processo de prestação de contas'],['DT-INI','Data inicial'],['DT-FIM','Data final'],
   ['INI+TA','Valor inicial + termos aditivos'],['ULT-TA','Último termo aditivo'],['OBJETO','Objeto'],
   ['R-SOCIAL','Razão social'],['ENDERECO','Endereço'],['BAIRRO','Bairro'],['CIDADE','Cidade'],
-  ['CPF/CNPJ','CPF/CNPJ'],['DIRETORIA','Diretoria / responsável'],['CPF','CPF do responsável'],
-  ['DT-INI_1','Data inicial (ocorrência 2)'],['DT-FIM_2','Data final (ocorrência 2)'],
-  ['CONSELHO1','Conselho 1'],['CONSELHO2','Conselho 2'],['CONSELHO3','Conselho 3'],['CONSELHO4','Conselho 4'],
-  ['DT-INI_3','Data inicial (ocorrência 3)'],['DT-FIM_4','Data final (ocorrência 3)'],
-  ['IRREGULAR','Indicador de irregularidade'],['MOTIVO','Motivo'],['CEP','CEP'],['TEL','Telefone'],
-  ['EMAIL-ENT','E-mail da entidade'],['CARGO-DIR','Cargo do dirigente'],['EMAIL-DIR','E-mail do dirigente'],
-  ['TP2_AJ','Tipo complementar do ajuste'],['COD-FORNEC','Código do fornecedor'],['SDO-CONVENIO','Saldo do convênio'],
-  ['CA1','CA1'],['CA2','CA2']
+  ['CPF/CNPJ','CPF/CNPJ'],['CA1','CA1'],['CA2','CA2']
 ];
-const CAD_DATE_FIELDS=new Set(['DT-ASSINA','DT-INI','DT-FIM','DT-INI_1','DT-FIM_2','DT-INI_3','DT-FIM_4']);
+const CAD_DATE_FIELDS=new Set(['DT-ASSINA','DT-INI','DT-FIM']);
 function renderCadExtraFields(metadata){
   const container=$('cadExtraFieldsGrid');
   const details=$('cadExtraDetails');
@@ -676,12 +690,11 @@ function setSelectOptions(id,values,emptyLabel,formatter){
   control.disabled=clean.length===0;
 }
 function renderAdjustmentOptionsFromCad(){
-  const selected=$('conv').value;
-  const allOptions=[];
+  const options=[];
   for(const metadata of cadMetadataByKey.values()){
     const cv=formatCadCode(metadata);
     if(!cv)continue;
-    allOptions.push({
+    options.push({
       cv,
       ent:String(metadata.entity||metadata.extra_fields?.['R-SOCIAL']||'').trim(),
       year:String(metadata.year||'').trim(),
@@ -689,43 +702,58 @@ function renderAdjustmentOptionsFromCad(){
       key:String(metadata.join_key||'')
     });
   }
-  allOptions.sort((a,b)=>
+  options.sort((a,b)=>
     a.year.localeCompare(b.year,'pt-BR',{numeric:true})||
     a.letter.localeCompare(b.letter,'pt-BR')||
     formatAdjustmentNumber(a.cv).localeCompare(formatAdjustmentNumber(b.cv),'pt-BR',{numeric:true})
   );
-  setSelectOptions('adjustmentYearFilter',allOptions.map(option=>option.year),'Todos os anos',value=>value);
-  setSelectOptions('adjustmentLetterFilter',allOptions.map(option=>option.letter),'Todas as letras',value=>value||'Sem letra');
   const year=$('adjustmentYearFilter').value;
   const letter=$('adjustmentLetterFilter').value;
-  const filtered=allOptions.filter(option=>
-    (!year||option.year===year)&&
-    (!letter||option.letter===letter)
+  const searchValue=$('search').value.trim();
+  const normalizedSearch=normalizeAdjustmentSearch(searchValue);
+  const suggestions=options.filter(option=>
+    !normalizedSearch||normalizeAdjustmentSearch(option.cv+' '+formatAdjustmentNumber(option.cv)+' '+option.ent).includes(normalizedSearch)
   );
-  const unique=new Map();
-  for(const option of filtered){
-    const key=normalizeAdjustmentSearch(option.cv);
-    if(!unique.has(key))unique.set(key,option);
+  window.CONVENIO_OPTIONS=suggestions;
+  const list=[...suggestions];
+  if(currentSelectedOption&&!list.some(option=>normalizeAdjustmentSearch(option.cv)===normalizeAdjustmentSearch(currentSelectedOption.cv))){
+    list.unshift(currentSelectedOption);
   }
-  const options=[...unique.values()];
-  window.CONVENIO_OPTIONS=options;
   $('conv').innerHTML='<option value="">Selecione um ajuste</option>'+
-    options.map(option=>'<option value="'+esc(option.cv)+'">'+esc(formatAdjustmentNumber(option.cv))+' — '+esc(option.ent||'Entidade não informada')+'</option>').join('');
-  $('conv').disabled=options.length===0;
-  $('search').disabled=options.length===0;
+    list.map(option=>'<option value="'+esc(option.cv)+'">'+esc(formatAdjustmentNumber(option.cv))+' — '+esc(option.ent||'Entidade não informada')+'</option>').join('');
+  $('conv').disabled=list.length===0;
+  $('search').disabled=false;
+  $('adjustmentYearFilter').disabled=selectionFacets.years.length===0;
+  $('adjustmentLetterFilter').disabled=selectionFacets.letters.length===0;
+  setSelectOptions('adjustmentYearFilter',selectionFacets.years,'Todos os anos',value=>value);
+  setSelectOptions('adjustmentLetterFilter',selectionFacets.letters,'Todas as letras',value=>value);
+  $('adjustmentYearFilter').value=year;
+  $('adjustmentLetterFilter').value=letter;
+  const selected=currentSelectedOption?.cv||'';
+  $('conv').value=list.some(option=>normalizeAdjustmentSearch(option.cv)===normalizeAdjustmentSearch(selected))?selected:'';
   $('clearAdjustmentSelection').disabled=!selected;
-  const normalizedSelected=normalizeAdjustmentSearch(selected);
-  const retained=options.find(option=>normalizeAdjustmentSearch(option.cv)===normalizedSelected);
-  $('conv').value=retained?retained.cv:'';
-  if(retained){
-    $('search').value=formatAdjustmentNumber(retained.cv);
-  }else if(selected){
-    clearAdjustmentSelection();
-  }
-  if(!options.length){
-    $('status').hidden=false;
-    $('status').textContent='Nenhum ajuste concedido com pagamentos a partir de 2020 foi encontrado na base atual.';
-  }
+}
+function renderAdjustmentPagination(containerId){
+  const container=$(containerId);
+  if(!container)return;
+  const totalPages=Math.max(1,Math.ceil(selectionTotalCount/100));
+  const first=selectionTotalCount?(selectionPage-1)*100+1:0;
+  const last=Math.min(selectionPage*100,selectionTotalCount);
+  const button=(label,page,disabled,aria)=>'<button type="button" data-page="'+page+'" aria-label="'+aria+'" '+(disabled?'disabled':'')+'>'+label+'</button>';
+  const actions=totalPages>1
+    ?'<div class="table-pagination-actions">'+
+      button('«',1,selectionPage===1,'Primeira página de ajustes')+
+      button('‹',selectionPage-1,selectionPage===1,'Página anterior de ajustes')+
+      '<span class="table-pagination-page">Página '+selectionPage.toLocaleString('pt-BR')+' de '+totalPages.toLocaleString('pt-BR')+'</span>'+
+      button('›',selectionPage+1,selectionPage===totalPages,'Próxima página de ajustes')+
+      button('»',totalPages,selectionPage===totalPages,'Última página de ajustes')+
+      '</div>'
+    :'<span class="table-pagination-page">Página 1 de 1</span>';
+  container.innerHTML='<span>Exibindo '+first.toLocaleString('pt-BR')+'–'+last.toLocaleString('pt-BR')+
+    ' de '+selectionTotalCount.toLocaleString('pt-BR')+' ajustes. Pesquise pelo número ou entidade para localizar qualquer ajuste.</span>'+actions;
+  container.querySelectorAll('button[data-page]').forEach(button=>
+    button.addEventListener('click',()=>loadCadMetadataFromSupabase({page:Number(button.getAttribute('data-page'))}))
+  );
 }
 function parseCadDateValue(value){
   const raw=String(value??'').trim();
@@ -778,20 +806,38 @@ function renderCadMetadata(code){
   renderCadExtraFields(metadata);
   renderAdjustmentStatus(code,metadata);
 }
-async function loadCadMetadataFromSupabase(){
-  cadMetadataByKey=new Map();
-  selectionRows=[];
-  cadMetadataLoaded=false;
-  cadMetadataFinishedAt='';
+async function loadCadMetadataFromSupabase(options={}){
+  const page=Math.max(1,Number(options.page||1));
+  const requestId=++selectionLoadRequestId;
+  const searchValue=options.search!==undefined?String(options.search||''):(
+    !$('overviewView').hidden?$('overviewSearch').value:$('search').value
+  );
+  const year=$('adjustmentYearFilter').value||null;
+  const letter=$('adjustmentLetterFilter').value||null;
+  const negativeOnly=!$('overviewView').hidden&&$('overviewBalanceFilter').value==='negative';
+  if(!cadMetadataLoaded){
+    $('overviewTable').innerHTML='<div class="empty">Carregando a primeira página de ajustes…</div>';
+    $('status').hidden=false;
+    $('status').textContent='Carregando a primeira página da seleção…';
+  }
   try{
-    const [records,cadImports]=await Promise.all([
-      supabaseGetAll(
-        'orcom_adjustment_selection?select=adjustment_key,adjustment_year,adjustment_number,adjustment_letter,entity,fields,total_cadastrado_inicial,total_cadastrado_aditamentos,total_cadastrado,total_empenhado,total_pago_bruto,total_pago_valido,quantidade_empenhos,quantidade_movimentos_pagamento&order=adjustment_year.desc,adjustment_number.desc,adjustment_letter.asc',
-        1000
-      ),
-      supabaseGet('ret_fontes_imports?select=finished_at,row_count&file_name=eq.CadConvenios.txt&status=eq.success&order=finished_at.desc&limit=1')
+    const [result,cadImports]=await Promise.all([
+      supabaseRpc('orcom_adjustment_selection_page',{
+        p_page:page,p_page_size:100,p_year:year,p_letter:letter,
+        p_search:searchValue.trim()||null,p_negative_only:negativeOnly
+      }),
+      cadMetadataFinishedAt?Promise.resolve([]):supabaseGet('ret_fontes_imports?select=finished_at,row_count&file_name=eq.CadConvenios.txt&status=eq.success&order=finished_at.desc&limit=1')
     ]);
-    for(const record of records){
+    if(requestId!==selectionLoadRequestId)return;
+    selectionPage=Number(result.page||page);
+    selectionTotalCount=Number(result.total_count||0);
+    selectionFacets={
+      years:Array.isArray(result.years)?result.years:[],
+      letters:Array.isArray(result.letters)?result.letters:[]
+    };
+    cadMetadataByKey=new Map();
+    selectionRows=[];
+    for(const record of (Array.isArray(result.rows)?result.rows:[])){
       let metadata=record.fields;
       if(typeof metadata==='string'){try{metadata=JSON.parse(metadata);}catch{metadata={};}}
       if(!metadata||typeof metadata!=='object'||Array.isArray(metadata))metadata={};
@@ -808,23 +854,30 @@ async function loadCadMetadataFromSupabase(){
       cadMetadataByKey.set(key,metadata);
       selectionRows.push({...record,_metadata:metadata});
     }
+    if(cadImports?.[0]?.finished_at)cadMetadataFinishedAt=cadImports[0].finished_at;
     cadMetadataLoaded=true;
-    cadMetadataFinishedAt=cadImports[0]?.finished_at||'';
     renderAdjustmentOptionsFromCad();
     renderCadMetadata($('conv').value);
     renderOverview();
+    renderAdjustmentPagination('selectionPagination');
+    renderAdjustmentPagination('overviewPagination');
     $('fileMeta').textContent=
-      records.length.toLocaleString('pt-BR')+' ajustes elegíveis · cadastro atualizado em '+
-      (cadMetadataFinishedAt?new Date(cadMetadataFinishedAt).toLocaleString('pt-BR'):'data não informada');
-  }catch(error){
-    console.error('Não foi possível carregar a lista de ajustes elegíveis.',error);
+      selectionTotalCount.toLocaleString('pt-BR')+' ajustes elegíveis · página '+selectionPage+
+      (cadMetadataFinishedAt?' · cadastro atualizado em '+new Date(cadMetadataFinishedAt).toLocaleString('pt-BR'):'');
     $('status').hidden=false;
-    $('status').textContent='Não foi possível carregar a lista de ajustes concedidos com pagamentos desde 2020: '+(error?.message||String(error));
-    cadMetadataLoaded=false;
-    renderAdjustmentOptionsFromCad();
+    $('status').textContent=selectionTotalCount
+      ?'Seleção pronta. Os ajustes são carregados em páginas de 100; use a busca para localizar qualquer registro.'
+      :'Nenhum ajuste concedido com pagamentos a partir de 2020 foi encontrado.';
+  }catch(error){
+    if(requestId!==selectionLoadRequestId)return;
+    console.error('Não foi possível carregar a página de ajustes elegíveis.',error);
+    $('status').hidden=false;
+    $('status').textContent='Não foi possível carregar os ajustes: '+(error?.message||String(error));
+    if(!cadMetadataLoaded){
+      $('overviewTable').innerHTML='<div class="empty">Não foi possível carregar a primeira página de ajustes.</div>';
+    }
   }
 }
-
 function retCompactKey(metadata){
   const year=String(metadata?.year||'').replace(/\D/g,'').slice(-4);
   const number=String(metadata?.number||'').replace(/\D/g,'').padStart(5,'0').slice(-5);
@@ -913,7 +966,7 @@ async function loadLatestFromSupabase(){
     return;
   }
   $('status').hidden=false;
-  $('status').textContent='Carregando a lista de ajustes concedidos com pagamentos de 2020 em diante…';
+  $('status').textContent='Conectado. Carregando a primeira página de ajustes…';
   try{
     const imports=await supabaseGet(
       'ret_fontes_imports?select=id,file_name,status,row_count,finished_at&file_name=eq.RET_FONTES.txt&status=eq.success&order=finished_at.desc&limit=1'
@@ -926,11 +979,11 @@ async function loadLatestFromSupabase(){
     currentEmpenhos=[];
     currentPayments=[];
     currentMovementRows=[];
-    movementDataLoadedFor='';
-    retRowsLoadedFor='';
-    await loadCadMetadataFromSupabase();
-    $('status').hidden=false;
-    $('status').textContent='Lista carregada. Selecione um ajuste para carregar somente seu cadastro, empenhos e pagamentos.';
+    currentEmpMovementRows=[];currentPayMovementRows=[];
+    movementContext=null;movementContextCache.clear();retRowsCache.clear();
+    empPageResult=null;payPageResult=null;
+    empCurrentPage=1;payCurrentPage=1;retRowsLoadedFor='';
+    await loadCadMetadataFromSupabase({page:1,search:$('search').value||''});
   }catch(error){
     $('status').hidden=false;
     $('status').textContent='Não foi possível carregar a consulta: '+(error?.message||String(error));
@@ -1613,16 +1666,10 @@ function renderOverview(){
     if(an&&a.balance!==b.balance)return a.balance-b.balance;
     return formatAdjustmentNumber(a.code).localeCompare(formatAdjustmentNumber(b.code),'pt-BR');
   });
-  const query=normalizeAdjustmentSearch($('overviewSearch').value);
-  const negativeOnly=$('overviewBalanceFilter').value==='negative';
-  const filtered=allAdjustments.filter(item=>{
-    if(negativeOnly&&!isNegativeMoney(item.balance))return false;
-    if(!query)return true;
-    return normalizeAdjustmentSearch(item.code+' '+formatAdjustmentNumber(item.code)+' '+item.entity+' '+item.cadType+' '+item.process+' '+item.object).includes(query);
-  });
+  const filtered=allAdjustments;
   const negativeCount=allAdjustments.filter(item=>isNegativeMoney(item.balance)).length;
-  $('overviewCount').textContent=filtered.length.toLocaleString('pt-BR')+' de '+allAdjustments.length.toLocaleString('pt-BR')+' ajustes';
-  $('overviewSummary').textContent=allAdjustments.length.toLocaleString('pt-BR')+' ajustes concedidos com pagamentos O/R a partir de 2020 · '+negativeCount.toLocaleString('pt-BR')+' com saldo negativo.';
+  $('overviewCount').textContent=filtered.length.toLocaleString('pt-BR')+' nesta página · '+selectionTotalCount.toLocaleString('pt-BR')+' ajustes no filtro';
+  $('overviewSummary').textContent=selectionTotalCount.toLocaleString('pt-BR')+' ajustes concedidos com pagamentos O/R a partir de 2020'+(negativeCount?' · '+negativeCount.toLocaleString('pt-BR')+' nesta página com saldo negativo.':'.');
   if(!filtered.length){
     $('overviewTable').innerHTML='<div class="empty">Nenhum ajuste encontrado para os filtros selecionados.</div>';
     return;
@@ -1752,12 +1799,17 @@ function showSuggestions(){
 }
 $('tabDetail').addEventListener('click',()=>showAppView('detail'));
 $('tabOverview').addEventListener('click',()=>showAppView('overview'));
-$('overviewSearch').addEventListener('input',renderOverview);
-$('overviewBalanceFilter').addEventListener('change',renderOverview);
+$('overviewSearch').addEventListener('input',()=>{
+  selectionPage=1;
+  clearTimeout(adjustmentSearchTimer);
+  adjustmentSearchTimer=setTimeout(()=>loadCadMetadataFromSupabase({page:1,search:$('overviewSearch').value}),250);
+});
+$('overviewBalanceFilter').addEventListener('change',()=>loadCadMetadataFromSupabase({page:1}));
 $('conv').addEventListener('change',()=>{if($('conv').value)chooseConv($('conv').value);});
-$('adjustmentYearFilter').addEventListener('change',renderAdjustmentOptionsFromCad);
-$('adjustmentLetterFilter').addEventListener('change',renderAdjustmentOptionsFromCad);
+$('adjustmentYearFilter').addEventListener('change',()=>loadCadMetadataFromSupabase({page:1}));
+$('adjustmentLetterFilter').addEventListener('change',()=>loadCadMetadataFromSupabase({page:1}));
 $('clearAdjustmentSelection').addEventListener('click',clearAdjustmentSelection);
+let adjustmentSearchTimer=null;
 $('search').addEventListener('input',()=>{
   const val=$('search').value.trim();
   const normalizedVal=normalizeAdjustmentSearch(val);
@@ -1765,9 +1817,18 @@ $('search').addEventListener('input',()=>{
   if(exact){
     chooseConv(exact.cv);
     $('suggestions').hidden=true;
-  }else{
-    showSuggestions();
+    return;
   }
+  clearTimeout(adjustmentSearchTimer);
+  $('suggestions').hidden=!val;
+  if(!val){
+    loadCadMetadataFromSupabase({page:1,search:''});
+    return;
+  }
+  adjustmentSearchTimer=setTimeout(async()=>{
+    await loadCadMetadataFromSupabase({page:1,search:val});
+    if($('search').value.trim()===val)showSuggestions();
+  },300);
 });
 $('search').addEventListener('keydown',e=>{
   if(e.key==='Enter'){
@@ -1838,7 +1899,7 @@ async function activateSession(session){
   $('signedInAs').textContent=email;
   $('manualRefreshButton').hidden=profile.is_admin!==true;
   $('manualRefreshButton').disabled=false;
-  await loadLatestFromSupabase();
+  void loadLatestFromSupabase();
   return true;
 }
 

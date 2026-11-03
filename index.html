@@ -1536,7 +1536,7 @@ function loadTextIntoPage(text, filename){
     $('empPagination').innerHTML='';$('payPagination').innerHTML='';
     $('dateFrom').disabled=true;$('dateTo').disabled=true;$('clearDates').disabled=true;$('export').disabled=true;
     $('payCount').textContent='0 registros';
-    currentMovementRows=[];currentEmpenhos=[];currentPayments=[];movementDataLoadedFor='';
+    currentMovementRows=[];currentEmpMovementRows=[];currentPayMovementRows=[];currentEmpenhos=[];currentPayments=[];movementContext=null;empPageResult=null;payPageResult=null;
     renderOverview();
     $('status').hidden=true;
   }catch(err){

@@ -643,7 +643,12 @@ function formatCadDate(value){
 }
 function cadMetadataFor(code){
   const key=normalizeAdjustmentSearch(formatAdjustmentNumber(code));
-  return cadMetadataByKey.get(key)||null;
+  const fromPage=cadMetadataByKey.get(key);
+  if(fromPage)return fromPage;
+  if(currentSelectedOption&&normalizeAdjustmentSearch(formatAdjustmentNumber(currentSelectedOption.cv))===key){
+    return currentSelectedOption.metadata||null;
+  }
+  return null;
 }
 function formatCadCode(metadata){
   if(!metadata)return '';
@@ -700,7 +705,8 @@ function renderAdjustmentOptionsFromCad(){
       ent:String(metadata.entity||metadata.extra_fields?.['R-SOCIAL']||'').trim(),
       year:String(metadata.year||'').trim(),
       letter:String(metadata.letter||'').trim().toUpperCase(),
-      key:String(metadata.join_key||'')
+      key:String(metadata.join_key||''),
+      metadata
     });
   }
   options.sort((a,b)=>

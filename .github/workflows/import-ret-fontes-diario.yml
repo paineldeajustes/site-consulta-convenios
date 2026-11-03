@@ -144,3 +144,17 @@ jobs:
             exit 1
           fi
           echo 'Todos os arquivos correntes e históricos foram importados ou confirmados sem alteração.'
+
+      - name: Atualizar snapshot da seleção de ajustes
+        env:
+          IMPORT_FUNCTION_SECRET: ${{ secrets.IMPORT_FUNCTION_SECRET }}
+        run: |
+          response=$(curl --fail-with-body --silent --show-error --max-time 130 \
+            --request POST \
+            --url 'https://qkjudfvlaatdcaosadun.supabase.co/functions/v1/import-orcom-movements' \
+            --header "Authorization: Bearer ${IMPORT_FUNCTION_SECRET}" \
+            --header 'Content-Type: application/json' \
+            --data '{"action":"refresh_adjustment_selection_snapshot"}')
+          echo "$response" | jq .
+          echo "$response" | jq -e '.success == true and .snapshot.success == true and .snapshot.row_count >= 0' >/dev/null
+          echo 'Snapshot de seleção atualizado após a conclusão das importações.'

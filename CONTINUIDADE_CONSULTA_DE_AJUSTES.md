@@ -307,3 +307,25 @@ As três migrações estão registradas também em `supabase/migrations/`.
 - Publicação Pages para o commit de código `9380f813016b5864721be342c3556aade8e65680`: run `41553309778` estava em andamento na última consulta; conferir o resultado mais recente do Actions antes de encerrar o checkpoint.
 
 Site: https://paineldeajustes.github.io/site-consulta-convenios/
+
+
+## Reforço de privacidade na tabela de importação — 03/11/2026
+
+Além da sanitização da view e do snapshot, a política RLS de `public.ret_fontes_rows` foi ajustada:
+- Usuários autenticados ativos na allowlist podem consultar diretamente apenas linhas cujo import associado tenha `file_name = 'RET_FONTES.txt'` e status `success`.
+- Linhas brutas de `CadConvenios.txt` não são retornadas por consultas diretas PostgREST para usuários do painel.
+- Os registros originais foram preservados. A rotina de atualização do snapshot roda com `service_role` por meio da Edge Function, que continua podendo ler o cadastro completo internamente.
+- A atualização do snapshot foi testada após essa política e concluiu com sucesso, retornando 1.237 ajustes.
+
+Migração aplicada e versionada:
+- `20261103003213_restrict_cadconvenios_raw_rows_to_internal_access`
+
+## Resultado final da publicação e atualização automática — 03/11/2026
+
+- Edge Function `import-orcom-movements`: versão 22 ativa, com fonte do GitHub igual ao código implantado.
+- Workflow diário: passo final `Atualizar snapshot da seleção de ajustes`, executado somente depois da confirmação de todos os imports. A etapa manual também chama o mesmo serviço interno apenas quando todos os resultados são positivos.
+- A consulta de primeira página foi medida em 19,172 ms após snapshot (1237 registros no snapshot; 100 retornados por chamada).
+- Nenhum arquivo-fonte foi reimportado durante esta intervenção. O snapshot foi recomposto a partir das importações `success` existentes.
+- Código da interface: ambos os blocos JavaScript inline compilaram com sucesso na validação estática.
+- GitHub Pages run para o commit de código `9380f813016b5864721be342c3556aade8e65680`: `completed / success` (run `41553309778`). A atualização posterior é documental e de migração; conferir o run mais recente do Pages.
+- Continua pendente um teste funcional com sessão autenticada no navegador; a conversa não tinha uma sessão de usuário ativa para percorrer os controles pós-login.

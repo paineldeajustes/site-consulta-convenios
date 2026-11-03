@@ -146,3 +146,13 @@ Migrações:
 - `20261103002646_precomputed_adjustment_selection_snapshot`
 
 Site: https://paineldeajustes.github.io/site-consulta-convenios/
+
+
+## Reforço final de privacidade — 03/11/2026
+
+- A política RLS de `ret_fontes_rows` agora permite SELECT de usuários do painel apenas para importações `RET_FONTES.txt` com status `success`.
+- Linhas originais de `CadConvenios.txt` foram mantidas, mas não ficam mais acessíveis diretamente pelo endpoint REST para usuários autenticados da allowlist.
+- A função interna de atualização do snapshot mantém acesso para consolidar o cadastro; o teste pós-RLS concluiu com sucesso e retornou os 1.237 ajustes.
+- Migração: `20261103003213_restrict_cadconvenios_raw_rows_to_internal_access`.
+
+**Publicação:** o código funcional do site no commit `9380f813016b5864721be342c3556aade8e65680` teve Pages run `41553309778` concluído com sucesso. Ambos os scripts inline passaram na validação sintática. A sessão autenticada do navegador ainda precisa de teste funcional real.

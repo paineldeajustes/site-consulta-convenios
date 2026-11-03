@@ -960,6 +960,7 @@ async function importOneFile(
   }
 }
 
+// Catalog snapshot refresh uses the atomic SQL routine; safe-delete predicates are explicit.
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ success: false, error: "Método não permitido." }, 405);

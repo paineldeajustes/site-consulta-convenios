@@ -451,7 +451,7 @@ let allRows=[],headers=RET_SCHEMA.slice(),currentRows=[],currentEmpenhos=[],curr
 let activeAdjustmentFilterCode='';
 let cadMetadataByKey=new Map(),cadMetadataLoaded=false,cadMetadataFinishedAt='';
 let selectionRows=[],retFontesImportId='',retFontesImportPromise=null,retRowsLoadedFor='',selectionRequestId=0,selectionLoadRequestId=0;
-let selectionPage=1,selectionTotalCount=0,selectionFacets={years:[],letters:[]},currentSelectedOption=null;
+let selectionPage=1,selectionTotalCount=0,selectionFacets={years:[],letters:[]},currentSelectedOption=null,catalogItems=[],catalogLoaded=false;
 let movementContext=null,movementContextCache=new Map();
 let currentEmpMovementRows=[],currentPayMovementRows=[],empPageResult=null,payPageResult=null;
 let movementPageRequestIds={empenho:0,pagamento:0};

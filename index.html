@@ -1819,29 +1819,40 @@ function closeDocumentModal(){
   $('documentModal').hidden=true;
   $('documentModalBody').innerHTML='';
 }
-function openMovementDocument(type,documentKey,label){
-  const matches=currentMovementRows.filter(record=>record.file_type===type&&String(record.document_key??'')===String(documentKey??''));
+async function openMovementDocument(type,documentKey,label){
+  const adjustmentKey=cadMetadataFor($('conv').value)?.join_key;
   const title=type==='empenho'?'Empenho':'Ordem de Pagamento';
   $('documentModalTitle').textContent=title+' '+(label||'');
-  $('documentModalSubtitle').textContent=matches.length.toLocaleString('pt-BR')+' registro(s) encontrado(s) nos arquivos históricos e correntes do ORCOM.';
-  if(!matches.length){
-    $('documentModalBody').innerHTML='<div class="empty">Não foram localizados os detalhes deste documento na importação atual.</div>';
-  }else{
+  $('documentModalSubtitle').textContent='Consultando os detalhes do documento…';
+  $('documentModalBody').innerHTML='<div class="empty">Carregando detalhes…</div>';
+  $('documentModal').hidden=false;
+  try{
+    if(!adjustmentKey)throw new Error('Não foi possível identificar o ajuste selecionado.');
+    const query=new URLSearchParams();
+    query.set('select','id,import_id,row_number,file_type,exercise,adjustment_key,document_key,document_number,fields,amount,category_code,source_code,transaction_kind,date_value,is_valid_payment');
+    query.set('adjustment_key','eq.'+adjustmentKey);query.set('file_type','eq.'+type);
+    query.set('document_key','eq.'+String(documentKey));query.set('order','exercise.asc,row_number.asc');
+    const matches=await supabaseGetAll('orcom_movement_rows?'+query.toString(),500);
+    $('documentModalSubtitle').textContent=matches.length.toLocaleString('pt-BR')+' registro(s) encontrado(s) nos arquivos históricos e correntes do ORCOM.';
+    if(!matches.length){$('documentModalBody').innerHTML='<div class="empty">Não foram localizados os detalhes deste documento na importação atual.</div>';return;}
     const preferredOrder=type==='empenho'
       ?['ANO-NE','NUM-NE','DATA','CAT','GRU','MOD','ELE ','SELE','FT','VLR','SDO','ANULACAO','FORN','DOC','HISTO','NUM-CF','LETRA-CF']
       :['OP','e/o/r','DATA','dt-bo','DT-VENC','EMPENHO','CAT','GRU','MOD','ELE ','SELE','FT','CANC','VALOR','nacf','lacf','ANULACAO','ACERTO-ORC','forn','HISTORICO','OBS','DOC'];
     const prettyKey=key=>String(key).replace(/__([0-9]+)/g,' (ocorrência $1)');
     $('documentModalBody').innerHTML=matches.map(record=>{
-      const fields=movementFields(record);
-      const keys=Object.keys(fields);
+      const fields=movementFields(record),keys=Object.keys(fields);
       const ordered=[...preferredOrder.filter(key=>Object.prototype.hasOwnProperty.call(fields,key)),...keys.filter(key=>!preferredOrder.includes(key))];
       const values=ordered.filter(key=>String(fields[key]??'').trim()!=='');
       const fieldHtml=values.map(key=>'<div class="document-field"><span>'+esc(prettyKey(key))+'</span><strong>'+esc(fields[key])+'</strong></div>').join('');
       return '<article class="document-record-card"><div class="document-record-title"><strong>'+esc(title+' '+(label||''))+'</strong><span class="pill">Exercício '+esc(record.exercise)+' · Linha '+esc(record.row_number)+'</span></div><div class="document-field-grid">'+fieldHtml+'</div></article>';
     }).join('');
+  }catch(error){
+    $('documentModalSubtitle').textContent='Falha ao consultar o documento';
+    $('documentModalBody').innerHTML='<div class="empty">'+esc(error?.message||String(error))+'</div>';
   }
-  $('documentModal').hidden=false;
 }
+
+
 $('closeDocumentModal').addEventListener('click',closeDocumentModal);
 document.querySelectorAll('[data-close-document]').forEach(el=>el.addEventListener('click',closeDocumentModal));
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('documentModal').hidden)closeDocumentModal();});

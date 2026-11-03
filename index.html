@@ -1033,7 +1033,7 @@ async function loadLatestFromSupabase(){
     currentEmpMovementRows=[];currentPayMovementRows=[];movementContext=null;movementContextCache.clear();retRowsCache.clear();
     empPageResult=null;payPageResult=null;empCurrentPage=1;payCurrentPage=1;retRowsLoadedFor='';
     // A primeira página da seleção é carregada em paralelo com a identificação da última versão RET.
-    const selectionRequest=loadCadMetadataFromSupabase({page:1,search:$('search').value||''});
+    const selectionRequest=loadAdjustmentCatalog();
     retFontesImportPromise=supabaseGet(
       'ret_fontes_imports?select=id,file_name,status,row_count,finished_at&file_name=eq.RET_FONTES.txt&status=eq.success&order=finished_at.desc&limit=1'
     ).then(imports=>{

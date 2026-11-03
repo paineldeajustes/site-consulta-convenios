@@ -1944,12 +1944,16 @@ $('manualRefreshButton').addEventListener('click',async()=>{
     }
     results.push(movementResult);
 
-    movementDataLoadedFor='';
-    currentMovementRows=[];currentEmpenhos=[];currentPayments=[];
-    movementDataCache.clear();retRowsCache.clear();
-    empCurrentPage=1;payCurrentPage=1;
+    currentMovementRows=[];currentEmpMovementRows=[];currentPayMovementRows=[];
+    currentEmpenhos=[];currentPayments=[];movementContext=null;empPageResult=null;payPageResult=null;
+    movementContextCache.clear();retRowsCache.clear();
+    empCurrentPage=1;payCurrentPage=1;currentSelectedOption=null;
     await loadLatestFromSupabase();
-    if(selectedAdjustment)chooseConv(selectedAdjustment);
+    if(selectedAdjustment){
+      await loadCadMetadataFromSupabase({page:1,search:selectedAdjustment});
+      const option=(window.CONVENIO_OPTIONS||[]).find(item=>normalizeAdjustmentSearch(item.cv)===normalizeAdjustmentSearch(selectedAdjustment));
+      if(option)await chooseConv(option.cv);
+    }
 
     const failed=results.filter(result=>!result.ok);
     $('status').hidden=false;

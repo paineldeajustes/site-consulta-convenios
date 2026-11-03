@@ -216,6 +216,38 @@ table{border-collapse:separate;border-spacing:0}thead th{background:#f1f5f9;colo
 .pill{border:1px solid #dbe5ef;background:#f2f6fa;color:#486078;border-radius:999px;padding:7px 11px}
 .account-bar{padding:8px 0 16px}.account-email{color:#60758a;font-size:13px}
 @media(max-width:760px){main{padding:0 12px}.panel{padding:16px;border-radius:14px}.view-tab{padding:10px 12px}}
+
+/* Visual refinement — institutional, clean and more elegant. */
+:root{font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;color:#152b3f;background:#f3f6f9}
+body{background:#f3f6f9}
+header{background:linear-gradient(112deg,#102b48 0%,#174a62 58%,#216d73 100%);padding:26px 30px;box-shadow:0 8px 28px rgba(12,35,58,.12)}
+main{max-width:1580px;margin:28px auto;padding:0 24px}
+.panel{border:1px solid #e0e7ee;border-radius:17px;padding:23px;margin-bottom:20px;box-shadow:0 8px 26px rgba(16,42,67,.045)}
+h2{font-size:18px;letter-spacing:-.25px;color:#173651}
+.section-head{margin-bottom:17px}
+label{font-size:12px;font-weight:700;color:#43576c;letter-spacing:.15px}
+.pill{background:#edf3f8;color:#31516d;border:1px solid #e0e8ef;padding:6px 10px}
+.status{background:#eef5f8;color:#34536b;border:1px solid #dce9ef;padding:11px 14px;border-radius:10px}
+.metric{border:1px solid #e4eaf0;border-radius:14px;padding:16px;background:#fff;box-shadow:0 2px 8px rgba(18,42,64,.025)}
+.metric strong{font-size:21px;color:#173c5a}
+.view-tabs{background:#e9eff5;border-color:#dce5ee;padding:5px;border-radius:13px}
+.view-tab{padding:11px 18px;color:#496175}
+.view-tab.active{color:#153d5c;border-color:#d9e3eb;box-shadow:0 2px 7px rgba(18,42,64,.07)}
+.account-button{border-color:#d5e0e9;color:#294c68;background:#fff}
+.account-button:hover{background:#f2f7fa;border-color:#b9cbd9}
+.catalogue-picker{max-width:760px;margin-top:16px}
+.catalogue-picker select{width:100%;height:50px;padding:12px 15px;border:1px solid #c8d5e1;border-radius:11px;background:#fff;color:#162f46;font-size:15px;outline:none;box-shadow:0 1px 2px rgba(18,42,64,.025);transition:border-color .16s,box-shadow .16s}
+.catalogue-picker select:focus{border-color:#438b99;box-shadow:0 0 0 4px rgba(67,139,153,.13)}
+.catalogue-hint{margin:8px 0 0;color:#748596;font-size:11px;line-height:1.5}
+.selection-actions{margin-top:13px}
+.table-wrap{border:1px solid #e1e8ef;border-radius:12px;box-shadow:0 2px 8px rgba(18,42,64,.025)}
+th{background:#eaf0f6;color:#274a68;border-bottom:2px solid #c4d2df}
+tbody tr:nth-child(even){background:#f9fbfd}
+tbody tr:hover{background:#edf5f7}
+tfoot td{background:#edf5f3}
+.ficha-pdf-fab{background:linear-gradient(130deg,#153c5b,#19717a);box-shadow:0 8px 22px rgba(15,57,78,.24)}
+@media(max-width:760px){main{padding:0 13px;margin:16px auto}.panel{padding:16px;border-radius:14px}.catalogue-picker{max-width:none}}
+
 </style>
 </head>
 <body>
@@ -291,12 +323,19 @@ table{border-collapse:separate;border-spacing:0}thead th{background:#f1f5f9;colo
       <h2>Seleção do ajuste</h2>
       <span id="fileMeta" class="pill">Conectando ao Supabase…</span>
     </div>
-    <div class="controls" style="margin-top:14px;grid-template-columns:repeat(2,minmax(180px,1fr))">
-      <div><label for="conv">Número do ajuste</label><select id="conv" disabled><option value="">Carregando ajustes…</option></select></div>
-      <div class="search-wrap"><label for="search">Localizar ajuste ou entidade</label><input id="search" type="search" placeholder="Digite o número do ajuste ou nome da entidade" autocomplete="off" disabled><div id="suggestions" class="suggestions" hidden></div></div>
-
+    <div class="catalogue-picker">
+      <label for="conv">Número do ajuste</label>
+      <select id="conv" disabled aria-label="Selecione o número do ajuste">
+        <option value="">Carregando catálogo de ajustes…</option>
+      </select>
+      <p class="catalogue-hint">Percorra a lista com a barra de rolagem ou digite os primeiros dígitos com a lista aberta para localizar um número.</p>
     </div>
-    <div class="selection-actions"><button id="clearAdjustmentSelection" type="button" class="account-button" disabled>Limpar seleção</button><span class="hint">Somente ajustes concedidos com pagamentos O/R a partir de 2020.</span></div><select id="adjustmentYearFilter" hidden><option value="">Todos</option></select><select id="adjustmentLetterFilter" hidden><option value="">Todas</option></select><div id="selectionPagination" hidden></div>
+    <div class="selection-actions"><button id="clearAdjustmentSelection" type="button" class="account-button" disabled>Limpar seleção</button><span class="hint">Catálogo com ajustes concedidos que possuem pagamentos O/R desde 2020.</span></div>
+    <input id="search" type="hidden" value="">
+    <div id="suggestions" hidden></div>
+    <select id="adjustmentYearFilter" hidden><option value="">Todos</option></select>
+    <select id="adjustmentLetterFilter" hidden><option value="">Todas</option></select>
+    <div id="selectionPagination" hidden></div>
 
     <div id="status" class="status">Conectando ao Supabase e carregando a base mais recente…</div>
   </section>
@@ -716,15 +755,19 @@ function setSelectOptions(id,values,emptyLabel,formatter){
 }
 async function loadAdjustmentCatalog(){
   const result=await supabaseRpc('get_orcom_adjustment_catalog',{});
-  catalogItems=(Array.isArray(result.items)?result.items:[]).map(item=>({cv:String(item.number||item.key||'').trim(),key:String(item.key||'').trim(),ent:''})).filter(item=>item.cv);
+  catalogItems=(Array.isArray(result.items)?result.items:[]).map(item=>({cv:String(item.number||'').trim(),key:'',ent:''})).filter(item=>item.cv);
   catalogLoaded=true;
   window.CONVENIO_OPTIONS=catalogItems;
-  $('catalogCount').textContent='('+catalogItems.length.toLocaleString('pt-BR')+')';
-  $('catalogStatus').textContent='Atualizado diariamente às 6h.';
-  $('conv').innerHTML=catalogItems.map(item=>'<option value="'+esc(item.cv)+'">'+esc(item.cv)+'</option>').join('');
+  $('conv').innerHTML='<option value="">Selecione um ajuste ('+catalogItems.length.toLocaleString('pt-BR')+' disponíveis)</option>'+
+    catalogItems.map(item=>'<option value="'+esc(item.cv)+'">'+esc(item.cv)+'</option>').join('');
+  $('conv').value='';
   $('conv').disabled=!catalogItems.length;
+  $('fileMeta').textContent=catalogItems.length.toLocaleString('pt-BR')+' números disponíveis · catálogo atualizado diariamente às 6h';
 }
 function renderAdjustmentOptionsFromCad(){
+  // A seleção principal é construída exclusivamente pelo catálogo de números.
+  // A Visão Geral usa esta rotina de compatibilidade sem alterar os 1.237 itens.
+  return;
   const options=[];
   for(const metadata of cadMetadataByKey.values()){
     const cv=formatCadCode(metadata);
@@ -1640,7 +1683,10 @@ function showAppView(view){
   $('tabOverview').classList.toggle('active',overview);
   $('tabDetail').setAttribute('aria-selected',String(!overview));
   $('tabOverview').setAttribute('aria-selected',String(overview));
-  if(overview)renderOverview();
+  if(overview){
+    if(!cadMetadataLoaded)loadCadMetadataFromSupabase({page:1,search:$('overviewSearch').value||''});
+    else renderOverview();
+  }
 }
 function clearAdjustmentSelection(){
   selectionRequestId++;selectionLoadRequestId++;
@@ -1677,16 +1723,23 @@ async function chooseConv(value){
   if(!found)return;
   const requestId=++selectionRequestId;currentSelectedOption=found;
   try{
-    const metaResult=await supabaseRpc('orcom_adjustment_selection_page',{p_page:1,p_page_size:1,p_year:null,p_letter:null,p_search:found.key||found.cv,p_negative_only:false});
-    const rec=(metaResult.rows||[])[0];
-    if(rec){
-      let meta=rec.fields;if(typeof meta==='string'){try{meta=JSON.parse(meta)}catch{meta={}}}
-      meta={...(meta||{}),join_key:rec.adjustment_key,year:rec.adjustment_year,number:rec.adjustment_number,letter:rec.adjustment_letter,entity:rec.entity||'' ,selection:rec};
-      cadMetadataByKey.set(normalizeAdjustmentSearch(rec.adjustment_key),meta);
-      cadMetadataByKey.set(normalizeAdjustmentSearch(found.cv),meta);
-      selectionRows=[{...rec,_metadata:meta}];cadMetadataLoaded=true;
-    }
-  }catch(error){console.warn('Não foi possível carregar metadados do ajuste selecionado',error);}
+    const rec=await supabaseRpc('orcom_adjustment_metadata',{p_adjustment_number:found.cv});
+    if(!rec||!rec.adjustment_key)throw new Error('Número não localizado no catálogo cadastral.');
+    let meta=rec.fields;
+    if(typeof meta==='string'){try{meta=JSON.parse(meta)}catch{meta={}}}
+    if(!meta||typeof meta!=='object'||Array.isArray(meta))meta={};
+    meta={...meta,join_key:rec.adjustment_key,year:rec.adjustment_year,number:rec.adjustment_number,
+      letter:rec.adjustment_letter,entity:rec.entity||meta.entity||'',selection:rec};
+    cadMetadataByKey.set(normalizeAdjustmentSearch(rec.adjustment_key),meta);
+    cadMetadataByKey.set(normalizeAdjustmentSearch(found.cv),meta);
+    currentSelectedOption={...found,key:rec.adjustment_key,metadata:meta};
+    selectionRows=[{...rec,_metadata:meta}];cadMetadataLoaded=true;
+  }catch(error){
+    $('status').hidden=false;
+    $('status').textContent='Não foi possível localizar os dados do ajuste selecionado: '+(error?.message||String(error));
+    console.error('Falha ao carregar o cadastro do ajuste',error);
+    return;
+  }
   $('conv').value=found.cv;$('search').value=formatAdjustmentNumber(found.cv);
   $('suggestions').hidden=true;$('clearAdjustmentSelection').disabled=false;
   currentRows=[];currentMovementRows=[];currentEmpMovementRows=[];currentPayMovementRows=[];

@@ -330,7 +330,7 @@ tfoot td{background:#edf5f3}
       </select>
       <p class="catalogue-hint">Percorra a lista com a barra de rolagem ou digite os primeiros dígitos com a lista aberta para localizar um número.</p>
     </div>
-    <div class="selection-actions"><button id="clearAdjustmentSelection" type="button" class="account-button" disabled>Limpar seleção</button><span class="hint">Catálogo com ajustes concedidos que possuem pagamentos O/R desde 2020.</span></div>
+    <div class="selection-actions"><button id="clearAdjustmentSelection" type="button" class="account-button" disabled>Limpar seleção</button><span class="hint">Catálogo permanente com os números de ajustes concedidos.</span></div>
     <input id="search" type="hidden" value="">
     <div id="suggestions" hidden></div>
     <select id="adjustmentYearFilter" hidden><option value="">Todos</option></select>
@@ -1309,65 +1309,6 @@ function parseISODate(value){
   if(date.getFullYear()!==Number(match[1])||date.getMonth()!==Number(match[2])-1||date.getDate()!==Number(match[3]))return null;
   return date;
 }
-function formatEmpenhoFromPaymentValue(value){
-  const raw=String(value??'').trim();
-  const match=raw.match(/^(\d{4})(\d{5})$/);
-  if(!match)return raw;
-  return match[2]+'/'+match[1];
-}
-function movementAmount(record){
-  const value=Number(record?.amount);
-  return Number.isFinite(value)?value:0;
-}
-function movementFields(record){
-  let fields=record?.fields??{};
-  if(typeof fields==='string'){try{fields=JSON.parse(fields);}catch{fields={};}}
-  return fields&&typeof fields==='object'&&!Array.isArray(fields)?fields:{};
-}
-function buildEmpenhoItem(record){
-  const fields=movementFields(record);
-  const year=String(fields['ANO-NE']||record.exercise||'').trim();
-  const number=String(fields['NUM-NE']||'').trim();
-  const rawCategory=String(record.category_code??fields.CAT??'').trim();
-  const amount=movementAmount(record);
-  const category=rawCategory==='3'?'custeio':rawCategory==='4'?'capital':'other';
-  const numberLabel=number&&year?number.padStart(5,'0')+'/'+year:(record.document_number||number||'—');
-  return {
-    record,fields,year,empenho:numberLabel,documentKey:record.document_key||((year&&number)?year+'|'+number:null),
-    source:sourceLabelFromFT(record.source_code??fields.FT),
-    c:category==='custeio'?amount:0,
-    cap:category==='capital'?amount:0,
-    other:category==='other'?amount:0,
-    total:amount,
-    annulment:String(fields.ANULACAO||'').trim()
-  };
-}
-function buildPaymentItem(record){
-  const fields=movementFields(record);
-  const amount=movementAmount(record);
-  const rawCategory=String(record.category_code??fields.CAT??'').trim();
-  const category=rawCategory==='3'?'custeio':rawCategory==='4'?'capital':'other';
-  const empValue=String(fields.EMPENHO||'').trim();
-  const empMatch=empValue.match(/^(\d{4})(\d{5})$/);
-  const linkedEmpKey=empMatch?empMatch[1]+'|'+empMatch[2]:null;
-  return {
-    record,fields,dt:parseISODate(record.date_value),
-    op:String(fields.OP||record.document_number||'').trim(),
-    documentKey:record.document_key||String(fields.OP||'').trim(),
-    ne:formatEmpenhoFromPaymentValue(empValue),
-    linkedEmpKey,
-    source:sourceLabelFromFT(record.source_code??fields.FT),
-    c:category==='custeio'?amount:0,
-    cap:category==='capital'?amount:0,
-    other:category==='other'?amount:0,
-    total:amount,
-    valid:record.is_valid_payment===true,
-    cancel:String(fields.CANC||'').trim(),
-    annulment:String(fields.ANULACAO||'').trim(),
-    transactionKind:String(fields['e/o/r']||'').trim().toUpperCase(),
-    accountingAdjustment:String(fields['ACERTO-ORC']||'').trim()
-  };
-}
 function formatAdjustmentNumber(value){
   const raw=String(value??'').trim();
   if(!raw)return raw;
@@ -1603,10 +1544,10 @@ function renderPayments(rows=currentPayments,result=payPageResult,allRecords=fal
     ['Registros na consulta','pay-summary-card net',totalCount.toLocaleString('pt-BR')+' pagamento(s)']
   ].map(([label,cls,value])=>'<div class="'+cls+'"><span>'+label+'</span><strong>'+value+'</strong></div>').join(''):'';
   if(!totalCount){
-    $('payTable').innerHTML='<div class="empty">Nenhum movimento O/R encontrado para este ajuste ou para os filtros selecionados.</div>';
+    $('payTable').innerHTML='<div class="empty">Nenhum pagamento encontrado no RET_FONTES.txt para este ajuste ou para os filtros selecionados.</div>';
     $('payPagination').innerHTML='';return;
   }
-  let html='<table><thead><tr><th>Data do pagamento (dt-bo)</th><th>OP</th><th>Empenho</th><th>Fonte</th><th>Custeio</th><th>Capital</th><th>Outros</th><th>Total do movimento</th><th>Situação</th></tr></thead><tbody>';
+  let html='<table><thead><tr><th>Data do pagamento (RET_FONTES)</th><th>OP</th><th>Empenho</th><th>Fonte</th><th>Custeio</th><th>Capital</th><th>Outros</th><th>Total do movimento</th><th>Situação</th></tr></thead><tbody>';
   for(const item of (rows||[])){
     const date=item.dt?item.dt.toLocaleDateString('pt-BR'):'—';
     const opLink=item.documentKey?'<button type="button" class="document-link" data-open-document="pagamento" data-document-key="'+esc(item.documentKey)+'" data-document-label="'+esc(item.op)+'">'+esc(item.op)+'</button>':esc(item.op);

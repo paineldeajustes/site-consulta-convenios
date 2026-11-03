@@ -329,3 +329,16 @@ Migração aplicada e versionada:
 - Código da interface: ambos os blocos JavaScript inline compilaram com sucesso na validação estática.
 - GitHub Pages run para o commit de código `9380f813016b5864721be342c3556aade8e65680`: `completed / success` (run `41553309778`). A atualização posterior é documental e de migração; conferir o run mais recente do Pages.
 - Continua pendente um teste funcional com sessão autenticada no navegador; a conversa não tinha uma sessão de usuário ativa para percorrer os controles pós-login.
+
+## Limpeza de armazenamento, catálogo de ajustes e refinamento visual — 03/11/2026
+
+- RET_FONTES e CadConvenios: limpas versões anteriores, preservada somente a importação mais recente success de cada TXT. Restam 9.471 linhas (1.153 RET + 8.318 Cad). Histórico de imports preservado.
+- ORCOM: removidos registros de imports failed e versões superseded/antigas; mantidas as últimas importações success por arquivo. Permanecem 449.304 movimentos (125.462 empenhos + 323.842 pagamentos). Histórico de imports preservado.
+- DELETE liberou registros lógicos, mas o espaço físico não diminui até VACUUM/autovacuum. O banco tinha 1.134 MB antes da limpeza; não foi possível medir novamente após o DELETE (SQL connector bloqueou consultas posteriores).
+- Catálogo `orcom_adjustment_catalog`: apenas adjustment_key, adjustment_number e refreshed_at. Atualização via função `refresh_orcom_adjustment_catalog()`, derivada do snapshot.
+- RPC `get_orcom_adjustment_catalog()` protegida por allowlist; anon sem execução.
+- Edge `import-orcom-movements` v23 atualiza snapshot e catálogo no final da rotina diária às 06h de Brasília (workflow existente já chama a ação).
+- Frontend: carregamento integral do catálogo (1.237 números), filtro local por teclado, detalhes carregados somente após seleção; removida paginação da seleção. Skin azul petróleo/teal refinada; botão manual “Atualizar dados agora” e fluxo removidos.
+- Controles de ano/letra e paginação antigos permanecem ocultos para compatibilidade da Visão Geral.
+- Scripts inline HTML passaram em verificação sintática. Teste autenticado e publicação Pages ainda pendentes.
+- Migrações: adjustment_catalog_and_test_data_cleanup; adjustment_catalog_list_rpc; secure_adjustment_catalog_rpc.

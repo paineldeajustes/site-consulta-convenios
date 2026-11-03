@@ -1070,7 +1070,7 @@ async function loadLatestFromSupabase(){
   if(!SUPABASE_PUBLIC_KEY || SUPABASE_PUBLIC_KEY === 'COLE_SUA_CHAVE_PUBLICA_AQUI'){
     $('status').hidden=false;$('status').textContent='Falta configurar a chave pública do Supabase no index.html.';return;
   }
-  $('status').hidden=false;$('status').textContent='Conectado. Carregando a primeira página de ajustes…';
+  $('status').hidden=false;$('status').textContent='Conectado. Carregando o catálogo permanente de ajustes…';
   try{
     headers=RET_SCHEMA.slice();allRows=[];currentRows=[];currentEmpenhos=[];currentPayments=[];currentMovementRows=[];
     currentEmpMovementRows=[];currentPayMovementRows=[];movementContext=null;movementContextCache.clear();retRowsCache.clear();
@@ -1724,6 +1724,7 @@ async function chooseConv(value){
   const requestId=++selectionRequestId;currentSelectedOption=found;
   try{
     const rec=await supabaseRpc('orcom_adjustment_metadata',{p_adjustment_number:found.cv});
+    if(requestId!==selectionRequestId)return;
     if(!rec||!rec.adjustment_key)throw new Error('Número não localizado no catálogo cadastral.');
     let meta=rec.fields;
     if(typeof meta==='string'){try{meta=JSON.parse(meta)}catch{meta={}}}
@@ -1733,7 +1734,7 @@ async function chooseConv(value){
     cadMetadataByKey.set(normalizeAdjustmentSearch(rec.adjustment_key),meta);
     cadMetadataByKey.set(normalizeAdjustmentSearch(found.cv),meta);
     currentSelectedOption={...found,key:rec.adjustment_key,metadata:meta};
-    selectionRows=[{...rec,_metadata:meta}];cadMetadataLoaded=true;
+    selectionRows=[{...rec,_metadata:meta}];cadMetadataLoaded=false;
   }catch(error){
     $('status').hidden=false;
     $('status').textContent='Não foi possível localizar os dados do ajuste selecionado: '+(error?.message||String(error));

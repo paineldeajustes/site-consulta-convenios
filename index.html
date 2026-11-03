@@ -1740,27 +1740,38 @@ $('search').addEventListener('keydown',e=>{
   } else if(e.key==='Escape') $('suggestions').hidden=true;
 });
 document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))$('suggestions').hidden=true;});
-$('dateFrom').addEventListener('change',()=>{payCurrentPage=1;renderPayments();});
-$('dateTo').addEventListener('change',()=>{payCurrentPage=1;renderPayments();});
-$('yearFilter').addEventListener('change',()=>{payCurrentPage=1;renderPayments();});
-$('quadrimFilter').addEventListener('change',()=>{payCurrentPage=1;renderPayments();});
+$('dateFrom').addEventListener('change',()=>{payCurrentPage=1;loadMovementPageForAdjustment('pagamento',1,selectionRequestId);});
+$('dateTo').addEventListener('change',()=>{payCurrentPage=1;loadMovementPageForAdjustment('pagamento',1,selectionRequestId);});
+$('yearFilter').addEventListener('change',()=>{payCurrentPage=1;loadMovementPageForAdjustment('pagamento',1,selectionRequestId);});
+$('quadrimFilter').addEventListener('change',()=>{payCurrentPage=1;loadMovementPageForAdjustment('pagamento',1,selectionRequestId);});
 ['empFilterYear','empFilterNumber','empFilterSource','empFilterCusteio','empFilterCapital']
-  .forEach(id=>$(id).addEventListener('change',()=>{empCurrentPage=1;renderEmpenhoTable(currentEmpenhos);}));
+  .forEach(id=>$(id).addEventListener('change',()=>{empCurrentPage=1;loadMovementPageForAdjustment('empenho',1,selectionRequestId);}));
 ['payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital']
-  .forEach(id=>$(id).addEventListener('change',()=>{payCurrentPage=1;renderPayments();}));
+  .forEach(id=>$(id).addEventListener('change',()=>{payCurrentPage=1;loadMovementPageForAdjustment('pagamento',1,selectionRequestId);}));
 $('clearDates').addEventListener('click',()=>{
   $('dateFrom').value='';$('dateTo').value='';$('yearFilter').value='';$('quadrimFilter').value='';
   ['payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital'].forEach(id=>$(id).value='');
-  payCurrentPage=1;renderPayments();
+  payCurrentPage=1;loadMovementPageForAdjustment('pagamento',1,selectionRequestId);
 });
-$('export').addEventListener('click',()=>{
- const rows=getFilteredPayments();
- const data=[['Data pagamento','OP','Empenho','Fonte','Custeio','Capital','Total pago'],
- ...rows.map(p=>[fmtDate(p.dt),p.op,p.ne,p.source,p.c.toFixed(2).replace('.',','),p.cap.toFixed(2).replace('.',','),p.total.toFixed(2).replace('.',',')])];
- const csv='\uFEFF'+data.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
- const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);
- const a=document.createElement('a');a.href=url;a.download='pagamentos_'+formatAdjustmentNumber($('conv').value).replace(/[^\w.-]+/g,'_')+'.csv';a.click();URL.revokeObjectURL(url);
-});
+async function exportAllPaymentsCSV(){
+  const button=$('export'),originalText=button.textContent;
+  button.disabled=true;button.textContent='Preparando CSV…';
+  try{
+    const result=await fetchAllMovementRows('pagamento',getMovementFilters('pagamento'));
+    const rows=(result.rows||[]).map(record=>buildPaymentItem({...record,fields:movementFields(record)}));
+    const data=[['Data pagamento','OP','Empenho','Fonte','Custeio','Capital','Total pago'],
+      ...rows.map(item=>[fmtDate(item.dt),item.op,item.ne,item.source,item.c.toFixed(2).replace('.',','),item.cap.toFixed(2).replace('.',','),item.total.toFixed(2).replace('.',',')])];
+    const csv='\uFEFF'+data.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='pagamentos_'+formatAdjustmentNumber($('conv').value).replace(/[^\w.-]+/g,'_')+'.csv';a.click();
+    URL.revokeObjectURL(url);
+    $('status').textContent='CSV exportado com '+rows.length.toLocaleString('pt-BR')+' pagamentos filtrados.';
+  }catch(error){$('status').textContent='Não foi possível exportar os pagamentos: '+(error?.message||String(error));}
+  finally{button.disabled=false;button.textContent=originalText;}
+}
+$('export').addEventListener('click',exportAllPaymentsCSV);
+
+
 function showAuthMessage(message,type='info'){
   const box=$('authMessage');
   box.textContent=message;

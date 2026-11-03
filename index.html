@@ -435,6 +435,7 @@ let selectionRows=[],retFontesImportId='',retRowsLoadedFor='',selectionRequestId
 let selectionPage=1,selectionTotalCount=0,selectionFacets={years:[],letters:[]},currentSelectedOption=null;
 let movementContext=null,movementContextCache=new Map();
 let currentEmpMovementRows=[],currentPayMovementRows=[],empPageResult=null,payPageResult=null;
+let movementPageRequestIds={empenho:0,pagamento:0};
 const MOVEMENT_PAGE_SIZE=100;
 const MOVEMENT_CACHE_LIMIT=20;
 let empCurrentPage=1,payCurrentPage=1;
@@ -919,45 +920,75 @@ async function loadRetRowsForAdjustment(code,requestId){
   retRowsCache.set(cacheKey,currentRows);
   retRowsLoadedFor=metadata?.join_key||normalizeAdjustmentSearch(formatAdjustmentNumber(code));
 }
-async function loadMovementDataForAdjustment(code,requestId){
+async function loadMovementContextForAdjustment(code,requestId){
   const metadata=cadMetadataFor(code);
   const adjustmentKey=metadata?.join_key||normalizeAdjustmentSearch(formatAdjustmentNumber(code));
-  if(!adjustmentKey)return;
-  if(movementDataCache.has(adjustmentKey)){
-    const cached=movementDataCache.get(adjustmentKey);
-    movementDataCache.delete(adjustmentKey);movementDataCache.set(adjustmentKey,cached);
-    currentMovementRows=cached.rows;
-    currentEmpenhos=cached.empenhos;
-    currentPayments=cached.payments;
-    layoutInfo.hasPayments=currentPayments.length>0;
-    movementDataLoadedFor=adjustmentKey;
-    return;
+  if(!adjustmentKey)return null;
+  if(movementContextCache.has(adjustmentKey)){
+    const cached=movementContextCache.get(adjustmentKey);
+    movementContextCache.delete(adjustmentKey);movementContextCache.set(adjustmentKey,cached);
+    movementContext=cached;return cached;
   }
-  const records=await supabaseGetAll(
-    'orcom_movement_rows?select=id,import_id,row_number,file_type,exercise,adjustment_key,document_key,document_number,fields,amount,category_code,source_code,transaction_kind,date_value,is_valid_payment&adjustment_key=eq.'+
-    encodeURIComponent(adjustmentKey)+'&order=file_type.asc,exercise.asc,row_number.asc',
-    1000
-  );
-  if(requestId!==selectionRequestId||$('conv').value!==code)return;
-  const visibleRecords=records.filter(record=>
-    record.file_type!=='pagamento'||Number(record.exercise)>=2020
-  );
-  currentMovementRows=visibleRecords.map(record=>({...record,fields:movementFields(record)}));
-  currentEmpenhos=currentMovementRows
-    .filter(record=>record.file_type==='empenho')
-    .map(buildEmpenhoItem);
-  currentPayments=currentMovementRows
-    .filter(record=>record.file_type==='pagamento'&&Number(record.exercise)>=2020&&['O','R'].includes(String(record.transaction_kind||'').toUpperCase()))
-    .map(buildPaymentItem)
-    .sort((a,b)=>(b.dt?.getTime()||0)-(a.dt?.getTime()||0));
-  layoutInfo.hasPayments=currentPayments.length>0;
-  movementDataLoadedFor=adjustmentKey;
-  cacheMovementData(adjustmentKey,{
-    rows:currentMovementRows,
-    empenhos:currentEmpenhos,
-    payments:currentPayments
-  });
+  const context=await supabaseRpc('orcom_adjustment_movement_context',{p_adjustment_key:adjustmentKey});
+  if(requestId!==selectionRequestId||$('conv').value!==code)return null;
+  movementContext=context;cacheMovementContext(adjustmentKey,context);return context;
 }
+function getMovementFilters(fileType){
+  if(fileType==='empenho')return {
+    year:$('empFilterYear').value||null,number:$('empFilterNumber').value||null,
+    source:$('empFilterSource').value||null,custeio:$('empFilterCusteio').value||null,
+    capital:$('empFilterCapital').value||null
+  };
+  return {
+    year:$('yearFilter').value||null,quadrimester:$('quadrimFilter').value||null,
+    op:$('payFilterOP').value||null,number:$('payFilterEmpenho').value||null,
+    source:$('payFilterFonte').value||null,custeio:$('payFilterCusteio').value||null,
+    capital:$('payFilterCapital').value||null,date_from:$('dateFrom').value||null,date_to:$('dateTo').value||null
+  };
+}
+async function loadMovementPageForAdjustment(fileType,page=1,selectionRequest=selectionRequestId,options={}){
+  const code=$('conv').value,metadata=cadMetadataFor(code);
+  const adjustmentKey=metadata?.join_key||normalizeAdjustmentSearch(formatAdjustmentNumber(code));
+  if(!adjustmentKey)return null;
+  const requestId=++movementPageRequestIds[fileType];
+  const result=await supabaseRpc('orcom_adjustment_movement_page',{
+    p_adjustment_key:adjustmentKey,p_file_type:fileType,p_page:page,
+    p_page_size:options.pageSize||MOVEMENT_PAGE_SIZE,
+    p_filters:options.filters||getMovementFilters(fileType)
+  });
+  if(selectionRequest!==selectionRequestId||requestId!==movementPageRequestIds[fileType]||$('conv').value!==code)return null;
+  const records=Array.isArray(result.rows)?result.rows:[];
+  if(fileType==='empenho'){
+    currentEmpMovementRows=records;
+    currentEmpenhos=records.map(record=>buildEmpenhoItem({...record,fields:movementFields(record)}));
+    empPageResult=result;empCurrentPage=Number(result.page||page);
+    renderEmpenhoTable(currentEmpenhos,empPageResult,options.allRecords===true);
+  }else{
+    currentPayMovementRows=records;
+    currentPayments=records.map(record=>buildPaymentItem({...record,fields:movementFields(record)}));
+    payPageResult=result;payCurrentPage=Number(result.page||page);
+    renderPayments(currentPayments,payPageResult,options.allRecords===true);
+  }
+  currentMovementRows=[...currentEmpMovementRows,...currentPayMovementRows];
+  return result;
+}
+async function fetchAllMovementRows(fileType,filters=null){
+  const allRows=[];let page=1,firstResult=null;
+  const pageSize=1000;
+  while(true){
+    const result=await supabaseRpc('orcom_adjustment_movement_page',{
+      p_adjustment_key:cadMetadataFor($('conv').value)?.join_key||normalizeAdjustmentSearch(formatAdjustmentNumber($('conv').value)),
+      p_file_type:fileType,p_page:page,p_page_size:pageSize,p_filters:filters||getMovementFilters(fileType)
+    });
+    if(!firstResult)firstResult=result;
+    const rows=Array.isArray(result.rows)?result.rows:[];
+    allRows.push(...rows);
+    if(allRows.length>=Number(result.total_count||0)||rows.length===0)break;
+    page++;
+  }
+  return {...(firstResult||{}),rows:allRows,total_count:Number(firstResult?.total_count||allRows.length)};
+}
+
 
 async function loadLatestFromSupabase(){
   if(!SUPABASE_PUBLIC_KEY || SUPABASE_PUBLIC_KEY === 'COLE_SUA_CHAVE_PUBLICA_AQUI'){
@@ -1320,224 +1351,72 @@ function resetColumnFilters(){
    'payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital'
   ].forEach(id=>{if($(id))$(id).value='';});
 }
-function configureEmpenhoColumnFilters(rows){
-  populateColumnSelect('empFilterYear',rows.map(item=>item.year),'Todos os anos');
-  populateColumnSelect('empFilterNumber',rows.map(item=>item.empenho),'Todos os empenhos');
-  populateColumnSelect('empFilterSource',rows.map(item=>item.source),'Todas as fontes');
-  populateColumnSelect('empFilterCusteio',rows.map(item=>item.c),'Todos os valores de custeio',value=>money(value));
-  populateColumnSelect('empFilterCapital',rows.map(item=>item.cap),'Todos os valores de capital',value=>money(value));
+function setRawFacetOptions(id,values,emptyLabel,formatter=value=>value){
+  const control=$(id);if(!control)return;
+  const previous=control.value;
+  const unique=[...new Set((values||[]).filter(value=>value!==null&&value!==undefined&&String(value)!=='').map(value=>String(value)))];
+  control.innerHTML='<option value="">'+esc(emptyLabel)+'</option>'+
+    unique.map(value=>'<option value="'+esc(value)+'">'+esc(formatter(value))+'</option>').join('');
+  control.value=unique.includes(previous)?previous:'';
+  control.disabled=unique.length===0;
 }
-function renderTablePagination(containerId,currentPage,totalRows,onPageChange){
-  const container=$(containerId);
-  if(!container)return;
-  if(!totalRows){container.innerHTML='';return;}
-  const totalPages=Math.max(1,Math.ceil(totalRows/MOVEMENT_PAGE_SIZE));
-  const first=((currentPage-1)*MOVEMENT_PAGE_SIZE)+1;
-  const last=Math.min(currentPage*MOVEMENT_PAGE_SIZE,totalRows);
-  const button=(label,page,disabled,aria)=>'<button type="button" data-page="'+page+'" aria-label="'+aria+'" '+(disabled?'disabled':'')+'>'+label+'</button>';
-  const actions=totalPages>1
-    ?'<div class="table-pagination-actions">'+
-      button('«',1,currentPage===1,'Primeira página')+
-      button('‹',currentPage-1,currentPage===1,'Página anterior')+
-      '<span class="table-pagination-page">Página '+currentPage.toLocaleString('pt-BR')+' de '+totalPages.toLocaleString('pt-BR')+'</span>'+
-      button('›',currentPage+1,currentPage===totalPages,'Próxima página')+
-      button('»',totalPages,currentPage===totalPages,'Última página')+
-      '</div>'
-    :'<span class="table-pagination-page">Página 1 de 1</span>';
-  container.innerHTML='<span>Exibindo '+first.toLocaleString('pt-BR')+'–'+last.toLocaleString('pt-BR')+
-    ' de '+totalRows.toLocaleString('pt-BR')+' registros. Os totais consideram todos os registros filtrados.</span>'+actions;
-  container.querySelectorAll('button[data-page]').forEach(button=>{
-    button.addEventListener('click',()=>onPageChange(Number(button.getAttribute('data-page'))));
-  });
-}
-function getFilteredEmpenhos(rows){
-  const items=rows.map(row=>({...row,total:Number(row.total)||0}));
-  return items.filter(item=>
-    filterMatches(item.year,$('empFilterYear').value)&&
-    filterMatches(item.empenho,$('empFilterNumber').value)&&
-    filterMatches(item.source,$('empFilterSource').value)&&
-    moneyMatches(item.c,$('empFilterCusteio').value)&&
-    moneyMatches(item.cap,$('empFilterCapital').value)
-  );
-}
-function renderEmpenhoTable(rows){
-  const container=$('empTable');
-  configureEmpenhoColumnFilters(rows);
-  if(!rows.length){
-    container.innerHTML='<div class="empty">Nenhum empenho encontrado para este ajuste nos arquivos importados.</div>';
-    $('empPagination').innerHTML='';
-    return;
-  }
-  const filtered=getFilteredEmpenhos(rows);
-  if(!filtered.length){
-    container.innerHTML='<div class="empty">Nenhum empenho encontrado para os filtros selecionados.</div>';
-    $('empPagination').innerHTML='';
-    return;
-  }
-  const totalPages=Math.max(1,Math.ceil(filtered.length/MOVEMENT_PAGE_SIZE));
-  empCurrentPage=Math.min(Math.max(1,empCurrentPage),totalPages);
-  const pageStart=(empCurrentPage-1)*MOVEMENT_PAGE_SIZE;
-  const pageRows=filtered.slice(pageStart,pageStart+MOVEMENT_PAGE_SIZE);
-  const byYear=new Map();
-  for(const item of pageRows){
-    if(!byYear.has(item.year))byYear.set(item.year,[]);
-    byYear.get(item.year).push(item);
-  }
-  const years=[...byYear.keys()].sort((a,b)=>Number(a)-Number(b));
-  let html='<table><thead><tr><th>Ano</th><th>Empenho</th><th>Fonte</th><th>Custeio</th><th>Capital</th><th>Outros</th><th>Total</th></tr></thead><tbody>';
-  let grandC=0,grandCap=0,grandOther=0,grandTotal=0;
-  for(const item of filtered){grandC+=item.c;grandCap+=item.cap;grandOther+=item.other;grandTotal+=item.total;}
-  for(const year of years){
-    const details=byYear.get(year);
-    const yearDetails=filtered.filter(item=>String(item.year)===String(year));
-    const totalC=yearDetails.reduce((sum,item)=>sum+item.c,0);
-    const totalCap=yearDetails.reduce((sum,item)=>sum+item.cap,0);
-    const totalOther=yearDetails.reduce((sum,item)=>sum+item.other,0);
-    const total=yearDetails.reduce((sum,item)=>sum+item.total,0);
-    html+='<tr class="year-total"><td colspan="3">TOTAL DO ANO '+esc(year)+' (filtro atual)</td><td class="num">'+esc(money(totalC))+'</td><td class="num">'+esc(money(totalCap))+'</td><td class="num">'+esc(money(totalOther))+'</td><td class="num">'+esc(money(total))+'</td></tr>';
-    const bySource=new Map();
-    for(const item of details){
-      if(!bySource.has(item.source))bySource.set(item.source,[]);
-      bySource.get(item.source).push(item);
-    }
-    const sources=[...bySource.keys()].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-    for(const source of sources){
-      const sourceItems=bySource.get(source).sort((a,b)=>a.empenho.localeCompare(b.empenho,'pt-BR',{numeric:true}));
-      const sourceCount=filtered.filter(item=>String(item.year)===String(year)&&item.source===source).length;
-      html+='<tr class="source-group"><td colspan="7">FONTE: '+esc(source)+' · '+sourceCount.toLocaleString('pt-BR')+' registro(s) no filtro</td></tr>';
-      for(const item of sourceItems){
-        const link=item.documentKey
-          ?'<button type="button" class="document-link" data-open-document="empenho" data-document-key="'+esc(item.documentKey)+'" data-document-label="'+esc(item.empenho)+'">'+esc(item.empenho)+'</button>'
-          :esc(item.empenho);
-        const status=item.annulment?' · Anulação':'';
-        html+='<tr class="emp-detail"><td>'+esc(item.year)+'</td><td>'+link+esc(status)+'</td><td>'+esc(item.source)+'</td><td class="num">'+esc(money(item.c))+'</td><td class="num">'+esc(money(item.cap))+'</td><td class="num">'+esc(money(item.other))+'</td><td class="num">'+esc(money(item.total))+'</td></tr>';
-      }
-    }
-  }
-  html+='</tbody><tfoot><tr><td colspan="3">TOTAL GERAL FILTRADO ('+filtered.length.toLocaleString('pt-BR')+' registros)</td><td class="num">'+esc(money(grandC))+'</td><td class="num">'+esc(money(grandCap))+'</td><td class="num">'+esc(money(grandOther))+'</td><td class="num">'+esc(money(grandTotal))+'</td></tr></tfoot></table>';
-  container.innerHTML=html;
-  renderTablePagination('empPagination',empCurrentPage,filtered.length,page=>{empCurrentPage=page;renderEmpenhoTable(currentEmpenhos);});
-}
-function render(){
-  const cv=$('conv').value;
-  updateFichaButtonVisibility();
-  if(!cv)return;
-  if(activeAdjustmentFilterCode!==cv){
-    resetColumnFilters();
-    empCurrentPage=1;payCurrentPage=1;
-    activeAdjustmentFilterCode=cv;
-  }
-  const normalizedCode=normalizeAdjustmentSearch(formatAdjustmentNumber(cv));
-  // currentRows é carregado sob demanda a partir do RET_FONTES, somente para o ajuste selecionado.
-  const metadata=cadMetadataFor(cv);
-  const entity=metadata?.entity||metadata?.extra_fields?.['R-SOCIAL']||
-    currentRows.map(row=>String(get(row,'ENTIDADE')).trim()).find(Boolean)||'—';
-  $('mConv').textContent=formatAdjustmentNumber(cv);
-  $('mEnt').textContent=entity;
-  renderCadMetadata(cv);
-
-  const recMap=new Map();
-  function recAdd(source,field,value){
-    const key=String(source||'Não informada');
-    if(!recMap.has(key))recMap.set(key,{source:key,initial:0,additions:0,registered:0,emp:0,paid:0});
-    recMap.get(key)[field]+=Number(value)||0;
-  }
-  for(const row of currentRows){
-    const tpcad=norm(get(row,'TPCAD'));
-    const source=get(row,'TPFOTE');
-    if(String(source??'').trim()&&(tpcad==='V'||tpcad==='A')){
-      const field=tpcad==='V'?'initial':'additions';
-      recAdd(sourceLabel(source),field,num(get(row,'VL-CUSTEIO'))+num(get(row,'VL-REFORMA'))+num(get(row,'VL-BEM')));
-    }
-  }
-  for(const item of currentEmpenhos){
-    recAdd(sourceBroadLabelFromFT(item.record.source_code), 'emp', item.total);
-  }
-  for(const item of currentPayments){
-    if(item.valid)recAdd(sourceBroadLabelFromFT(item.record.source_code),'paid',item.total);
-  }
-  const recon=[...recMap.values()].map(item=>({
-    ...item,
-    registered:item.initial+item.additions,
-    uncommitted:item.initial+item.additions-item.emp,
-    empPaidBalance:item.emp-item.paid
-  })).sort((a,b)=>a.source.localeCompare(b.source,'pt-BR'));
-  renderReconVertical(recon);
-
-  const cad=aggregate(
-    currentRows.filter(row=>String(get(row,'TPFOTE')).trim()!==''),
-    row=>sourceLabel(get(row,'TPFOTE')),
-    row=>{
-      const c=num(get(row,'VL-CUSTEIO'))+num(get(row,'VL-REFORMA'));
-      const cap=num(get(row,'VL-BEM'));
-      return {c,cap,total:c+cap};
-    }
-  );
-  makeTable('cadTable',[
-    {label:'Fonte',get:row=>row.key},
-    {label:'Custeio',num:true,get:row=>money(row.c)},
-    {label:'Capital',num:true,get:row=>money(row.cap)},
-    {label:'Total',num:true,get:row=>money(row.total)}
-  ],cad,'Não há valores cadastrados com fonte preenchida.');
-  renderCadAmendments(currentRows);
-  renderEmpenhoTable(currentEmpenhos);
-
-  const totalEmpenhado=currentEmpenhos.reduce((sum,item)=>sum+item.total,0);
-  const totalInicial=recon.reduce((sum,item)=>sum+item.initial,0);
-  const totalAditamentos=recon.reduce((sum,item)=>sum+item.additions,0);
-  const totalCadastrado=totalInicial+totalAditamentos;
-  const totalPago=currentPayments.filter(item=>item.valid).reduce((sum,item)=>sum+item.total,0);
-  const saldoAjuste=totalCadastrado-totalEmpenhado;
-  const saldoAPagar=totalEmpenhado-totalPago;
-  $('mCadInicial').textContent=money(totalInicial);
-  $('mCadAditamentos').textContent=money(totalAditamentos);
-  $('mTotalCadastrado').textContent=money(totalCadastrado);
-  $('mEmp').textContent=money(totalEmpenhado);
-  $('mSaldo').textContent=money(saldoAjuste);
-  $('saldoAjusteCard').classList.toggle('negative-balance',isNegativeMoney(saldoAjuste));
-  $('mPago').textContent=layoutInfo.hasPayments?money(totalPago):'Não disponível';
-  $('mSaldoPagar').textContent=layoutInfo.hasPayments?money(saldoAPagar):'Não disponível';
-
-  $('dateFrom').value='';$('dateTo').value='';
-  configurePaymentFilters();
-  $('dateFrom').disabled=!layoutInfo.hasPayments;
-  $('dateTo').disabled=!layoutInfo.hasPayments;
-  $('clearDates').disabled=!layoutInfo.hasPayments;
-  $('export').disabled=!layoutInfo.hasPayments;
-  renderPayments();
+function configureEmpenhoColumnFilters(){
+  const facets=movementContext?.facets?.empenhos||{};
+  setRawFacetOptions('empFilterYear',facets.years,'Todos os anos');
+  setRawFacetOptions('empFilterNumber',facets.numbers,'Todos os empenhos');
+  setRawFacetOptions('empFilterSource',facets.sources,'Todas as fontes',sourceLabelFromFT);
+  setRawFacetOptions('empFilterCusteio',facets.custeio,'Todos os valores de custeio',value=>money(value));
+  setRawFacetOptions('empFilterCapital',facets.capital,'Todos os valores de capital',value=>money(value));
 }
 function configurePaymentFilters(){
-  const yearControl=$('yearFilter');
-  const years=[...new Set(currentPayments.map(item=>item.dt?item.dt.getFullYear():null).filter(Boolean))].sort((a,b)=>b-a);
-  yearControl.innerHTML='<option value="">Todos os anos</option>'+years.map(year=>'<option value="'+year+'">'+year+'</option>').join('');
-  yearControl.value='';
+  const facets=movementContext?.facets?.pagamentos||{};
+  setRawFacetOptions('yearFilter',facets.years,'Todos os anos');
+  setRawFacetOptions('payFilterOP',facets.ops,'Todas as OPs');
+  setRawFacetOptions('payFilterEmpenho',facets.empenhos,'Todos os empenhos');
+  setRawFacetOptions('payFilterFonte',facets.sources,'Todas as fontes',sourceLabelFromFT);
+  setRawFacetOptions('payFilterCusteio',facets.custeio,'Todos os valores de custeio',value=>money(value));
+  setRawFacetOptions('payFilterCapital',facets.capital,'Todos os valores de capital',value=>money(value));
   $('quadrimFilter').value='';
-  yearControl.disabled=!layoutInfo.hasPayments;
-  $('quadrimFilter').disabled=!layoutInfo.hasPayments;
-  populateColumnSelect('payFilterOP',currentPayments.map(item=>item.op),'Todas as OPs');
-  populateColumnSelect('payFilterEmpenho',currentPayments.map(item=>item.ne),'Todos os empenhos');
-  populateColumnSelect('payFilterFonte',currentPayments.map(item=>item.source),'Todas as fontes');
-  populateColumnSelect('payFilterCusteio',currentPayments.map(item=>item.c),'Todos os valores de custeio',value=>money(value));
-  populateColumnSelect('payFilterCapital',currentPayments.map(item=>item.cap),'Todos os valores de capital',value=>money(value));
-  ['payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital']
-    .forEach(id=>{if($(id))$(id).disabled=!layoutInfo.hasPayments;});
+  const enabled=Number(movementContext?.summary?.pagamento_count||0)>0;
+  ['yearFilter','quadrimFilter','dateFrom','dateTo','clearDates','export','payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital']
+    .forEach(id=>{if($(id))$(id).disabled=!enabled;});
 }
-function getFilteredPayments(){
-  const from=$('dateFrom').value?new Date($('dateFrom').value+'T00:00:00'):null;
-  const to=$('dateTo').value?new Date($('dateTo').value+'T23:59:59'):null;
-  const selectedYear=$('yearFilter').value;
-  const selectedQuad=$('quadrimFilter').value;
-  return currentPayments.filter(item=>
-    (!from||(item.dt&&item.dt>=from))&&
-    (!to||(item.dt&&item.dt<=to))&&
-    (!selectedYear||(item.dt&&item.dt.getFullYear()===Number(selectedYear)))&&
-    (!selectedQuad||(item.dt&&Math.floor(item.dt.getMonth()/4)+1===Number(selectedQuad)))&&
-    filterMatches(item.op,$('payFilterOP').value)&&
-    filterMatches(item.ne,$('payFilterEmpenho').value)&&
-    filterMatches(item.source,$('payFilterFonte').value)&&
-    moneyMatches(item.c,$('payFilterCusteio').value)&&
-    moneyMatches(item.cap,$('payFilterCapital').value)
-  );
+function renderTablePagination(containerId,currentPage,totalRows,onPageChange){
+  const container=$(containerId);if(!container)return;
+  if(!totalRows){container.innerHTML='';return;}
+  const totalPages=Math.max(1,Math.ceil(totalRows/MOVEMENT_PAGE_SIZE));
+  const first=((currentPage-1)*MOVEMENT_PAGE_SIZE)+1,last=Math.min(currentPage*MOVEMENT_PAGE_SIZE,totalRows);
+  const button=(label,page,disabled,aria)=>'<button type="button" data-page="'+page+'" aria-label="'+aria+'" '+(disabled?'disabled':'')+'>'+label+'</button>';
+  const actions=totalPages>1?'<div class="table-pagination-actions">'+
+    button('«',1,currentPage===1,'Primeira página')+button('‹',currentPage-1,currentPage===1,'Página anterior')+
+    '<span class="table-pagination-page">Página '+currentPage.toLocaleString('pt-BR')+' de '+totalPages.toLocaleString('pt-BR')+'</span>'+
+    button('›',currentPage+1,currentPage===totalPages,'Próxima página')+button('»',totalPages,currentPage===totalPages,'Última página')+'</div>':
+    '<span class="table-pagination-page">Página 1 de 1</span>';
+  container.innerHTML='<span>Exibindo '+first.toLocaleString('pt-BR')+'–'+last.toLocaleString('pt-BR')+
+    ' de '+totalRows.toLocaleString('pt-BR')+' registros. Os totais consideram todos os registros filtrados.</span>'+actions;
+  container.querySelectorAll('button[data-page]').forEach(button=>button.addEventListener('click',()=>onPageChange(Number(button.getAttribute('data-page')))));
+}
+function movementTotals(result){return result?.totals||{};}
+function renderEmpenhoTable(rows=currentEmpenhos,result=empPageResult,allRecords=false){
+  const container=$('empTable'),totals=movementTotals(result),totalCount=Number(result?.total_count||0);
+  if(!totalCount){
+    container.innerHTML='<div class="empty">Nenhum empenho encontrado para este ajuste ou para os filtros selecionados.</div>';
+    $('empPagination').innerHTML='';return;
+  }
+  let html='<table><thead><tr><th>Ano</th><th>Empenho</th><th>Fonte</th><th>Custeio</th><th>Capital</th><th>Outros</th><th>Total</th></tr></thead><tbody>';
+  for(const item of (rows||[])){
+    const link=item.documentKey?'<button type="button" class="document-link" data-open-document="empenho" data-document-key="'+esc(item.documentKey)+'" data-document-label="'+esc(item.empenho)+'">'+esc(item.empenho)+'</button>':esc(item.empenho);
+    html+='<tr class="emp-detail"><td>'+esc(item.year)+'</td><td>'+link+(item.annulment?' · Anulação':'')+'</td><td>'+esc(item.source)+'</td>'+
+      '<td class="num">'+esc(money(item.c))+'</td><td class="num">'+esc(money(item.cap))+'</td><td class="num">'+esc(money(item.other))+'</td><td class="num">'+esc(money(item.total))+'</td></tr>';
+  }
+  html+='</tbody><tfoot><tr><td colspan="3">TOTAL GERAL FILTRADO ('+totalCount.toLocaleString('pt-BR')+' registros)</td>'+
+    '<td class="num">'+esc(money(totals.total_custeio))+'</td><td class="num">'+esc(money(totals.total_capital))+'</td>'+
+    '<td class="num">'+esc(money(totals.total_other))+'</td><td class="num">'+esc(money(totals.total_amount))+'</td></tr></tfoot></table>';
+  container.innerHTML=html;
+  if(allRecords){$('empPagination').innerHTML='';return;}
+  renderTablePagination('empPagination',Number(result?.page||empCurrentPage),totalCount,page=>{
+    empCurrentPage=page;loadMovementPageForAdjustment('empenho',page,selectionRequestId);
+  });
 }
 function paymentSituation(item){
   if(item.cancel)return 'Cancelamento';
@@ -1547,53 +1426,89 @@ function paymentSituation(item){
   if(!item.dt)return 'Sem data de baixa válida';
   return 'Não computado no líquido';
 }
-function renderPayments(){
-  const rows=getFilteredPayments();
-  const totalPages=Math.max(1,Math.ceil(rows.length/MOVEMENT_PAGE_SIZE));
-  payCurrentPage=Math.min(Math.max(1,payCurrentPage),totalPages);
-  const pageStart=(payCurrentPage-1)*MOVEMENT_PAGE_SIZE;
-  const pageRows=rows.slice(pageStart,pageStart+MOVEMENT_PAGE_SIZE);
-  const rangeLabel=rows.length
-    ?'Exibindo '+(pageStart+1).toLocaleString('pt-BR')+'–'+Math.min(pageStart+MOVEMENT_PAGE_SIZE,rows.length).toLocaleString('pt-BR')+' de '+rows.length.toLocaleString('pt-BR')
-    :'0 de 0';
-  $('payCount').textContent=rangeLabel+' movimentos O/R (filtro atual)';
-  const gross=rows.reduce((sum,item)=>sum+item.total,0);
-  const net=rows.filter(item=>item.valid).reduce((sum,item)=>sum+item.total,0);
-  const exceptions=rows.filter(item=>!item.valid).length;
-  $('paySummary').hidden=rows.length===0;
-  $('paySummary').innerHTML=rows.length?[
+function renderPayments(rows=currentPayments,result=payPageResult,allRecords=false){
+  const totals=movementTotals(result),totalCount=Number(result?.total_count||0);
+  const page=Number(result?.page||payCurrentPage),pageSize=Number(result?.page_size||MOVEMENT_PAGE_SIZE);
+  const first=totalCount?(page-1)*pageSize+1:0,last=Math.min(page*pageSize,totalCount);
+  $('payCount').textContent=totalCount?'Exibindo '+first.toLocaleString('pt-BR')+'–'+last.toLocaleString('pt-BR')+' de '+totalCount.toLocaleString('pt-BR')+' movimentos O/R':'0 movimentos O/R';
+  const exceptions=Number(totals.exceptions||0),gross=Number(totals.total_amount||0),net=Number(totals.total_valid||0);
+  $('paySummary').hidden=!totalCount;
+  $('paySummary').innerHTML=totalCount?[
     ['Movimento bruto (com sinais)','pay-summary-card',money(gross)],
     ['Total líquido válido','pay-summary-card net',money(net)],
     ['Cancelamentos, anulações ou exceções','pay-summary-card warning',exceptions.toLocaleString('pt-BR')+' registro(s)']
   ].map(([label,cls,value])=>'<div class="'+cls+'"><span>'+label+'</span><strong>'+value+'</strong></div>').join(''):'';
-  if(!rows.length){
-    $('payTable').innerHTML='<div class="empty">'+(currentPayments.length?'Nenhum pagamento encontrado para os filtros selecionados.':'Nenhum movimento O/R encontrado para este ajuste nos arquivos importados.')+'</div>';
-    $('payPagination').innerHTML='';
-    return;
+  if(!totalCount){
+    $('payTable').innerHTML='<div class="empty">Nenhum movimento O/R encontrado para este ajuste ou para os filtros selecionados.</div>';
+    $('payPagination').innerHTML='';return;
   }
   let html='<table><thead><tr><th>Data do pagamento (dt-bo)</th><th>OP</th><th>Empenho</th><th>Fonte</th><th>Custeio</th><th>Capital</th><th>Outros</th><th>Total do movimento</th><th>Situação</th></tr></thead><tbody>';
-  for(const item of pageRows){
+  for(const item of (rows||[])){
     const date=item.dt?item.dt.toLocaleDateString('pt-BR'):'—';
-    const opLink=item.documentKey
-      ?'<button type="button" class="document-link" data-open-document="pagamento" data-document-key="'+esc(item.documentKey)+'" data-document-label="'+esc(item.op)+'">'+esc(item.op)+'</button>'
-      :esc(item.op);
-    const empLink=item.linkedEmpKey
-      ?'<button type="button" class="document-link" data-open-document="empenho" data-document-key="'+esc(item.linkedEmpKey)+'" data-document-label="'+esc(item.ne)+'">'+esc(item.ne)+'</button>'
-      :esc(item.ne||'—');
-    const situation=paymentSituation(item);
+    const opLink=item.documentKey?'<button type="button" class="document-link" data-open-document="pagamento" data-document-key="'+esc(item.documentKey)+'" data-document-label="'+esc(item.op)+'">'+esc(item.op)+'</button>':esc(item.op);
+    const empLink=item.linkedEmpKey?'<button type="button" class="document-link" data-open-document="empenho" data-document-key="'+esc(item.linkedEmpKey)+'" data-document-label="'+esc(item.ne)+'">'+esc(item.ne)+'</button>':esc(item.ne||'—');
     html+='<tr><td>'+esc(date)+'</td><td>'+opLink+'</td><td>'+empLink+'</td><td>'+esc(item.source)+'</td>'+
       '<td class="num">'+esc(money(item.c))+'</td><td class="num">'+esc(money(item.cap))+'</td><td class="num">'+esc(money(item.other))+'</td>'+
-      '<td class="num">'+esc(money(item.total))+'</td><td>'+esc(situation)+'</td></tr>';
+      '<td class="num">'+esc(money(item.total))+'</td><td>'+esc(paymentSituation(item))+'</td></tr>';
   }
-  const totalC=rows.reduce((sum,item)=>sum+item.c,0);
-  const totalCap=rows.reduce((sum,item)=>sum+item.cap,0);
-  const totalOther=rows.reduce((sum,item)=>sum+item.other,0);
-  html+='</tbody><tfoot><tr><td colspan="4">TOTAL BRUTO DOS MOVIMENTOS FILTRADOS ('+rows.length.toLocaleString('pt-BR')+' linhas)</td>'+
-    '<td class="num">'+esc(money(totalC))+'</td><td class="num">'+esc(money(totalCap))+'</td><td class="num">'+esc(money(totalOther))+'</td><td class="num">'+esc(money(gross))+'</td><td>—</td></tr>'+
+  html+='</tbody><tfoot><tr><td colspan="4">TOTAL BRUTO DOS MOVIMENTOS FILTRADOS ('+totalCount.toLocaleString('pt-BR')+' linhas)</td>'+
+    '<td class="num">'+esc(money(totals.total_custeio))+'</td><td class="num">'+esc(money(totals.total_capital))+'</td>'+
+    '<td class="num">'+esc(money(totals.total_other))+'</td><td class="num">'+esc(money(gross))+'</td><td>—</td></tr>'+
     '<tr><td colspan="7">TOTAL LÍQUIDO VÁLIDO (O/R, valor positivo, dt-bo válida, sem cancelamento/anulação/acerto)</td><td class="num">'+esc(money(net))+'</td><td>—</td></tr></tfoot></table>';
   $('payTable').innerHTML=html;
-  renderTablePagination('payPagination',payCurrentPage,rows.length,page=>{payCurrentPage=page;renderPayments();});
+  if(allRecords){$('payPagination').innerHTML='';return;}
+  renderTablePagination('payPagination',page,totalCount,nextPage=>{
+    payCurrentPage=nextPage;loadMovementPageForAdjustment('pagamento',nextPage,selectionRequestId);
+  });
 }
+function render(){
+  const cv=$('conv').value;updateFichaButtonVisibility();if(!cv)return;
+  if(activeAdjustmentFilterCode!==cv){resetColumnFilters();empCurrentPage=1;payCurrentPage=1;activeAdjustmentFilterCode=cv;}
+  const metadata=cadMetadataFor(cv);
+  const entity=metadata?.entity||metadata?.extra_fields?.['R-SOCIAL']||currentRows.map(row=>String(get(row,'ENTIDADE')).trim()).find(Boolean)||'—';
+  $('mConv').textContent=formatAdjustmentNumber(cv);$('mEnt').textContent=entity;renderCadMetadata(cv);
+  const recMap=new Map();
+  function recAdd(source,field,value){
+    const key=String(source||'Não informada');
+    if(!recMap.has(key))recMap.set(key,{source:key,initial:0,additions:0,registered:0,emp:0,paid:0});
+    recMap.get(key)[field]+=Number(value)||0;
+  }
+  for(const row of currentRows){
+    const tpcad=norm(get(row,'TPCAD')),source=get(row,'TPFOTE');
+    if(String(source??'').trim()&&(tpcad==='V'||tpcad==='A')){
+      const field=tpcad==='V'?'initial':'additions';
+      recAdd(sourceLabel(source),field,num(get(row,'VL-CUSTEIO'))+num(get(row,'VL-REFORMA'))+num(get(row,'VL-BEM')));
+    }
+  }
+  for(const source of (movementContext?.sources||[])){
+    const label=sourceBroadLabelFromFT(source.source_code);
+    recAdd(label,'emp',source.total_empenhado);recAdd(label,'paid',source.total_pago_valido);
+  }
+  const recon=[...recMap.values()].map(item=>({...item,registered:item.initial+item.additions,uncommitted:item.initial+item.additions-item.emp,empPaidBalance:item.emp-item.paid})).sort((a,b)=>a.source.localeCompare(b.source,'pt-BR'));
+  renderReconVertical(recon);
+  const cad=aggregate(
+    currentRows.filter(row=>String(get(row,'TPFOTE')).trim()!==''),
+    row=>sourceLabel(get(row,'TPFOTE')),
+    row=>{const c=num(get(row,'VL-CUSTEIO'))+num(get(row,'VL-REFORMA'));const cap=num(get(row,'VL-BEM'));return {c,cap,total:c+cap};}
+  );
+  makeTable('cadTable',[
+    {label:'Fonte',get:row=>row.key},{label:'Custeio',num:true,get:row=>money(row.c)},
+    {label:'Capital',num:true,get:row=>money(row.cap)},{label:'Total',num:true,get:row=>money(row.total)}
+  ],cad,'Não há valores cadastrados com fonte preenchida.');
+  renderCadAmendments(currentRows);
+  configureEmpenhoColumnFilters();configurePaymentFilters();
+  renderEmpenhoTable(currentEmpenhos,empPageResult);renderPayments(currentPayments,payPageResult);
+  const summary=movementContext?.summary||{},totalEmpenhado=Number(summary.total_empenhado||0);
+  const totalInicial=recon.reduce((sum,item)=>sum+item.initial,0),totalAditamentos=recon.reduce((sum,item)=>sum+item.additions,0);
+  const totalCadastrado=totalInicial+totalAditamentos,totalPago=Number(summary.total_pago_valido||0);
+  const saldoAjuste=totalCadastrado-totalEmpenhado,saldoAPagar=totalEmpenhado-totalPago;
+  $('mCadInicial').textContent=money(totalInicial);$('mCadAditamentos').textContent=money(totalAditamentos);
+  $('mTotalCadastrado').textContent=money(totalCadastrado);$('mEmp').textContent=money(totalEmpenhado);
+  $('mSaldo').textContent=money(saldoAjuste);$('saldoAjusteCard').classList.toggle('negative-balance',isNegativeMoney(saldoAjuste));
+  $('mPago').textContent=layoutInfo.hasPayments?money(totalPago):'Não disponível';
+  $('mSaldoPagar').textContent=layoutInfo.hasPayments?money(saldoAPagar):'Não disponível';
+}
+
 
 function loadTextIntoPage(text, filename){
   $('status').hidden=false;

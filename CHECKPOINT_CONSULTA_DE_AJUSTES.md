@@ -66,6 +66,7 @@ A redução ocorreu por exclusão física das tabelas grandes de movimentos ORCO
 - `import-orcom-movements` v28 — stub desativado.
 - Migração `20261103020350_selection_from_ret_fontes_only`.
 - Migração `20261103020643_remove_orcom_movement_txt_storage`.
+- Migração `20261103021119_selection_view_security_invoker` — view usa `security_invoker=true`.
 - SQL das migrações está em `supabase/migrations/`.
 
 ## Pendências reais

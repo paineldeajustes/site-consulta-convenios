@@ -965,21 +965,17 @@ Deno.serve(async (req: Request) => {
   // Executado somente com IMPORT_FUNCTION_SECRET ou sessão administrativa,
   // pela rotina diária após a conclusão integral dos arquivos de origem.
   if (action === "refresh_adjustment_selection_snapshot") {
-    const { data: snapshot, error: snapshotError } = await admin.rpc(
-      "refresh_orcom_adjustment_selection_snapshot",
-    );
+    const { data: snapshot, error: snapshotError } = await admin.rpc("refresh_orcom_adjustment_selection_snapshot");
     if (snapshotError) {
       console.error("Falha ao atualizar o snapshot dos ajustes:", snapshotError.message);
-      return jsonResponse({
-        success: false,
-        error: "Não foi possível atualizar o resumo dos ajustes. O snapshot anterior foi preservado.",
-      }, 500);
+      return jsonResponse({success:false,error:"Não foi possível atualizar o resumo dos ajustes. O snapshot anterior foi preservado."},500);
     }
-    return jsonResponse({
-      success: true,
-      snapshot,
-      message: "Resumo dos ajustes atualizado após as importações concluídas.",
-    }, 200);
+    const {data:catalog,error:catalogError}=await admin.rpc("refresh_orcom_adjustment_catalog");
+    if(catalogError){
+      console.error("Falha ao atualizar catálogo de ajustes:",catalogError.message);
+      return jsonResponse({success:false,snapshot,error:"Snapshot atualizado, mas catálogo não foi atualizado."},500);
+    }
+    return jsonResponse({success:true,snapshot,catalog,message:"Resumo e catálogo dos ajustes atualizados após as importações concluídas."},200);
   }
 
   try {

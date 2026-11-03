@@ -108,3 +108,41 @@ Site: https://paineldeajustes.github.io/site-consulta-convenios/
 Commits funcionais: `53f116f0549a4a0d4ca37d91303f7bf3b171d80e`, `7776ba559a6baf5bbddd3c746bd67366911c15c4` e `7a7abb54e03e2fb1c94f291cfbcf9d3291e0cdf9`.
 
 Validação estática: os dois blocos JavaScript inline compilam sem erro. GitHub Pages run `41549252538`: `completed / success`. Testes funcionais pós-login ainda pendentes.
+
+
+## Aceleração da carga e snapshot de ajustes — 03/11/2026
+
+**Implementado:**
+- Login libera a interface e inicia o carregamento em segundo plano.
+- Primeira carga da seleção traz somente 100 ajustes do snapshot já calculado; pesquisa/filtros e Visão Geral consultam o servidor.
+- Consulta inicial da seleção medida em **19,172 ms** no banco (EXPLAIN ANALYZE), antes cerca de 5,6 s.
+- Empenhos/pagamentos: 100 registros por chamada RPC, com filtros e totais globais calculados no servidor.
+- Resumo por fonte e conciliação vêm do contexto agregado, sem transferência das linhas completas.
+- CSV/PDF buscam todos os registros por páginas de forma explícita.
+- Detalhe de documento é carregado diretamente, independente da página.
+- Os campos pessoais listados foram removidos da view de consulta, da tela e do PDF. A varredura de 1.237 registros do snapshot não encontrou nenhuma dessas chaves; dados importados originais não foram alterados.
+
+**Snapshot pré-calculado:**
+- Tabela `public.orcom_adjustment_selection_snapshot` contém 1.237 ajustes.
+- Atualização atômica pela função `refresh_orcom_adjustment_selection_snapshot()`.
+- Refresh restrito a `service_role`; leitura com RLS para usuários ativos na allowlist, sem acesso `anon`.
+- Edge Function `import-orcom-movements` está na versão **22** com ação interna para atualizar o snapshot.
+- Workflow diário foi alterado para executar o refresh somente após todos os imports terminarem corretamente. Se qualquer import falhar, o snapshot anterior é preservado.
+- Atualização manual também atualiza o snapshot só quando todos os imports dão certo.
+- O snapshot foi inicialmente populado usando os registros existentes, sem nova importação.
+
+**Validação técnica:**
+- 100 ajustes por página; total 1.237.
+- Para `000012022CG`: 565 empenhos e 1.470 pagamentos; páginas 1 e 2 retornam 100 em cada tabela.
+- Os dois scripts inline do HTML compilam sem erro.
+- Edge v22 ativa e fonte GitHub idêntica à implantação.
+- Nenhuma importação de fonte foi disparada nesta etapa.
+- Ainda falta teste funcional autenticado no navegador.
+- GitHub Pages run `41553309778` para o commit `9380f813016b5864721be342c3556aade8e65680` estava em andamento na última consulta.
+
+Migrações:
+- `20261103001430_server_side_adjustment_pagination_and_privacy`
+- `20261103001544_add_negative_balance_filter_to_selection_page`
+- `20261103002646_precomputed_adjustment_selection_snapshot`
+
+Site: https://paineldeajustes.github.io/site-consulta-convenios/

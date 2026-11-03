@@ -255,3 +255,55 @@ Esta entrega implementa paginação client-side: para o ajuste selecionado, o co
 - Commit funcional: `7a7abb54e03e2fb1c94f291cfbcf9d3291e0cdf9`.
 - GitHub Pages run `41549252538`: `completed / success`.
 - Site: https://paineldeajustes.github.io/site-consulta-convenios/
+
+
+## Aceleração da primeira carga, paginação server-side e snapshot — 03/11/2026
+
+### Primeira carga do painel
+- A tela de aplicação é exibida imediatamente após a validação do perfil. A leitura inicial dos ajustes é iniciada em segundo plano; o login não aguarda todo o carregamento.
+- A primeira chamada traz somente 100 ajustes da tabela preparada. A busca por número/entidade consulta o servidor com debounce, sem baixar a lista inteira.
+- Os filtros de ano/letra, a busca, a Visão Geral e seus controles de página usam o endpoint paginado.
+- A consulta da primeira página passou a ler um snapshot agregado e não recompõe a view histórica de ajustes em cada acesso.
+- A consulta de seleção foi medida novamente com `EXPLAIN (ANALYZE, BUFFERS)`: **19,172 ms** no banco, ante cerca de **5,6 segundos** antes da materialização.
+
+### Movimentos ORCOM
+- Empenhos e pagamentos consultam somente 100 linhas por página via `orcom_adjustment_movement_page`.
+- O contexto de cada ajuste traz apenas totais, conciliação por fonte e opções de filtros; não transfere os movimentos completos.
+- A troca de página e os filtros executam nova chamada paginada no Supabase.
+- CSV, ficha PDF e detalhe do documento consultam os registros necessários separadamente; a paginação da tela não limita o conteúdo exportado.
+- Validação em `000012022CG`: 565 empenhos e 1.470 pagamentos; páginas 1 e 2 retornam 100 registros cada. Filtros por ano/fonte também foram validados.
+
+### Snapshot e atualização diária
+- Nova tabela `public.orcom_adjustment_selection_snapshot`, preenchida em **03/11/2026** com 1.237 ajustes.
+- Snapshot preparado a partir da view de seleção já sanitizada; os dados originais dos TXT/imports não são modificados.
+- A função `refresh_orcom_adjustment_selection_snapshot()` atualiza o retrato em uma transação; leitores veem a versão anterior completa ou a nova completa.
+- A função de atualização só concede EXECUTE a `service_role`. Usuários autorizados ativos na allowlist têm SELECT via RLS; `anon` não lê.
+- Edge Function `import-orcom-movements` atualizada para a versão **22**, com a ação interna `refresh_adjustment_selection_snapshot`.
+- O workflow diário `Importar RET_FONTES diariamente` executa essa ação somente depois de todos os arquivos de origem terminarem em sucesso/unchanged/skipped. Em caso de falha no ciclo, a etapa não é executada e o snapshot anterior permanece disponível.
+- A atualização manual do painel usa a mesma regra: tenta atualizar o snapshot somente quando todas as importações terminam sem erro.
+- Na validação manual, o snapshot foi reconstruído com os dados já existentes: 1.237 linhas, sem reimportar RET, CadConvenios ou ORCOM.
+
+### Privacidade dos campos CadConvenios
+Os campos abaixo foram retirados da view de consulta (resposta do servidor), das definições de exibição e do PDF:
+`DIRETORIA`, `CPF`, `DT-INI_1`, `DT-FIM_2`, `CONSELHO1` a `CONSELHO4`, `DT-INI_3`, `DT-FIM_4`, `IRREGULAR`, `MOTIVO`, `CEP`, `TEL`, `EMAIL-ENT`, `CARGO-DIR`, `EMAIL-DIR`, `TP2_AJ`, `COD-FORNEC` e `SDO-CONVENIO`.
+
+A checagem percorreu os 1.237 registros do snapshot e encontrou **zero registros** com qualquer uma dessas chaves. Os dados de origem em `ret_fontes_rows` foram preservados; somente a camada de consulta é sanitizada. O campo `CPF/CNPJ` da entidade não foi alterado, pois não estava entre os campos listados pelo usuário.
+
+### Migrações Supabase
+- `20261103001430_server_side_adjustment_pagination_and_privacy`
+- `20261103001544_add_negative_balance_filter_to_selection_page`
+- `20261103002646_precomputed_adjustment_selection_snapshot`
+
+As três migrações estão registradas também em `supabase/migrations/`.
+
+### Validação, segurança e publicação
+- Os dois blocos JavaScript inline de `index.html` passaram na validação sintática.
+- RPC de seleção: 100 linhas por página / 1.237 no total.
+- RLS do snapshot: SELECT para `authenticated` com allowlist; nenhum SELECT para `anon`.
+- Refresh do snapshot: EXECUTE permitido a `service_role`; negado a `authenticated`.
+- Edge Function ativa `import-orcom-movements` v22; o conteúdo ativo foi comparado e coincide com o fonte do GitHub.
+- Nenhuma importação foi iniciada nesta etapa. As versões `success` existentes foram mantidas.
+- Teste funcional de navegação com uma sessão de usuário real ainda deve ser feito no navegador; a validação atual foi estática e via SQL.
+- Publicação Pages para o commit de código `9380f813016b5864721be342c3556aade8e65680`: run `41553309778` estava em andamento na última consulta; conferir o resultado mais recente do Actions antes de encerrar o checkpoint.
+
+Site: https://paineldeajustes.github.io/site-consulta-convenios/

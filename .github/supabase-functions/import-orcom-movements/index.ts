@@ -870,6 +870,36 @@ async function importOneFile(
       if (supersedeError) {
         console.warn("A nova versão de " + file.name + " foi importada, mas não foi possível marcar versões anteriores:", supersedeError.message);
       }
+
+      // Linhas físicas de versões substituídas e importações fracassadas não são
+      // necessárias para consulta. O histórico de orcom_file_imports é preservado.
+      const { data: obsoleteImports, error: obsoleteListError } = await admin
+        .from("orcom_file_imports")
+        .select("id")
+        .in("status", ["superseded", "failed"]);
+      if (obsoleteListError) {
+        console.error("Arquivo importado, mas não foi possível localizar linhas ORCOM obsoletas:", obsoleteListError.message);
+        return {
+          file_name: file.name, file_type: parsed.fileType, exercise: parsed.exercise,
+          status: "cleanup_failed", complete: true, import_id: lockedRecord!.id,
+          row_count: totalRowCount, error: obsoleteListError.message,
+        };
+      }
+      const obsoleteIds = (obsoleteImports || []).map((item: Record<string, unknown>) => String(item.id));
+      if (obsoleteIds.length) {
+        const { error: cleanupError } = await admin
+          .from("orcom_movement_rows")
+          .delete()
+          .in("import_id", obsoleteIds);
+        if (cleanupError) {
+          console.error("Arquivo importado, mas não foi possível remover linhas de versões ORCOM obsoletas:", cleanupError.message);
+          return {
+            file_name: file.name, file_type: parsed.fileType, exercise: parsed.exercise,
+            status: "cleanup_failed", complete: true, import_id: lockedRecord!.id,
+            row_count: totalRowCount, error: cleanupError.message,
+          };
+        }
+      }
     }
 
     return {

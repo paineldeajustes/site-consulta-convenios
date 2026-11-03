@@ -105,6 +105,8 @@ Medições posteriores:
 
 Foi confirmado que `to_regclass` retorna NULL para `orcom_movement_rows`, `orcom_file_imports` e `orcom_adjustment_movement_summary`. O banco é compartilhado com outros recursos, inclusive Clareza; não alterar tabelas/functions dessas outras aplicações.
 
+A auditoria pós-migração não apontou mais alerta de view SECURITY DEFINER depois de configurar `security_invoker=true` na view de seleção. Permanecem outros alertas de segurança/desempenho referentes a funções e tabelas do Clareza; não foram modificados nesta tarefa.
+
 ## Edge Functions e workflow
 
 - `import-ret-fontes`: ativa, versão 14.
@@ -116,10 +118,12 @@ Foi confirmado que `to_regclass` retorna NULL para `orcom_movement_rows`, `orcom
 
 - `20261103020350_selection_from_ret_fontes_only`: view e refresh do snapshot passaram a usar Cad + RET e catálogo congelado.
 - `20261103020643_remove_orcom_movement_txt_storage`: remoção de views, funções e tabelas de movimentos ORCOM.
+- `20261103021119_selection_view_security_invoker`: view da seleção configurada com `security_invoker=true` para respeitar RLS.
 
 Arquivos correspondentes em `supabase/migrations/`:
 - `20261103020350_selection_from_ret_fontes_only.sql`
 - `20261103020643_remove_orcom_movement_txt_storage.sql`
+- `20261103021119_selection_view_security_invoker.sql`
 
 ## GitHub e interface
 
@@ -128,7 +132,7 @@ Arquivos correspondentes em `supabase/migrations/`:
 - Removidos da interface os rótulos O/R, dt-bo e referências às antigas tabelas/funções de movimentos. Os scripts inline foram validados sintaticamente.
 - Workflow atualizado para as duas fontes.
 - Último commit de código da interface: `a3be76b93dbfff19f711a542d6fdecf48ed13bf7`.
-- O Pages build desse commit estava em fila na última consulta; confirmar o status do deploy após os últimos commits/documentação.
+- O Pages build do commit `a3be76b93dbfff19f711a542d6fdecf48ed13bf7` foi concluído com sucesso (run `41564268264`).
 
 **Validação ainda pendente:** teste funcional com uma sessão autenticada no navegador (seleção, abertura de ajuste, filtros, paginação, detalhe da OP/empenho e CSV). Também aguardar o DTI corrigir/substituir o RET_FONTES; quando houver o arquivo corrigido, executar o workflow manualmente ou esperar o ciclo diário e repetir conferência de contagens e valores.
 

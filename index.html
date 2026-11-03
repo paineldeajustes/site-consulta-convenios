@@ -716,7 +716,7 @@ function renderAdjustmentOptionsFromCad(){
   );
   const year=$('adjustmentYearFilter').value;
   const letter=$('adjustmentLetterFilter').value;
-  const searchValue=$('search').value.trim();
+  const searchValue=(!$('overviewView').hidden?$('overviewSearch').value:$('search').value).trim();
   const normalizedSearch=normalizeAdjustmentSearch(searchValue);
   const suggestions=options.filter(option=>
     !normalizedSearch||normalizeAdjustmentSearch(option.cv+' '+formatAdjustmentNumber(option.cv)+' '+option.ent).includes(normalizedSearch)
@@ -998,32 +998,30 @@ async function fetchAllMovementRows(fileType,filters=null){
 
 async function loadLatestFromSupabase(){
   if(!SUPABASE_PUBLIC_KEY || SUPABASE_PUBLIC_KEY === 'COLE_SUA_CHAVE_PUBLICA_AQUI'){
-    $('status').hidden=false;
-    $('status').textContent='Falta configurar a chave pública do Supabase no index.html.';
-    return;
+    $('status').hidden=false;$('status').textContent='Falta configurar a chave pública do Supabase no index.html.';return;
   }
-  $('status').hidden=false;
-  $('status').textContent='Conectado. Carregando a primeira página de ajustes…';
+  $('status').hidden=false;$('status').textContent='Conectado. Carregando a primeira página de ajustes…';
   try{
-    const imports=await supabaseGet(
+    headers=RET_SCHEMA.slice();allRows=[];currentRows=[];currentEmpenhos=[];currentPayments=[];currentMovementRows=[];
+    currentEmpMovementRows=[];currentPayMovementRows=[];movementContext=null;movementContextCache.clear();retRowsCache.clear();
+    empPageResult=null;payPageResult=null;empCurrentPage=1;payCurrentPage=1;retRowsLoadedFor='';
+    // A primeira página da seleção é carregada em paralelo com a identificação da última versão RET.
+    const selectionRequest=loadCadMetadataFromSupabase({page:1,search:$('search').value||''});
+    const retImportRequest=supabaseGet(
       'ret_fontes_imports?select=id,file_name,status,row_count,finished_at&file_name=eq.RET_FONTES.txt&status=eq.success&order=finished_at.desc&limit=1'
     );
-    if(!imports.length)throw new Error('Não há importação concluída de RET_FONTES.txt.');
+    const [imports]=await Promise.all([retImportRequest,selectionRequest]);
+    if(!imports?.length)throw new Error('Não há importação concluída de RET_FONTES.txt.');
     retFontesImportId=imports[0].id;
-    headers=RET_SCHEMA.slice();
-    allRows=[];
-    currentRows=[];
-    currentEmpenhos=[];
-    currentPayments=[];
-    currentMovementRows=[];
-    currentEmpMovementRows=[];currentPayMovementRows=[];
-    movementContext=null;movementContextCache.clear();retRowsCache.clear();
-    empPageResult=null;payPageResult=null;
-    empCurrentPage=1;payCurrentPage=1;retRowsLoadedFor='';
-    await loadCadMetadataFromSupabase({page:1,search:$('search').value||''});
+    // O usuário pode selecionar um ajuste enquanto os metadados são localizados.
+    if($('conv').value&&currentSelectedOption){
+      const selectedCode=$('conv').value;
+      const requestId=selectionRequestId;
+      await loadRetRowsForAdjustment(selectedCode,requestId);
+      if(requestId===selectionRequestId&&$('conv').value===selectedCode)render();
+    }
   }catch(error){
-    $('status').hidden=false;
-    $('status').textContent='Não foi possível carregar a consulta: '+(error?.message||String(error));
+    $('status').hidden=false;$('status').textContent='Não foi possível carregar a consulta: '+(error?.message||String(error));
     console.error('Falha ao carregar a seleção de ajustes.',error);
   }
 }

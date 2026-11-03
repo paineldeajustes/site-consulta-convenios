@@ -1615,29 +1615,15 @@ function showAppView(view){
   if(overview)renderOverview();
 }
 function clearAdjustmentSelection(){
-  selectionRequestId++;
-  activeAdjustmentFilterCode='';
-  currentRows=[];
-  currentMovementRows=[];
-  currentEmpenhos=[];
-  currentPayments=[];
-  movementDataLoadedFor='';
-  retRowsLoadedFor='';
-  empCurrentPage=1;payCurrentPage=1;
-  layoutInfo.hasPayments=false;
-  $('conv').value='';
-  $('search').value='';
-  $('suggestions').hidden=true;
+  selectionRequestId++;selectionLoadRequestId++;
+  activeAdjustmentFilterCode='';currentSelectedOption=null;
+  currentRows=[];currentMovementRows=[];currentEmpMovementRows=[];currentPayMovementRows=[];
+  currentEmpenhos=[];currentPayments=[];movementContext=null;empPageResult=null;payPageResult=null;
+  movementPageRequestIds.empenho++;movementPageRequestIds.pagamento++;
+  retRowsLoadedFor='';empCurrentPage=1;payCurrentPage=1;layoutInfo.hasPayments=false;
+  $('conv').value='';$('search').value='';$('suggestions').hidden=true;
   $('clearAdjustmentSelection').disabled=true;
-  $('mConv').textContent='—';
-  $('mEnt').textContent='—';
-  $('mCadInicial').textContent='—';
-  $('mCadAditamentos').textContent='—';
-  $('mTotalCadastrado').textContent='—';
-  $('mEmp').textContent='—';
-  $('mPago').textContent='—';
-  $('mSaldo').textContent='—';
-  $('mSaldoPagar').textContent='—';
+  ['mConv','mEnt','mCadInicial','mCadAditamentos','mTotalCadastrado','mEmp','mPago','mSaldo','mSaldoPagar'].forEach(id=>$(id).textContent='—');
   $('saldoAjusteCard').classList.remove('negative-balance');
   renderCadMetadata('');
   $('reconTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar a conciliação.</div>';
@@ -1646,62 +1632,61 @@ function clearAdjustmentSelection(){
   $('empTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar os empenhos.</div>';
   $('payTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar os pagamentos.</div>';
   $('empPagination').innerHTML='';$('payPagination').innerHTML='';
-  $('paySummary').hidden=true;
-  $('payCount').textContent='0 registros';
+  $('paySummary').hidden=true;$('payCount').textContent='0 registros';
   $('dateFrom').value='';$('dateTo').value='';
-  $('dateFrom').disabled=true;$('dateTo').disabled=true;
-  $('yearFilter').disabled=true;$('quadrimFilter').disabled=true;
-  $('clearDates').disabled=true;$('export').disabled=true;
-  resetColumnFilters();
+  $('dateFrom').disabled=true;$('dateTo').disabled=true;$('yearFilter').disabled=true;$('quadrimFilter').disabled=true;
+  $('clearDates').disabled=true;$('export').disabled=true;resetColumnFilters();
   ['empFilterYear','empFilterNumber','empFilterSource','empFilterCusteio','empFilterCapital','payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital'].forEach(id=>{if($(id))$(id).disabled=true;});
   updateFichaButtonVisibility();
-  $('status').hidden=false;
-  $('status').textContent='Seleção limpa. Escolha um ajuste ou aplique os filtros de ano e letra.';
+  $('status').hidden=false;$('status').textContent='Seleção limpa. Escolha um ajuste ou aplique os filtros de ano e letra.';
 }
+
+
 async function chooseConv(value){
-  const cv=String(value||'').trim();
-  if(!cv)return;
-  const found=(window.CONVENIO_OPTIONS||[]).find(option=>normalizeAdjustmentSearch(option.cv)===normalizeAdjustmentSearch(cv));
+  const cv=String(value||'').trim();if(!cv)return;
+  const found=(window.CONVENIO_OPTIONS||[]).find(option=>normalizeAdjustmentSearch(option.cv)===normalizeAdjustmentSearch(cv))
+    ||(currentSelectedOption&&normalizeAdjustmentSearch(currentSelectedOption.cv)===normalizeAdjustmentSearch(cv)?currentSelectedOption:null);
   if(!found)return;
-  const requestId=++selectionRequestId;
-  $('conv').value=found.cv;
-  $('search').value=formatAdjustmentNumber(found.cv);
-  $('suggestions').hidden=true;
-  $('clearAdjustmentSelection').disabled=false;
-  currentRows=[];
-  currentMovementRows=[];
-  currentEmpenhos=[];
-  currentPayments=[];
-  movementDataLoadedFor='';
-  retRowsLoadedFor='';
-  empCurrentPage=1;payCurrentPage=1;
-  layoutInfo.hasPayments=false;
+  const requestId=++selectionRequestId;currentSelectedOption=found;
+  $('conv').value=found.cv;$('search').value=formatAdjustmentNumber(found.cv);
+  $('suggestions').hidden=true;$('clearAdjustmentSelection').disabled=false;
+  currentRows=[];currentMovementRows=[];currentEmpMovementRows=[];currentPayMovementRows=[];
+  currentEmpenhos=[];currentPayments=[];movementContext=null;empPageResult=null;payPageResult=null;
+  movementPageRequestIds.empenho++;movementPageRequestIds.pagamento++;
+  retRowsLoadedFor='';empCurrentPage=1;payCurrentPage=1;layoutInfo.hasPayments=false;
+  ['dateFrom','dateTo'].forEach(id=>$(id).value='');
+  ['yearFilter','quadrimFilter','payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital',
+   'empFilterYear','empFilterNumber','empFilterSource','empFilterCusteio','empFilterCapital'].forEach(id=>{if($(id))$(id).value='';});
   $('paySummary').hidden=true;
+  $('empTable').innerHTML='<div class="empty">Carregando a primeira página de empenhos…</div>';
+  $('payTable').innerHTML='<div class="empty">Carregando a primeira página de pagamentos…</div>';
+  $('empPagination').innerHTML='';$('payPagination').innerHTML='';
   render();
-  $('status').hidden=false;
-  $('status').textContent='Carregando os dados do ajuste '+formatAdjustmentNumber(found.cv)+'…';
+  $('status').hidden=false;$('status').textContent='Carregando o resumo do ajuste '+formatAdjustmentNumber(found.cv)+' e as primeiras 100 linhas de cada tabela…';
   updateFichaButtonVisibility();
   try{
+    await Promise.all([loadRetRowsForAdjustment(found.cv,requestId),loadMovementContextForAdjustment(found.cv,requestId)]);
+    if(requestId!==selectionRequestId||$('conv').value!==found.cv)return;
+    layoutInfo.hasPayments=Number(movementContext?.summary?.pagamento_count||0)>0;
+    configureEmpenhoColumnFilters();configurePaymentFilters();
     await Promise.all([
-      loadRetRowsForAdjustment(found.cv,requestId),
-      loadMovementDataForAdjustment(found.cv,requestId)
+      loadMovementPageForAdjustment('empenho',1,requestId),
+      loadMovementPageForAdjustment('pagamento',1,requestId)
     ]);
     if(requestId!==selectionRequestId||$('conv').value!==found.cv)return;
     render();
     $('status').hidden=false;
-    const retText=currentRows.length
-      ?currentRows.length.toLocaleString('pt-BR')+' linhas cadastrais'
-      :'nenhum lançamento correspondente no RET_FONTES.txt mais recente';
-    $('status').textContent=
-      retText+' · '+currentEmpenhos.length.toLocaleString('pt-BR')+' empenhos · '+
-      currentPayments.length.toLocaleString('pt-BR')+' movimentos de pagamento (2020+).';
+    const retText=currentRows.length?currentRows.length.toLocaleString('pt-BR')+' linhas cadastrais':'nenhum lançamento correspondente no RET_FONTES.txt mais recente';
+    $('status').textContent=retText+' · '+Number(movementContext?.summary?.empenho_count||0).toLocaleString('pt-BR')+
+      ' empenhos · '+Number(movementContext?.summary?.pagamento_count||0).toLocaleString('pt-BR')+' movimentos de pagamento (2020+).';
   }catch(error){
     if(requestId!==selectionRequestId)return;
-    $('status').hidden=false;
-    $('status').textContent='Falha ao carregar os dados do ajuste: '+(error?.message||String(error));
+    $('status').hidden=false;$('status').textContent='Falha ao carregar os dados do ajuste: '+(error?.message||String(error));
     console.error('Falha ao abrir ajuste',error);
   }
 }
+
+
 function showSuggestions(){
   const panel=$('suggestions');
   const q=normalizeAdjustmentSearch($('search').value);

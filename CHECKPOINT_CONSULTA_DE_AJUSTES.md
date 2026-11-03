@@ -74,7 +74,7 @@ A redução ocorreu por exclusão física das tabelas grandes de movimentos ORCO
 1. Aguardar o DTI corrigir o arquivo RET_FONTES.txt; o último importado tinha 1.153 linhas.
 2. Quando o arquivo corrigido estiver no Drive, executar `workflow_dispatch` no workflow `Importar RET_FONTES e CadConvenios diariamente` e confirmar que o snapshot concluiu com 1.237 linhas.
 3. Testar o site com sessão autenticada: abrir ajuste, conferir empenhos, OPs, filtros, paginação, detalhe dos documentos, conciliação e CSV.
-4. Confirmar a conclusão do GitHub Pages para o commit atual após os commits de documentação.
+4. GitHub Pages do commit de código `a3be76b93dbfff19f711a542d6fdecf48ed13bf7` concluído com sucesso (run `41564268264`).
 
 ## Comando para o próximo chat
 

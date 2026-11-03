@@ -156,3 +156,12 @@ Site: https://paineldeajustes.github.io/site-consulta-convenios/
 - Migração: `20261103003213_restrict_cadconvenios_raw_rows_to_internal_access`.
 
 **Publicação:** o código funcional do site no commit `9380f813016b5864721be342c3556aade8e65680` teve Pages run `41553309778` concluído com sucesso. Ambos os scripts inline passaram na validação sintática. A sessão autenticada do navegador ainda precisa de teste funcional real.
+
+## Catálogo, limpeza de testes e skin — 03/11/2026
+
+- Limpeza de `ret_fontes_rows`: 9.471 linhas atuais (1.153 RET + 8.318 Cad), somente imports success mais recentes por arquivo. Histórico mantido.
+- Limpeza ORCOM: somente últimas importações success por nome de arquivo; 449.304 movimentos válidos mantidos; linhas failed e superseded removidas. Histórico mantido.
+- Catálogo `orcom_adjustment_catalog`: 1.237 números, sem dados pessoais/cadastrais; RPC para allowlist. Atualização diária às 06h após importações via Edge v23 (snapshot + catálogo).
+- Interface: catálogo inteiro no seletor, filtro local de número; seleção sem paginação; botão de refresh manual removido; skin visual refinada azul petróleo/teal.
+- Teste de sintaxe JS inline ok. Publicação/teste autenticado pendentes.
+- Espaço físico ainda não refletiu DELETE: PostgreSQL precisa VACUUM/autovacuum; tamanho anterior 1.134 MB, pós-cleanup não medido nesta sessão.

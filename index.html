@@ -2112,14 +2112,20 @@ function addDomTableSection(doc,title,containerId,y,tablesOverride=null){
 async function generateFichaPDF(){
   const cv=$('conv').value;
   if(!cv){$('status').textContent='Selecione uma parceria antes de gerar a ficha.';$('status').hidden=false;return;}
-  const button=$('generateFichaButton');
-  const originalText=button.textContent;
+  const button=$('generateFichaButton'),originalText=button.textContent;
+  const savedEmp=currentEmpenhos,savedPay=currentPayments,savedEmpResult=empPageResult,savedPayResult=payPageResult;
   button.disabled=true;button.textContent='Preparando PDF…';
-  $('status').hidden=false;$('status').textContent='Montando a Ficha de Convênio em PDF…';
+  $('status').hidden=false;$('status').textContent='Montando a Ficha de Convênio; consultando todas as páginas de empenhos e pagamentos…';
   try{
     await loadScriptOnce('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>Boolean(window.jspdf?.jsPDF));
     await loadScriptOnce('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>Boolean(window.jspdf?.jsPDF?.API?.autoTable));
     FICHA_CREST_DATA=await loadCrestForPDF();
+    const [allEmpResult,allPayResult]=await Promise.all([
+      fetchAllMovementRows('empenho',getMovementFilters('empenho')),
+      fetchAllMovementRows('pagamento',getMovementFilters('pagamento'))
+    ]);
+    const allEmpItems=(allEmpResult.rows||[]).map(record=>buildEmpenhoItem({...record,fields:movementFields(record)}));
+    const allPayItems=(allPayResult.rows||[]).map(record=>buildPaymentItem({...record,fields:movementFields(record)}));
     const JsPDF=window.jspdf.jsPDF;
     const doc=new JsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
     doc.setProperties({title:'Ficha de Convênio - '+formatAdjustmentNumber(cv),subject:'Ficha de consulta de parceria',author:'Município de São Bernardo do Campo - SEFAZ',creator:'Painel de Ajustes'});
@@ -2128,8 +2134,7 @@ async function generateFichaPDF(){
     const metadata=cadMetadataFor(cv);
     const entidade=currentRows.map(row=>String(get(row,'ENTIDADE')).trim()).find(Boolean)||$('mEnt').innerText.trim()||'Não informado';
     const generalRows=[
-      ['Número do ajuste',formatAdjustmentNumber(cv)],
-      ['Entidade / organização',entidade],
+      ['Número do ajuste',formatAdjustmentNumber(cv)],['Entidade / organização',entidade],
       ['Tipo do ajuste',metadata?cadTypeLabel(metadata.type_code):$('cadMetaType').innerText.trim()||'Não informado'],
       ['Processo administrativo',metadata?.process||$('cadMetaProcess').innerText.trim()||'Não informado'],
       ['Data de assinatura',metadata?formatCadDate(metadata.signed_date):$('cadMetaSigned').innerText.trim()||'Não informado'],
@@ -2139,13 +2144,9 @@ async function generateFichaPDF(){
     y=addFichaSectionTitle(doc,'IDENTIFICAÇÃO DA PARCERIA',y);
     y=pdfTable(doc,['Campo','Informação'],generalRows,y);
     const metricIds=[
-      ['Total cadastrado inicial','mCadInicial'],
-      ['Total cadastrado em aditamentos','mCadAditamentos'],
-      ['Total cadastrado','mTotalCadastrado'],
-      ['Total empenhado','mEmp'],
-      ['Saldo cadastrado menos empenhado','mSaldo'],
-      ['Total pago','mPago'],
-      ['Saldo empenhado menos pago','mSaldoPagar']
+      ['Total cadastrado inicial','mCadInicial'],['Total cadastrado em aditamentos','mCadAditamentos'],
+      ['Total cadastrado','mTotalCadastrado'],['Total empenhado','mEmp'],
+      ['Saldo cadastrado menos empenhado','mSaldo'],['Total pago','mPago'],['Saldo empenhado menos pago','mSaldoPagar']
     ];
     y=addFichaSectionTitle(doc,'RESUMO FINANCEIRO',y);
     y=pdfTable(doc,['Indicador','Valor'],metricIds.map(([label,id])=>[label,$(id)?.innerText.trim()||'Não informado']),y);
@@ -2160,29 +2161,27 @@ async function generateFichaPDF(){
         });
       });
     }
-    if(reconRows.length){
-      y=addFichaSectionTitle(doc,'CONCILIAÇÃO CONSOLIDADA POR FONTE',y);
-      y=pdfTable(doc,['Fonte','Indicador','Valor'],reconRows,y);
-    }
+    if(reconRows.length){y=addFichaSectionTitle(doc,'CONCILIAÇÃO CONSOLIDADA POR FONTE',y);y=pdfTable(doc,['Fonte','Indicador','Valor'],reconRows,y);}
     y=addDomTableSection(doc,'VALORES CADASTRADOS POR FONTE E CATEGORIA ECONÔMICA','cadTable',y);
     y=addDomTableSection(doc,'DETALHAMENTO DOS CADASTROS E ADITAMENTOS','cadDetailTable',y);
-    // A ficha deve conter todos os movimentos, não apenas a página que está aberta na tela.
-    const empPageCount=Math.ceil(getFilteredEmpenhos(currentEmpenhos).length/MOVEMENT_PAGE_SIZE);
-    const payPageCount=Math.ceil(getFilteredPayments().length/MOVEMENT_PAGE_SIZE);
-    const allEmpTables=collectPagedTableForPDF('empTable',empPageCount,()=>empCurrentPage,page=>{empCurrentPage=page;},()=>renderEmpenhoTable(currentEmpenhos));
-    const allPayTables=collectPagedTableForPDF('payTable',payPageCount,()=>payCurrentPage,page=>{payCurrentPage=page;},renderPayments);
-    y=addDomTableSection(doc,'EMPENHOS POR ANO, FONTE E CATEGORIA ECONÔMICA','empTable',y,allEmpTables);
-    y=addDomTableSection(doc,'PAGAMENTOS À ENTIDADE','payTable',y,allPayTables);
+    renderEmpenhoTable(allEmpItems,allEmpResult,true);
+    renderPayments(allPayItems,allPayResult,true);
+    y=addDomTableSection(doc,'EMPENHOS POR ANO, FONTE E CATEGORIA ECONÔMICA','empTable',y);
+    y=addDomTableSection(doc,'PAGAMENTOS À ENTIDADE','payTable',y);
     const safeAdjustment=formatAdjustmentNumber(cv).replace(/[\\/:*?"<>|]/g,'-').replace(/\s+/g,'_');
     doc.save('Ficha de Convênio - '+safeAdjustment+'.pdf');
-    $('status').textContent='Ficha de Convênio gerada para o ajuste '+formatAdjustmentNumber(cv)+'.';
+    $('status').textContent='Ficha de Convênio gerada com '+allEmpItems.length.toLocaleString('pt-BR')+' empenhos e '+allPayItems.length.toLocaleString('pt-BR')+' pagamentos.';
   }catch(error){
     console.error('Erro ao gerar Ficha de Convênio',error);
     $('status').textContent='Não foi possível gerar o PDF: '+(error?.message||String(error));
   }finally{
+    currentEmpenhos=savedEmp;currentPayments=savedPay;empPageResult=savedEmpResult;payPageResult=savedPayResult;
+    renderEmpenhoTable(currentEmpenhos,empPageResult);renderPayments(currentPayments,payPageResult);
     button.disabled=false;button.textContent=originalText;
   }
 }
+
+
 $('generateFichaButton').addEventListener('click',generateFichaPDF);
 $('conv').addEventListener('change',updateFichaButtonVisibility);
 

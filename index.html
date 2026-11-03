@@ -195,6 +195,27 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 .ficha-pdf-fab:disabled{opacity:.72;transform:none}
 @media(max-width:520px){.site-header{gap:12px;padding:18px 16px}.municipal-crest{width:54px;height:64px}.site-header-copy h1{font-size:20px}.site-header-copy p,.site-header-copy .municipal-name,.site-header-copy .agency-name{font-size:11px}.auth-crest{width:40px;height:48px}.ficha-pdf-fab{right:12px;bottom:12px;padding:12px 15px;font-size:12px;max-width:calc(100vw - 24px)}}
 
+
+/* Refined professional interface */
+:root{font-family:Inter,"Segoe UI",system-ui,sans-serif;color:#14243a;background:#f5f7fb;--brand:#123b62;--accent:#0f766e;--line:#dce4ee;--soft:#edf3f8}
+body{background:radial-gradient(ellipse at top left,#e9f1f8 0%,#f5f7fb 44%,#f7f8fc 100%);color:#172b45;letter-spacing:-.01em}
+header{background:linear-gradient(125deg,#102f50 0%,#174b68 58%,#0f766e 100%);padding:30px clamp(18px,4vw,48px);box-shadow:0 12px 32px #102f501b}
+header h1{font-size:clamp(24px,2.2vw,32px);font-weight:750;letter-spacing:-.8px}
+main{max-width:1580px;margin:28px auto;padding:0 clamp(14px,2.4vw,34px)}
+.panel{border:1px solid #dce5ef;border-radius:18px;padding:clamp(18px,2vw,26px);margin-bottom:20px;box-shadow:0 8px 26px #16334d08;background:#fff}
+.view-tabs{background:#eaf0f7;border:1px solid #d8e2ee;border-radius:14px;padding:5px;gap:5px}
+.view-tab{border-radius:10px;color:#3c536b;padding:12px 18px;font-weight:650;background:transparent}
+.view-tab.active{background:#fff;color:#153c61;box-shadow:0 2px 8px #173b6010;border:1px solid #dce5ef}
+button{border-radius:10px;transition:transform .15s ease,box-shadow .15s ease,background .15s ease}
+button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px #14395a18}
+input[type=file],input[type=date],select,input[type=search],input[type=text]{border:1px solid #cbd8e6;border-radius:10px;padding:12px 13px;outline:none;transition:border .15s,box-shadow .15s}
+input:focus,select:focus{border-color:#3c83b8;box-shadow:0 0 0 3px #3c83b81a}
+.metric,.status-card{border:1px solid #e2e9f1;border-radius:13px;background:linear-gradient(180deg,#fff,#fbfcfe);padding:16px}
+.table-wrap{border:1px solid #e2e8f0;border-radius:12px;overflow:auto}
+table{border-collapse:separate;border-spacing:0}thead th{background:#f1f5f9;color:#40566d;font-weight:700}tbody tr:hover td{background:#f7fbff}
+.pill{border:1px solid #dbe5ef;background:#f2f6fa;color:#486078;border-radius:999px;padding:7px 11px}
+.account-bar{padding:8px 0 16px}.account-email{color:#60758a;font-size:13px}
+@media(max-width:760px){main{padding:0 12px}.panel{padding:16px;border-radius:14px}.view-tab{padding:10px 12px}}
 </style>
 </head>
 <body>

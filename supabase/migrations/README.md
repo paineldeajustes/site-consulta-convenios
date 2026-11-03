@@ -14,3 +14,5 @@ Antes de usar Supabase CLI para sincronizar, comparar as versões locais com \`m
 - `20261103011829_normalize_catalog_to_adjustment_numbers_only.sql`: reduz o catálogo à única coluna `adjustment_number`, aplica RLS para usuários ativos da allowlist e cria a consulta de metadados por número selecionado.
 - `20261103012322_fix_number_only_catalog_rpc.sql`: a RPC de listagem devolve somente números, sem chave interna, entidade, CPF, contato ou movimentos.
 - `20261103012703_fix_snapshot_refresh_safe_delete_predicates.sql`: reconstrói snapshot e catálogo na mesma transação usando predicados explícitos de DELETE exigidos por pg_safeupdate. A função fica restrita a `service_role`.
+
+- `20261103013223_increase_snapshot_refresh_statement_timeout.sql`: aumenta o limite da rotina interna de atualização do snapshot para 120 segundos, mantendo a reconstrução atômica e a execução restrita a `service_role`.

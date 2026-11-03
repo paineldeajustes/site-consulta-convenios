@@ -342,3 +342,50 @@ Migração aplicada e versionada:
 - Controles de ano/letra e paginação antigos permanecem ocultos para compatibilidade da Visão Geral.
 - Scripts inline HTML passaram em verificação sintática. Teste autenticado e publicação Pages ainda pendentes.
 - Migrações: adjustment_catalog_and_test_data_cleanup; adjustment_catalog_list_rpc; secure_adjustment_catalog_rpc.
+
+
+## Estado operacional consolidado — limpeza, catálogo e interface — 03/11/2026
+
+Esta seção substitui os números e a descrição do catálogo presentes nos checkpoints históricos anteriores.
+
+### Importações e retenção
+- `import-ret-fontes` v14: sempre importa RET_FONTES em modo de teste; somente após importação bem-sucedida remove as linhas físicas das versões anteriores. Histórico em `ret_fontes_imports` preservado.
+- `import-cad-convenios` v12: mesma regra para CadConvenios; histórico preservado.
+- `import-orcom-movements` v27: mantém a comparação MD5/data/tamanho; arquivo inalterado retorna `unchanged`. Quando há nova versão bem-sucedida, marca a anterior como superseded e elimina suas linhas físicas, bem como linhas de imports failed. Histórico `orcom_file_imports` preservado.
+- Estado físico após limpeza: `ret_fontes_rows` = 9.471 linhas (8.318 Cad + 1.153 RET); `orcom_movement_rows` = 449.304 movimentos (125.462 empenhos + 323.842 pagamentos). As 3 importações ORCOM failed não têm linhas físicas.
+- RET/Cad import history permanece registrado mesmo com as cópias físicas antigas eliminadas.
+
+### Catálogo permanente
+- `orcom_adjustment_catalog` possui **uma coluna somente**: `adjustment_number`.
+- Catálogo atual contém 1.237 números, sem chaves internas, entidade, dados cadastrais, CPF, contato ou movimento.
+- `get_orcom_adjustment_catalog()` retorna somente `items: [{number}] ` e count, com RLS para usuário ativo da allowlist.
+- Selecionar um número consulta `orcom_adjustment_metadata(number)` para obter os metadados específicos; movimentos só são carregados depois da seleção.
+- A rotina existente do workflow é diária às 06h de Brasília (09h UTC). Após as importações, a Edge Function atualiza snapshot e catálogo.
+- A função interna é restrita a `service_role`, com reconstrução atômica. Foi ajustada com `WHERE true` nos DELETEs por causa de pg_safeupdate e `statement_timeout = '120s'` por causa do timeout curto do PostgREST.
+
+### Interface
+- Seleção principal: um único `select` nativo com os 1.237 números, rolagem e digitação para localizar; não há segundo campo visível de busca nem paginação da seleção.
+- Metadados do ajuste são buscados somente após escolher um número.
+- A aba Visão geral continua separada e carrega seus dados sob demanda; seu carregamento não substitui o catálogo principal.
+- Botão “Atualizar dados agora” removido.
+- Skin refinada com paleta azul-marinho/azul-petróleo/teal, superfícies neutras, cartões e controles mais discretos.
+
+### Consumo do Supabase após a limpeza
+Medição em 03/11/2026, via `pg_database_size` e `pg_total_relation_size`:
+- Banco completo: **983 MB** (1.030.543.027 bytes), ante 1.134 MB na medição anterior; redução aproximada de 151 MB.
+- `ret_fontes_rows`: **51 MB**.
+- `orcom_movement_rows`: **910 MB**.
+- Snapshot: cerca de 3 MB.
+- Catálogo numérico: cerca de 256 KB.
+
+O número do banco inclui as tabelas e demais objetos; os tamanhos de relações incluem seus índices. O volume ORCOM atual é composto pelos movimentos válidos que permanecem necessários à consulta.
+
+### Publicação e validação
+- Edge Functions ativas: RET v14, Cad v12, ORCOM v27.
+- Código da interface: dois blocos JavaScript inline passaram na validação sintática.
+- Pages do commit da interface `e63a87fdc5c4712e91235ee43a8f099ae05015c0`: run `41559894522` completed/success.
+- Teste SQL de `refresh_orcom_adjustment_selection_snapshot()` retornou success com 1.237 linhas no snapshot e 1.237 números no catálogo.
+- Último workflow de reimportação e validação automática: run `41560414958`, em execução na última consulta; conferir a conclusão antes de considerar a etapa automática validada.
+- Continua pendente o teste funcional final com sessão autenticada no navegador.
+
+Site: https://paineldeajustes.github.io/site-consulta-convenios/

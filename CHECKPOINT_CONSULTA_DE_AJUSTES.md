@@ -165,3 +165,20 @@ Site: https://paineldeajustes.github.io/site-consulta-convenios/
 - Interface: catálogo inteiro no seletor, filtro local de número; seleção sem paginação; botão de refresh manual removido; skin visual refinada azul petróleo/teal.
 - Teste de sintaxe JS inline ok. Publicação/teste autenticado pendentes.
 - Espaço físico ainda não refletiu DELETE: PostgreSQL precisa VACUUM/autovacuum; tamanho anterior 1.134 MB, pós-cleanup não medido nesta sessão.
+
+
+## Estado mais recente — catálogo numérico e limpeza — 03/11/2026
+
+- RET_FONTES/CadConvenios: guardar apenas linhas da última importação bem-sucedida; novas importações sempre ocorrem em modo de teste, mesmo sem alteração do arquivo; histórico de execuções permanece.
+- ORCOM: comparação MD5 mantida; linhas de versões superseded e imports failed excluídas fisicamente. Import metadata preservada.
+- Linhas físicas: RET/Cad = 9.471 (8.318 Cad + 1.153 RET); ORCOM = 449.304 (todas das 14 imports success; 3 failed com zero linhas).
+- Catálogo Supabase: `orcom_adjustment_catalog` com uma coluna `adjustment_number`, 1.237 linhas.
+- O site usa um único seletor nativo, com rolagem e type-to-select. Consulta metadados apenas após a escolha. Visão geral separada e lazy-loaded.
+- Botão “Atualizar dados agora” removido. Skin azul-marinho/azul-petróleo/teal.
+- Medição: banco 983 MB (1.030.543.027 bytes), anterior 1.134 MB; redução aproximada 151 MB. `ret_fontes_rows` 51 MB; `orcom_movement_rows` 910 MB; snapshot 3 MB; catálogo 256 KB.
+- Edge Functions: RET v14, Cad v12, ORCOM v27.
+- A função de refresh foi corrigida com predicados WHERE explícitos e statement_timeout de 120s. A chamada SQL administrativa retornou success (1.237 snapshot rows e 1.237 catálogo rows).
+- Workflow de validação completo após a correção: run `41560414958`, em andamento na última leitura; consultar resultado final.
+- Teste funcional autenticado do site ainda pendente.
+
+Site: https://paineldeajustes.github.io/site-consulta-convenios/

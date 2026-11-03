@@ -1,4 +1,4 @@
-name: Importar RET_FONTES diariamente
+name: Importar RET_FONTES e CadConvenios diariamente
 
 on:
   push:
@@ -6,9 +6,8 @@ on:
       - '.github/workflows/import-ret-fontes-diario.yml'
       - '.github/supabase-functions/import-cad-convenios/index.ts'
       - '.github/supabase-functions/import-ret-fontes/index.ts'
-      - '.github/supabase-functions/import-orcom-movements/index.ts'
   schedule:
-    # 09:00 UTC = 06:00 no horário de Brasília (UTC-3). Importa cadastro e movimentos ORCOM após compartilhamento da pasta.
+    # 09:00 UTC = 06:00 no horário de Brasília.
     - cron: '0 9 * * *'
   workflow_dispatch:
 
@@ -22,7 +21,7 @@ concurrency:
 jobs:
   importar:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 45
     steps:
       - name: Verificar configuração do segredo
         env:
@@ -33,128 +32,32 @@ jobs:
             exit 1
           fi
 
-      - name: Executar importação no Supabase
+      - name: Importar RET_FONTES.txt
         env:
           IMPORT_FUNCTION_SECRET: ${{ secrets.IMPORT_FUNCTION_SECRET }}
         run: |
-          curl --fail-with-body --silent --show-error \
+          response=$(curl --fail-with-body --silent --show-error --max-time 180 \
             --request POST \
             --url 'https://qkjudfvlaatdcaosadun.supabase.co/functions/v1/import-ret-fontes' \
             --header "Authorization: Bearer ${IMPORT_FUNCTION_SECRET}" \
             --header 'Content-Type: application/json' \
-            --data '{}'
+            --data '{}')
+          echo "$response" | jq .
+          echo "$response" | jq -e '.success == true' >/dev/null
 
-      - name: Importar cadastro CadConvenios
+      - name: Importar CadConvenios.txt e atualizar o resumo do painel
         env:
           IMPORT_FUNCTION_SECRET: ${{ secrets.IMPORT_FUNCTION_SECRET }}
         run: |
-          curl --fail-with-body --silent --show-error \
+          response=$(curl --fail-with-body --silent --show-error --max-time 240 \
             --request POST \
             --url 'https://qkjudfvlaatdcaosadun.supabase.co/functions/v1/import-cad-convenios' \
             --header "Authorization: Bearer ${IMPORT_FUNCTION_SECRET}" \
             --header 'Content-Type: application/json' \
-            --data '{}'
-
-      - name: Localizar arquivos de empenho e pagamento no Google Drive
-        id: listar_movimentos
-        env:
-          IMPORT_FUNCTION_SECRET: ${{ secrets.IMPORT_FUNCTION_SECRET }}
-        run: |
-          response=$(curl --fail-with-body --silent --show-error --max-time 130 \
-            --request POST \
-            --url 'https://qkjudfvlaatdcaosadun.supabase.co/functions/v1/import-orcom-movements' \
-            --header "Authorization: Bearer ${IMPORT_FUNCTION_SECRET}" \
-            --header 'Content-Type: application/json' \
-            --data '{"action":"list"}')
+            --data '{}')
           echo "$response" | jq .
           echo "$response" | jq -e '.success == true' >/dev/null
-          echo "$response" | jq -r '.files[].name' > movement-files.txt
-          if [ ! -s movement-files.txt ]; then
-            echo 'Nenhum arquivo TXT_EMPENHO/TXT_PAGAMENTO foi encontrado.'
-            exit 1
-          fi
-          echo "Arquivos localizados: $(wc -l < movement-files.txt)"
+          echo "$response" | jq -e '.snapshot_refresh.success == true' >/dev/null
 
-      - name: Importar cada arquivo de empenho e pagamento em blocos
-        env:
-          IMPORT_FUNCTION_SECRET: ${{ secrets.IMPORT_FUNCTION_SECRET }}
-        run: |
-          failed=0
-          while IFS= read -r file_name; do
-            [ -z "$file_name" ] && continue
-            echo "Iniciando/verificando $file_name"
-            payload=$(jq -nc --arg file "$file_name" '{action:"import_file",file_name:$file}')
-            attempts=0
-            while true; do
-              attempts=$((attempts + 1))
-              if [ "$attempts" -gt 300 ]; then
-                echo "Limite de tentativas alcançado para $file_name"
-                failed=1
-                break
-              fi
-
-              response=$(curl --fail-with-body --silent --show-error --max-time 120 \
-                --request POST \
-                --url 'https://qkjudfvlaatdcaosadun.supabase.co/functions/v1/import-orcom-movements' \
-                --header "Authorization: Bearer ${IMPORT_FUNCTION_SECRET}" \
-                --header 'Content-Type: application/json' \
-                --data "$payload") || {
-                  echo "Falha HTTP ao processar $file_name (tentativa $attempts)"
-                  failed=1
-                  break
-                }
-
-              echo "$response" | jq .
-              if ! echo "$response" | jq -e '.success == true' >/dev/null; then
-                echo "Falha na importação de $file_name"
-                echo "$response" | jq -r '.error // .file.error // "Erro sem detalhe retornado"'
-                failed=1
-                break
-              fi
-
-              file_status=$(echo "$response" | jq -r '.file.status // empty')
-              import_id=$(echo "$response" | jq -r '.file.import_id // empty')
-              case "$file_status" in
-                imported|unchanged|skipped)
-                  echo "$file_name concluído: status=$file_status"
-                  break
-                  ;;
-                processing|busy|retry)
-                  if [ -z "$import_id" ]; then
-                    echo "A sessão de $file_name não retornou import_id para continuar."
-                    failed=1
-                    break
-                  fi
-                  payload=$(jq -nc --arg file "$file_name" --arg id "$import_id" '{action:"import_file",file_name:$file,import_id:$id}')
-                  if [ "$file_status" = "busy" ] || [ "$file_status" = "retry" ]; then
-                    sleep 2
-                  fi
-                  ;;
-                *)
-                  echo "Status inesperado para $file_name: $file_status"
-                  failed=1
-                  break
-                  ;;
-              esac
-            done
-          done < movement-files.txt
-
-          if [ "$failed" -ne 0 ]; then
-            echo 'Uma ou mais importações de movimentos falharam; as últimas versões válidas permanecem disponíveis.'
-            exit 1
-          fi
-          echo 'Todos os arquivos correntes e históricos foram importados ou confirmados sem alteração.'
-
-      - name: Atualizar snapshot da seleção de ajustes
-        env:
-          IMPORT_FUNCTION_SECRET: ${{ secrets.IMPORT_FUNCTION_SECRET }}
-        run: |
-          response=$(curl --fail-with-body --silent --show-error --max-time 130 \
-            --request POST \
-            --url 'https://qkjudfvlaatdcaosadun.supabase.co/functions/v1/import-orcom-movements' \
-            --header "Authorization: Bearer ${IMPORT_FUNCTION_SECRET}" \
-            --header 'Content-Type: application/json' \
-            --data '{"action":"refresh_adjustment_selection_snapshot"}')
-          echo "$response" | jq .
-          echo "$response" | jq -e '.success == true and .snapshot.success == true and .snapshot.row_count >= 0' >/dev/null
-          echo 'Snapshot de seleção atualizado após a conclusão das importações.'
+      - name: Concluir
+        run: echo 'RET_FONTES.txt e CadConvenios.txt importados; snapshot atualizado sem TXT_EMPENHO/TXT_PAGAMENTO.'

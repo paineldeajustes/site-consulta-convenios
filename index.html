@@ -296,7 +296,7 @@ table{border-collapse:separate;border-spacing:0}thead th{background:#f1f5f9;colo
       <div class="search-wrap"><label for="search">Localizar ajuste ou entidade</label><input id="search" type="search" placeholder="Digite o número do ajuste ou nome da entidade" autocomplete="off" disabled><div id="suggestions" class="suggestions" hidden></div></div>
 
     </div>
-    <div class="selection-actions"><button id="clearAdjustmentSelection" type="button" class="account-button" disabled>Limpar seleção</button><span class="hint">A lista contém somente ajustes concedidos com pagamentos O/R registrados a partir de 2020.</span></div>
+    <div class="selection-actions"><button id="clearAdjustmentSelection" type="button" class="account-button" disabled>Limpar seleção</button><span class="hint">Somente ajustes concedidos com pagamentos O/R a partir de 2020.</span></div>
 
     <div id="status" class="status">Conectando ao Supabase e carregando a base mais recente…</div>
   </section>
@@ -1833,8 +1833,6 @@ async function activateSession(session){
   $('loginScreen').hidden=true;
   $('appShell').hidden=false;
   $('signedInAs').textContent=email;
-  $('manualRefreshButton').hidden=profile.is_admin!==true;
-  $('manualRefreshButton').disabled=false;
   void loadLatestFromSupabase();
   return true;
 }

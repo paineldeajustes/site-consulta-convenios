@@ -1010,7 +1010,7 @@ async function loadLatestFromSupabase(){
     const retImportRequest=supabaseGet(
       'ret_fontes_imports?select=id,file_name,status,row_count,finished_at&file_name=eq.RET_FONTES.txt&status=eq.success&order=finished_at.desc&limit=1'
     );
-    const [imports]=await Promise.all([retImportRequest,selectionRequest]);
+    const [selectionResult,imports]=await Promise.all([selectionRequest,retImportRequest]);
     if(!imports?.length)throw new Error('Não há importação concluída de RET_FONTES.txt.');
     retFontesImportId=imports[0].id;
     // O usuário pode selecionar um ajuste enquanto os metadados são localizados.

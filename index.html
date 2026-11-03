@@ -1750,24 +1750,10 @@ $('adjustmentLetterFilter').addEventListener('change',()=>loadCadMetadataFromSup
 $('clearAdjustmentSelection').addEventListener('click',clearAdjustmentSelection);
 let adjustmentSearchTimer=null;
 $('search').addEventListener('input',()=>{
-  const val=$('search').value.trim();
-  const normalizedVal=normalizeAdjustmentSearch(val);
-  const exact=(window.CONVENIO_OPTIONS||[]).find(o=>normalizeAdjustmentSearch(o.cv)===normalizedVal || normalizeAdjustmentSearch(formatAdjustmentNumber(o.cv))===normalizedVal);
-  if(exact){
-    chooseConv(exact.cv);
-    $('suggestions').hidden=true;
-    return;
-  }
-  clearTimeout(adjustmentSearchTimer);
-  $('suggestions').hidden=!val;
-  if(!val){
-    loadCadMetadataFromSupabase({page:1,search:''});
-    return;
-  }
-  adjustmentSearchTimer=setTimeout(async()=>{
-    await loadCadMetadataFromSupabase({page:1,search:val});
-    if($('search').value.trim()===val)showSuggestions();
-  },300);
+  const q=normalizeAdjustmentSearch($('search').value);
+  const opts=(window.CONVENIO_OPTIONS||[]).filter(o=>!q||normalizeAdjustmentSearch(o.cv).includes(q));
+  $('conv').innerHTML=opts.map(o=>'<option value="'+esc(o.cv)+'">'+esc(o.cv)+'</option>').join('');
+  $('conv').disabled=!opts.length;
 });
 $('search').addEventListener('keydown',e=>{
   if(e.key==='Enter'){

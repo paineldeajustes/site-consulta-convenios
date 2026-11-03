@@ -1676,6 +1676,17 @@ async function chooseConv(value){
     ||(currentSelectedOption&&normalizeAdjustmentSearch(currentSelectedOption.cv)===normalizeAdjustmentSearch(cv)?currentSelectedOption:null);
   if(!found)return;
   const requestId=++selectionRequestId;currentSelectedOption=found;
+  try{
+    const metaResult=await supabaseRpc('orcom_adjustment_selection_page',{p_page:1,p_page_size:1,p_year:null,p_letter:null,p_search:found.key||found.cv,p_negative_only:false});
+    const rec=(metaResult.rows||[])[0];
+    if(rec){
+      let meta=rec.fields;if(typeof meta==='string'){try{meta=JSON.parse(meta)}catch{meta={}}}
+      meta={...(meta||{}),join_key:rec.adjustment_key,year:rec.adjustment_year,number:rec.adjustment_number,letter:rec.adjustment_letter,entity:rec.entity||'' ,selection:rec};
+      cadMetadataByKey.set(normalizeAdjustmentSearch(rec.adjustment_key),meta);
+      cadMetadataByKey.set(normalizeAdjustmentSearch(found.cv),meta);
+      selectionRows=[{...rec,_metadata:meta}];cadMetadataLoaded=true;
+    }
+  }catch(error){console.warn('Não foi possível carregar metadados do ajuste selecionado',error);}
   $('conv').value=found.cv;$('search').value=formatAdjustmentNumber(found.cv);
   $('suggestions').hidden=true;$('clearAdjustmentSelection').disabled=false;
   currentRows=[];currentMovementRows=[];currentEmpMovementRows=[];currentPayMovementRows=[];

@@ -359,11 +359,45 @@ Deno.serve(async (req: Request) => {
         );
       }
 
+      // Mantém apenas a importação recém-concluída para leitura operacional.
+      // O histórico em ret_fontes_imports é preservado; somente as linhas físicas antigas saem.
+      const { data: previousImports, error: historyError } = await supabase
+        .from("ret_fontes_imports")
+        .select("id")
+        .eq("file_name", "RET_FONTES.txt")
+        .neq("id", importId);
+      if (historyError) {
+        console.error("Importação concluída, mas não foi possível localizar versões antigas do RET_FONTES:", historyError.message);
+        return jsonResponse({
+          success: false,
+          import_id: importId,
+          row_count: rows.length,
+          error: "RET_FONTES foi importado, mas a limpeza das versões anteriores não foi concluída: " + historyError.message,
+        }, 500);
+      }
+      const previousIds = (previousImports || []).map((item) => item.id);
+      if (previousIds.length) {
+        const { error: cleanupError } = await supabase
+          .from("ret_fontes_rows")
+          .delete()
+          .in("import_id", previousIds);
+        if (cleanupError) {
+          console.error("Importação RET_FONTES concluída, mas a limpeza física das versões antigas falhou:", cleanupError.message);
+          return jsonResponse({
+            success: false,
+            import_id: importId,
+            row_count: rows.length,
+            error: "RET_FONTES foi importado, mas a limpeza das versões anteriores falhou: " + cleanupError.message,
+          }, 500);
+        }
+      }
+
       return jsonResponse({
         success: true,
         import_id: importId,
         row_count: rows.length,
-        message: "Importação concluída.",
+        deleted_previous_imports: previousIds.length,
+        message: "Importação concluída; somente a versão corrente permanece armazenada.",
       });
     } catch (error) {
       const message =

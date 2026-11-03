@@ -828,13 +828,10 @@ async function loadCadMetadataFromSupabase(options={}){
     $('status').textContent='Carregando a primeira página da seleção…';
   }
   try{
-    const [result,cadImports]=await Promise.all([
-      supabaseRpc('orcom_adjustment_selection_page',{
-        p_page:page,p_page_size:100,p_year:year,p_letter:letter,
-        p_search:searchValue.trim()||null,p_negative_only:negativeOnly
-      }),
-      cadMetadataFinishedAt?Promise.resolve([]):supabaseGet('ret_fontes_imports?select=finished_at,row_count&file_name=eq.CadConvenios.txt&status=eq.success&order=finished_at.desc&limit=1')
-    ]);
+    const result=await supabaseRpc('orcom_adjustment_selection_page',{
+      p_page:page,p_page_size:100,p_year:year,p_letter:letter,
+      p_search:searchValue.trim()||null,p_negative_only:negativeOnly
+    });
     if(requestId!==selectionLoadRequestId)return;
     selectionPage=Number(result.page||page);
     selectionTotalCount=Number(result.total_count||0);
@@ -861,7 +858,6 @@ async function loadCadMetadataFromSupabase(options={}){
       cadMetadataByKey.set(key,metadata);
       selectionRows.push({...record,_metadata:metadata});
     }
-    if(cadImports?.[0]?.finished_at)cadMetadataFinishedAt=cadImports[0].finished_at;
     cadMetadataLoaded=true;
     renderAdjustmentOptionsFromCad();
     renderCadMetadata($('conv').value);

@@ -389,3 +389,18 @@ O número do banco inclui as tabelas e demais objetos; os tamanhos de relações
 - Continua pendente o teste funcional final com sessão autenticada no navegador.
 
 Site: https://paineldeajustes.github.io/site-consulta-convenios/
+
+## Fechamento validado — 03/11/2026
+
+- GitHub Actions run `41560414958`: `completed / success`, inclusive a etapa de atualização do snapshot e catálogo após as importações.
+- GitHub Pages run `41560414120`: `completed / success`.
+- Edge Functions ativas e sincronizadas com o GitHub: `import-ret-fontes` v14, `import-cad-convenios` v12, `import-orcom-movements` v27.
+- Catálogo `orcom_adjustment_catalog`: uma coluna `adjustment_number`, 1.237 números; snapshot com 1.237 ajustes. A RPC retorna somente números. A tela usa um seletor nativo único com rolagem/digitação, carrega metadados ao selecionar e mantém a Visão geral sob demanda.
+- Botão de atualização manual removido; skin profissional azul-marinho/azul-petróleo/teal.
+- RET/Cad: 9.471 linhas físicas atuais (8.318 Cad + 1.153 RET), imports anteriores mantidos no histórico.
+- ORCOM: 449.304 movimentos válidos; três imports failed sem linhas físicas; verificação MD5 preservada para arquivos inalterados.
+- Banco medido após a limpeza: 983 MB (1.030.821.555 bytes), ante 1.134 MB anteriores — redução aproximada de 151 MB. RET/Cad 52 MB; ORCOM 910 MB; snapshot 3 MB; catálogo 200 KB.
+- Função de refresh usa `WHERE true` nos DELETEs e `statement_timeout = '120s'`; o workflow posterior concluiu com sucesso.
+- Os dois scripts inline do HTML passaram na validação sintática. O teste funcional pós-login deve ser realizado pelo usuário no navegador.
+
+Site: https://paineldeajustes.github.io/site-consulta-convenios/

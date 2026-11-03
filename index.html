@@ -714,6 +714,16 @@ function setSelectOptions(id,values,emptyLabel,formatter){
   control.value=clean.includes(previous)?previous:'';
   control.disabled=clean.length===0;
 }
+async function loadAdjustmentCatalog(){
+  const result=await supabaseRpc('get_orcom_adjustment_catalog',{});
+  catalogItems=(Array.isArray(result.items)?result.items:[]).map(item=>({cv:String(item.number||item.key||'').trim(),key:String(item.key||'').trim(),ent:''})).filter(item=>item.cv);
+  catalogLoaded=true;
+  window.CONVENIO_OPTIONS=catalogItems;
+  $('catalogCount').textContent='('+catalogItems.length.toLocaleString('pt-BR')+')';
+  $('catalogStatus').textContent='Atualizado diariamente às 6h.';
+  $('conv').innerHTML=catalogItems.map(item=>'<option value="'+esc(item.cv)+'">'+esc(item.cv)+'</option>').join('');
+  $('conv').disabled=!catalogItems.length;
+}
 function renderAdjustmentOptionsFromCad(){
   const options=[];
   for(const metadata of cadMetadataByKey.values()){

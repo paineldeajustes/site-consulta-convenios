@@ -2,2017 +2,375 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Consulta de Ajustes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0c2540">
+<title>Consulta 2.0 | Ajustes e Parcerias</title>
 <style>
-:root{font-family:Inter,'Segoe UI',Arial,sans-serif;color:#172b4d;background:#f3f6fb}
-*{box-sizing:border-box}body{margin:0}header{background:linear-gradient(120deg,#12345a,#176b75);color:white;padding:26px 28px;box-shadow:0 4px 18px #12345a20}
-header h1{font-size:24px;letter-spacing:-.4px;margin:0 0 7px}header p{margin:0;color:#dbe7f5;font-size:13px}
-main{max-width:1500px;margin:24px auto;padding:0 20px}
-.panel{background:white;border:1px solid #e0e7f0;border-radius:15px;padding:20px;margin-bottom:18px;box-shadow:0 5px 18px #10203007}
-h2{font-size:17px;margin:0 0 14px}h3{font-size:15px;margin:0 0 10px}
-.controls{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:14px}
-label{font-size:12px;font-weight:650;display:block;margin-bottom:6px;color:#475467}
-input,select,button{font:inherit}input[type=file],input[type=date],select,input[type=search]{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
-button{background:#164e87;color:white;border:0;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:600}
-button:disabled{opacity:.45;cursor:not-allowed}.hint{font-size:12px;color:#667085;line-height:1.5}
-.status{padding:10px 12px;background:#eef5fc;border-radius:8px;font-size:13px;margin-top:12px}
-.cards{display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:12px}
-.metric{border:1px solid #e1e7ef;border-radius:12px;padding:15px;background:linear-gradient(180deg,#fff,#fbfcfe)}.metric span{font-size:12px;color:#667085;display:block}.metric strong{font-size:20px;display:block;margin-top:7px;overflow-wrap:anywhere;color:#12345a}.metric.negative-balance{background:#fff1f0;border-color:#dc2626}.metric.negative-balance span,.metric.negative-balance strong{color:#b91c1c}
-
-.adjustment-status{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.1px;white-space:nowrap;border:1px solid transparent}
-.adjustment-status:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:0 0 auto}
-.adjustment-status.status-current{color:#166534;background:#ecfdf3;border-color:#a7f3c0}
-.adjustment-status.status-closed{color:#b42318;background:#fff1f0;border-color:#fecdca}
-.adjustment-status.status-unknown{color:#475467;background:#f2f4f7;border-color:#d0d5dd}
-@media(max-width:520px){.adjustment-status{font-size:11px;padding:6px 9px;white-space:normal;text-align:center}}
-.table-wrap{overflow-x:auto;overflow-y:visible;max-height:none;border:1px solid #cbd7e6;border-radius:10px;background:#fff}
-.table-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:10px 2px 2px;color:#475467;font-size:12px}
-.table-pagination-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.table-pagination button{border:1px solid #cbd7e6;background:#fff;color:#234260;border-radius:7px;padding:7px 10px;font-size:12px;font-weight:650;cursor:pointer}
-.table-pagination button:hover:not(:disabled){background:#edf5fb;border-color:#9ab9d5}
-.table-pagination button:disabled{opacity:.4;cursor:not-allowed}
-.table-pagination-page{padding:0 5px;font-weight:700;color:#344054}
-@media(max-width:520px){.table-pagination{align-items:flex-start;flex-direction:column}.table-pagination-actions{width:100%}.table-pagination button{flex:1}}
-table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px;white-space:nowrap}
-th,td{padding:10px 12px;border-right:1px solid #dce4ef;border-bottom:1px solid #dce4ef;text-align:left;vertical-align:middle}
-th{background:#e7eef7;color:#243f62;text-align:center;font-weight:750;line-height:1.35;border-bottom:2px solid #aebfd3}
-th:last-child,td:last-child{border-right:0}
-tbody tr:last-child td{border-bottom:0}
-tbody tr:nth-child(even){background:#f7faff}
-tbody tr:hover{background:#edf5fb}
-tfoot td{background:#eaf3f4;font-weight:750;border-top:2px solid #b7d2d4}
-td.num{text-align:right;font-variant-numeric:tabular-nums}
-.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
-.empty{color:#667085;text-align:center;padding:22px}.pill{display:inline-block;background:#edf2f7;padding:4px 8px;border-radius:20px;font-size:11px;color:#344054}
-.footer{font-size:11px;color:#667085;padding:8px 2px 24px}
-.search-wrap{position:relative}.suggestions{position:absolute;left:0;right:0;top:100%;z-index:20;background:#fff;border:1px solid #cbd5e1;border-radius:9px;box-shadow:0 8px 24px #10203020;max-height:280px;overflow:auto;margin-top:4px}.suggestions[hidden]{display:none}.suggestion{display:block;width:100%;text-align:left;background:#fff;color:#172b4d;border-radius:0;padding:10px 12px;border-bottom:1px solid #eef2f6;font-weight:500}.suggestion:hover,.suggestion:focus{background:#edf6f7}.suggestion strong{display:block;font-size:13px}.suggestion span{display:block;font-size:11px;color:#667085;margin-top:3px}
-@media(max-width:1100px){.cards{grid-template-columns:repeat(3,minmax(140px,1fr))}}
-@media(max-width:760px){.controls,.cards{grid-template-columns:1fr 1fr}header{padding:18px}.section-head{align-items:flex-start;flex-direction:column}}
-
-.recon-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
-.recon-card{border:1px solid #cbd7e6;border-radius:12px;overflow:hidden;background:#fff;min-width:0}
-.recon-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;background:linear-gradient(110deg,#e8eff8,#eef7f7);border-bottom:2px solid #b7c8dc}
-.recon-card-head strong{font-size:15px;color:#183b61}
-.recon-card-head span{font-size:11px;color:#51667f;background:#fff;border:1px solid #cfdae7;border-radius:20px;padding:4px 9px}
-.recon-metrics{width:100%;border-collapse:collapse;white-space:normal;font-size:12px}
-.recon-metrics td{padding:10px 13px;border-right:1px solid #e0e7f0;border-bottom:1px solid #e0e7f0;vertical-align:middle}
-.recon-metrics tr:last-child td{border-bottom:0}
-.recon-metrics td:first-child{width:62%;color:#43566f}
-.recon-metrics td:last-child{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:650;color:#203c5b;border-right:0}
-.recon-metrics tr.metric-total td{background:#e8f4ef;color:#174e3d;font-weight:800;border-top:2px solid #a8cfc0}
-.recon-metrics tr.metric-balance td{background:#fff8e9}
-.recon-metrics tr.metric-flow td{background:#f7f9fc}
-.recon-metrics tr.metric-paid td{border-top:2px solid #d4deeb}
-.recon-card-foot{padding:8px 13px;font-size:11px;color:#6a7890;background:#fafbfd;border-top:1px solid #e5ebf3}
-@media(max-width:850px){.recon-grid{grid-template-columns:1fr}}
-.payment-filters{grid-template-columns:repeat(5,minmax(125px,1fr))}
-.column-filters{display:grid;grid-template-columns:repeat(5,minmax(125px,1fr));gap:10px;margin:0 0 12px;padding:12px;background:#f7f9fc;border:1px solid #e0e7f0;border-radius:10px}
-.column-filters label{margin-bottom:5px}
-.column-filters input,.column-filters select{width:100%;min-width:0;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
-.selection-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
-.selection-actions .hint{margin:0}
-.selection-actions .account-button{padding:9px 13px}
-.selection-filter-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px}
-@media(max-width:760px){.selection-filter-grid{grid-template-columns:1fr 1fr}}
-
-.source-group td{background:#eef4fa!important;color:#244466;font-weight:800;border-top:1px solid #ccd9e8}
-.emp-detail td:nth-child(2){padding-left:12px}
-@media(max-width:1100px){.column-filters{grid-template-columns:repeat(3,minmax(130px,1fr))}}
-@media(max-width:650px){.column-filters{grid-template-columns:repeat(2,minmax(120px,1fr))}}
-@media(max-width:420px){.column-filters{grid-template-columns:1fr}}
-.payment-actions{flex-wrap:wrap}
-.view-tabs{display:flex;gap:8px;margin:0 0 18px;padding:4px;background:#e7eef7;border:1px solid #d5e0ed;border-radius:12px;width:max-content;max-width:100%}
-.view-tab{background:transparent;color:#344054;border:1px solid transparent;border-radius:8px;padding:10px 16px}
-.view-tab.active{background:#fff;color:#12345a;border-color:#cbd7e6;box-shadow:0 2px 6px #10203010}
-.view-tabs [hidden], [hidden]{display:none!important}
-.year-total td{background:#e8f4ef!important;color:#174e3d;font-weight:800;border-top:2px solid #a8cfc0}
-.emp-detail td{background:#fff!important;font-weight:400}
-.emp-detail td:nth-child(2){padding-left:24px;color:#344054}
-.negative-value{background:#fff1f0!important;color:#b91c1c!important;font-weight:800!important}
-.cad-meta-grid{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px}
-
-.cad-extra-details{margin-top:16px;border:1px solid #d9e2ee;border-radius:12px;background:#fbfcfe;padding:0 14px}
-.cad-extra-details summary{cursor:pointer;list-style:none;padding:14px 0;color:#174a78;font-weight:800}
-.cad-extra-details summary::-webkit-details-marker{display:none}
-.cad-extra-details summary:after{content:"＋";float:right;color:#176b75;font-size:18px;line-height:16px}
-.cad-extra-details[open] summary:after{content:"−"}
-.cad-extra-details .hint{margin:0 0 12px}
-.cad-extra-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:0 0 14px}
-.cad-extra-field{border:1px solid #e2e8f0;background:#fff;border-radius:9px;padding:9px 10px;min-width:0}
-.cad-extra-field span{display:block;font-size:11px;color:#667085;margin-bottom:5px;letter-spacing:.15px}
-.cad-extra-field strong{display:block;font-size:13px;line-height:1.35;color:#173b61;overflow-wrap:anywhere;white-space:pre-wrap}
-.pay-summary{display:grid;grid-template-columns:repeat(3,minmax(140px,1fr));gap:10px;margin:0 0 12px}
-.pay-summary-card{border:1px solid #dce5ef;background:#f8fafc;border-radius:10px;padding:10px 12px}
-.pay-summary-card span{display:block;font-size:11px;color:#667085;margin-bottom:5px}
-.pay-summary-card strong{display:block;font-size:16px;color:#173b61;font-weight:800}
-.pay-summary-card.net{background:#effaf4;border-color:#b8e4c8}
-.pay-summary-card.net strong{color:#166534}
-.pay-summary-card.warning{background:#fff8eb;border-color:#f5d9a6}
-.pay-summary-card.warning strong{color:#995c00}
-.document-link{border:0;background:transparent;color:#185a92;padding:0;font:inherit;font-weight:700;text-decoration:underline;text-decoration-color:#9ab9d5;text-underline-offset:3px;cursor:pointer}
-.document-link:hover{color:#0b3d68;text-decoration-color:currentColor}
-.document-modal{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px}
-.document-modal[hidden]{display:none}
-.document-modal-backdrop{position:absolute;inset:0;border:0;border-radius:0;background:rgba(15,23,42,.58);cursor:default}
-.document-modal-card{position:relative;z-index:1;width:min(100%,1050px);max-height:min(90vh,900px);display:flex;flex-direction:column;background:#fff;border-radius:16px;box-shadow:0 24px 70px rgba(15,23,42,.28);overflow:hidden}
-.document-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:20px 24px;border-bottom:1px solid #e4eaf1;background:#f8fafc}
-.document-modal-header h2{margin:2px 0 5px;color:#12345a;font-size:21px}
-.document-modal-header .hint{margin:0}
-.document-modal-header .eyebrow{margin:0;color:#176b75;font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:800}
-.document-modal-close{width:38px;height:38px;flex:0 0 auto;border:1px solid #d4deea;border-radius:10px;background:#fff;color:#334155;font-size:26px;line-height:1;cursor:pointer}
-.document-modal-body{padding:18px 24px 24px;overflow:auto}
-.document-record-card{border:1px solid #e1e8f0;border-radius:12px;padding:14px;margin-bottom:14px}
-.document-record-title{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:0 0 12px}
-.document-record-title strong{color:#12345a}
-.document-field-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.document-field{min-width:0;padding:9px;border-radius:8px;background:#f8fafc;border:1px solid #e7edf4}
-.document-field span{display:block;color:#667085;font-size:10px;margin-bottom:4px;font-weight:700;overflow-wrap:anywhere}
-.document-field strong{display:block;color:#243b53;font-size:12px;font-weight:600;white-space:pre-wrap;overflow-wrap:anywhere}
-@media(max-width:900px){.cad-extra-grid,.document-field-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:650px){.pay-summary{grid-template-columns:1fr}.cad-extra-grid,.document-field-grid{grid-template-columns:1fr}.document-modal{padding:8px}.document-modal-card{max-height:95vh}.document-modal-header,.document-modal-body{padding:14px}.document-modal-header h2{font-size:18px}}
-
-.cad-meta-item{border:1px solid #e1e7ef;background:#fbfcfe;border-radius:10px;padding:12px;min-width:0}
-.cad-meta-item span,.cad-meta-object>span{font-size:12px;color:#667085;display:block;margin-bottom:6px}
-.cad-meta-item strong{font-size:14px;color:#12345a;overflow-wrap:anywhere}
-.cad-meta-object{margin-top:12px;border:1px solid #e1e7ef;border-radius:10px;padding:12px;background:#fff}
-.cad-meta-object p{margin:0;font-size:13px;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
-.object-cell{white-space:normal!important;min-width:260px;max-width:420px;line-height:1.4;overflow-wrap:anywhere}
-@media(max-width:850px){.cad-meta-grid{grid-template-columns:repeat(2,minmax(140px,1fr))}}
-.detail-subsection{margin-top:20px}.detail-subsection h3{margin-bottom:6px}
-.overview-select{background:transparent;color:#164e87;text-decoration:underline;padding:0;border-radius:0;font-weight:650}
-.overview-select:hover{background:transparent;color:#12345a}
-#overviewSearch{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px}
-@media(max-width:1100px){.payment-filters{grid-template-columns:repeat(2,minmax(140px,1fr))}}
-@media(max-width:560px){.payment-filters{grid-template-columns:1fr}}
-
-.auth-wrap{display:flex;justify-content:center;align-items:flex-start;padding:34px 10px 58px;min-height:calc(100vh - 180px)}
-.auth-card{width:100%;max-width:450px;background:#fff;border:1px solid #e1e8f0;border-radius:22px;padding:32px;box-shadow:0 22px 70px #12345a12}
-.auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:25px}
-.auth-mark{width:44px;height:44px;display:grid;place-items:center;color:#fff;background:linear-gradient(145deg,#12345a,#238b8f);border-radius:13px;font-size:20px;font-weight:800;box-shadow:0 6px 15px #12345a25}
-.auth-brand strong{display:block;font-size:15px;color:#17395d}.auth-brand span{display:block;color:#748198;font-size:12px;margin-top:3px}
-.auth-card h2{font-size:24px;letter-spacing:-.5px;margin:0 0 8px;color:#172b4d}
-.auth-subtitle{font-size:13px;line-height:1.6;color:#667085;margin:0 0 24px}
-.auth-field{margin-bottom:16px}.auth-field label{font-size:12px;color:#344054;margin-bottom:7px}
-.auth-field input{width:100%;border:1px solid #cfd8e5;border-radius:10px;padding:12px 13px;background:#fff;color:#172b4d;outline:none;transition:border-color .15s,box-shadow .15s}
-.auth-field input:focus{border-color:#398c9b;box-shadow:0 0 0 3px #398c9b20}
-.auth-password{display:flex;align-items:center;border:1px solid #cfd8e5;border-radius:10px;overflow:hidden;background:#fff}
-.auth-password:focus-within{border-color:#398c9b;box-shadow:0 0 0 3px #398c9b20}
-.auth-password input{border:0;border-radius:0;box-shadow:none!important;min-width:0}
-.auth-password button{flex-shrink:0;border-radius:0;background:#fff;color:#52657e;padding:11px 13px;font-size:12px}
-.auth-password button:hover{background:#f4f7fb}
-.auth-actions{display:flex;justify-content:flex-end;margin:-3px 0 18px}
-.auth-link{border:0;background:transparent;color:#12687a;padding:0;font-size:12px;font-weight:650}
-.auth-link:hover{background:transparent;color:#0c4756;text-decoration:underline}
-.auth-submit{width:100%;padding:12px 16px;border-radius:10px;background:#164e87;color:#fff;font-size:14px;font-weight:700;box-shadow:0 5px 12px #164e8720}
-.auth-submit:hover{background:#123d6a}.auth-submit:disabled{opacity:.65}
-.auth-note{font-size:11px;line-height:1.55;color:#8792a4;text-align:center;margin:18px 0 0}
-.auth-message{font-size:12px;line-height:1.55;padding:11px 12px;border-radius:9px;margin-top:15px;white-space:normal}
-.auth-message.error{color:#9b2525;background:#fff1f0;border:1px solid #f3c5c2}
-.auth-message.info{color:#214d70;background:#eef6fc;border:1px solid #d4e5f4}
-.auth-message.success{color:#176345;background:#ecf8f1;border:1px solid #ccead8}
-.account-bar{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap;padding:0 0 16px}
-.account-email{font-size:12px;color:#52657e;margin-right:auto}
-.account-button{padding:8px 11px;font-size:12px;border:1px solid #cfdae7;border-radius:9px;background:#fff;color:#284a6c}
-.account-button:hover{background:#f0f6fa}
-.account-button.admin-action{color:white;border-color:#164e87;background:#164e87}
-.account-button.admin-action:hover{background:#123d6a}
-.account-button.admin-action[hidden]{display:none!important}
-@media(max-width:520px){.auth-wrap{padding:16px 0 36px}.auth-card{padding:24px 20px;border-radius:17px}.account-bar{justify-content:flex-start}.account-email{width:100%;margin-bottom:4px}}
-
-
-.site-header{display:flex;align-items:center;gap:22px}
-.municipal-crest{width:76px;height:88px;object-fit:contain;flex:0 0 auto;background:#fff;border-radius:10px;padding:5px}
-.site-header-copy h1{font-size:24px;letter-spacing:-.4px;margin:0 0 7px}
-.site-header-copy p{margin:3px 0;color:#dbe7f5;font-size:13px}
-.site-header-copy .municipal-name{font-weight:800;letter-spacing:.45px;color:#fff;font-size:14px}
-.site-header-copy .agency-name{font-weight:800;letter-spacing:.3px;color:#fff;font-size:14px}
-.auth-crest{width:48px;height:58px;object-fit:contain;background:#fff;padding:3px;border-radius:8px;flex:0 0 auto}
-.auth-brand{align-items:center}
-.auth-brand>div:last-child{display:flex;flex-direction:column;gap:3px}
-.ficha-pdf-fab{position:fixed;z-index:999;right:22px;bottom:22px;display:inline-flex;align-items:center;gap:8px;box-shadow:0 8px 24px #102a4340;border:1px solid #ffffff75;background:linear-gradient(135deg,#12345a,#176b75);color:#fff;border-radius:999px;padding:15px 21px;font-weight:800;letter-spacing:.1px}
-.ficha-pdf-fab:hover{filter:brightness(1.08);transform:translateY(-1px)}
-.ficha-pdf-fab:disabled{opacity:.72;transform:none}
-@media(max-width:520px){.site-header{gap:12px;padding:18px 16px}.municipal-crest{width:54px;height:64px}.site-header-copy h1{font-size:20px}.site-header-copy p,.site-header-copy .municipal-name,.site-header-copy .agency-name{font-size:11px}.auth-crest{width:40px;height:48px}.ficha-pdf-fab{right:12px;bottom:12px;padding:12px 15px;font-size:12px;max-width:calc(100vw - 24px)}}
-
-
-/* Refined professional interface */
-:root{font-family:Inter,"Segoe UI",system-ui,sans-serif;color:#14243a;background:#f5f7fb;--brand:#123b62;--accent:#0f766e;--line:#dce4ee;--soft:#edf3f8}
-body{background:radial-gradient(ellipse at top left,#e9f1f8 0%,#f5f7fb 44%,#f7f8fc 100%);color:#172b45;letter-spacing:-.01em}
-header{background:linear-gradient(125deg,#102f50 0%,#174b68 58%,#0f766e 100%);padding:30px clamp(18px,4vw,48px);box-shadow:0 12px 32px #102f501b}
-header h1{font-size:clamp(24px,2.2vw,32px);font-weight:750;letter-spacing:-.8px}
-main{max-width:1580px;margin:28px auto;padding:0 clamp(14px,2.4vw,34px)}
-.panel{border:1px solid #dce5ef;border-radius:18px;padding:clamp(18px,2vw,26px);margin-bottom:20px;box-shadow:0 8px 26px #16334d08;background:#fff}
-.view-tabs{background:#eaf0f7;border:1px solid #d8e2ee;border-radius:14px;padding:5px;gap:5px}
-.view-tab{border-radius:10px;color:#3c536b;padding:12px 18px;font-weight:650;background:transparent}
-.view-tab.active{background:#fff;color:#153c61;box-shadow:0 2px 8px #173b6010;border:1px solid #dce5ef}
-button{border-radius:10px;transition:transform .15s ease,box-shadow .15s ease,background .15s ease}
-button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px #14395a18}
-input[type=file],input[type=date],select,input[type=search],input[type=text]{border:1px solid #cbd8e6;border-radius:10px;padding:12px 13px;outline:none;transition:border .15s,box-shadow .15s}
-input:focus,select:focus{border-color:#3c83b8;box-shadow:0 0 0 3px #3c83b81a}
-.metric,.status-card{border:1px solid #e2e9f1;border-radius:13px;background:linear-gradient(180deg,#fff,#fbfcfe);padding:16px}
-.table-wrap{border:1px solid #e2e8f0;border-radius:12px;overflow:auto}
-table{border-collapse:separate;border-spacing:0}thead th{background:#f1f5f9;color:#40566d;font-weight:700}tbody tr:hover td{background:#f7fbff}
-.pill{border:1px solid #dbe5ef;background:#f2f6fa;color:#486078;border-radius:999px;padding:7px 11px}
-.account-bar{padding:8px 0 16px}.account-email{color:#60758a;font-size:13px}
-@media(max-width:760px){main{padding:0 12px}.panel{padding:16px;border-radius:14px}.view-tab{padding:10px 12px}}
-
-/* Visual refinement — institutional, clean and more elegant. */
-:root{font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;color:#152b3f;background:#f3f6f9}
-body{background:#f3f6f9}
-header{background:linear-gradient(112deg,#102b48 0%,#174a62 58%,#216d73 100%);padding:26px 30px;box-shadow:0 8px 28px rgba(12,35,58,.12)}
-main{max-width:1580px;margin:28px auto;padding:0 24px}
-.panel{border:1px solid #e0e7ee;border-radius:17px;padding:23px;margin-bottom:20px;box-shadow:0 8px 26px rgba(16,42,67,.045)}
-h2{font-size:18px;letter-spacing:-.25px;color:#173651}
-.section-head{margin-bottom:17px}
-label{font-size:12px;font-weight:700;color:#43576c;letter-spacing:.15px}
-.pill{background:#edf3f8;color:#31516d;border:1px solid #e0e8ef;padding:6px 10px}
-.status{background:#eef5f8;color:#34536b;border:1px solid #dce9ef;padding:11px 14px;border-radius:10px}
-.metric{border:1px solid #e4eaf0;border-radius:14px;padding:16px;background:#fff;box-shadow:0 2px 8px rgba(18,42,64,.025)}
-.metric strong{font-size:21px;color:#173c5a}
-.view-tabs{background:#e9eff5;border-color:#dce5ee;padding:5px;border-radius:13px}
-.view-tab{padding:11px 18px;color:#496175}
-.view-tab.active{color:#153d5c;border-color:#d9e3eb;box-shadow:0 2px 7px rgba(18,42,64,.07)}
-.account-button{border-color:#d5e0e9;color:#294c68;background:#fff}
-.account-button:hover{background:#f2f7fa;border-color:#b9cbd9}
-.catalogue-picker{max-width:760px;margin-top:16px}
-.catalogue-picker select{width:100%;height:50px;padding:12px 15px;border:1px solid #c8d5e1;border-radius:11px;background:#fff;color:#162f46;font-size:15px;outline:none;box-shadow:0 1px 2px rgba(18,42,64,.025);transition:border-color .16s,box-shadow .16s}
-.catalogue-picker select:focus{border-color:#438b99;box-shadow:0 0 0 4px rgba(67,139,153,.13)}
-.catalogue-hint{margin:8px 0 0;color:#748596;font-size:11px;line-height:1.5}
-.selection-actions{margin-top:13px}
-.table-wrap{border:1px solid #e1e8ef;border-radius:12px;box-shadow:0 2px 8px rgba(18,42,64,.025)}
-th{background:#eaf0f6;color:#274a68;border-bottom:2px solid #c4d2df}
-tbody tr:nth-child(even){background:#f9fbfd}
-tbody tr:hover{background:#edf5f7}
-tfoot td{background:#edf5f3}
-.ficha-pdf-fab{background:linear-gradient(130deg,#153c5b,#19717a);box-shadow:0 8px 22px rgba(15,57,78,.24)}
-@media(max-width:760px){main{padding:0 13px;margin:16px auto}.panel{padding:16px;border-radius:14px}.catalogue-picker{max-width:none}}
-
+:root{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#17314a;background:#f4f7fa;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;min-height:100vh}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.48}
+[hidden]{display:none!important}a{color:#147c8b}h1,h2,h3,p{margin-top:0}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #81d9d1;outline-offset:2px}
+.topbar{height:72px;background:#0c253f;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,3vw,44px);color:#fff;gap:14px}
+.brand{display:flex;align-items:center;gap:12px}.brand-mark{width:37px;height:37px;background:#24b8aa;color:#062f3a;border-radius:12px;display:grid;place-items:center;font-weight:900;font-size:17px}
+.brand-name{font-size:15px;font-weight:800;letter-spacing:-.4px}.brand-sub{font-size:11px;color:#9fc5d4;margin-top:3px}
+.top-actions{display:flex;gap:12px;align-items:center}.top-actions small{color:#a5c5d1;font-size:11px;text-align:right}
+.ghost-dark{border:1px solid #436075;background:transparent;color:#e6f5fc;border-radius:9px;padding:9px 12px;font-size:12px;font-weight:700}
+.intro{padding:30px clamp(18px,3vw,44px) 23px;background:linear-gradient(113deg,#102f4d,#0e4656);color:#fff}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#7fe7d6;font-weight:800;margin-bottom:7px}
+.intro h1{font-size:clamp(23px,2.6vw,35px);letter-spacing:-1px;margin-bottom:8px}.intro p{font-size:13px;color:#c9e2e8;margin:0;max-width:780px;line-height:1.6}
+.summary-strip{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.summary-pill{border:1px solid #4e7281;border-radius:999px;padding:7px 11px;font-size:11px;color:#dfedf2}
+.summary-pill strong{color:#fff}.layout{display:grid;grid-template-columns:310px minmax(0,1fr);gap:20px;max-width:1700px;margin:22px auto 60px;padding:0 clamp(16px,2.5vw,40px)}
+.side,.main-card,.notice,.tile{background:#fff;border:1px solid #e3eaf0;border-radius:16px;box-shadow:0 3px 15px #14355107}
+.side{position:sticky;top:14px;align-self:start;overflow:hidden}.side-head{padding:19px 18px 15px;border-bottom:1px solid #e7eef3}
+.section-title{display:flex;align-items:center;justify-content:space-between;gap:10px}.section-title h2{font-size:14px;margin:0;letter-spacing:-.1px}
+.round-count{padding:5px 9px;background:#eaf6f6;color:#087b7d;font-size:11px;border-radius:999px;font-weight:800}
+.field-label{display:block;font-size:11px;font-weight:800;color:#546c7e;margin:17px 0 7px}.search-field{display:flex;align-items:center;background:#f7f9fb;border:1px solid #d5e2e9;border-radius:10px;padding:0 12px;gap:8px}
+.search-field:focus-within{border-color:#24a4a5;background:#fff;box-shadow:0 0 0 3px #24a4a511}.search-field span{font-size:17px;color:#7590a0}
+.search-field input{border:0;background:transparent;width:100%;min-width:0;padding:13px 0;color:#15364d;outline:none;font-size:13px}
+.filter-chips{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}.filter-chip{background:#f4f7f9;color:#577184;border:1px solid #e4ebf0;border-radius:999px;font-size:10px;font-weight:800;padding:7px 10px}
+.filter-chip.active{background:#e0f5f1;color:#116d6c;border-color:#aee0db}
+.list-head{display:flex;justify-content:space-between;padding:13px 18px 9px;font-size:11px;color:#637b8c}
+.pick-list{padding:0 8px 10px;height:min(59vh,630px);overflow-y:auto;scrollbar-color:#cddbe1 transparent}
+.pick{display:flex;align-items:center;width:100%;border:1px solid transparent;border-radius:11px;text-align:left;background:transparent;padding:12px 11px;margin-bottom:4px;gap:9px;color:#193952}
+.pick:hover{background:#f4f8fa}.pick.active{background:#e9f6f5;border-color:#b7e5dd}
+.pick-letter{height:30px;min-width:30px;border-radius:9px;display:grid;place-items:center;background:#eaf0f5;font-size:11px;font-weight:900;color:#51748a}
+.pick.active .pick-letter{background:#20a89e;color:#fff}.pick-main{min-width:0;flex:1}.pick-num{font-size:12px;font-weight:800;letter-spacing:.1px}
+.pick-entity{display:block;font-size:10px;color:#718698;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
+.pick-dot{width:7px;height:7px;border-radius:50%;background:#c9d6de}.pick-dot.available{background:#18b092}
+.side-foot{padding:12px 18px;border-top:1px solid #e8eef2;font-size:10px;color:#8193a0;line-height:1.4}
+.content{min-width:0;display:flex;flex-direction:column;gap:16px}.empty-hero{padding:90px 24px;text-align:center}.empty-hero .glyph{display:grid;place-items:center;margin:0 auto 16px;height:60px;width:60px;border-radius:19px;background:#e4f7f5;color:#1a898b;font-size:29px}
+.empty-hero h2{font-size:20px;margin-bottom:8px}.empty-hero p{font-size:13px;color:#708493;max-width:470px;margin:0 auto;line-height:1.6}
+.detail-head{padding:23px 26px;display:flex;align-items:start;justify-content:space-between;gap:20px}.detail-meta{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.1px;color:#118e8e;margin-bottom:7px}
+.detail-head h2{font-size:clamp(21px,2.4vw,30px);margin:0 0 7px;color:#123551;letter-spacing:-.8px}.detail-head p{font-size:13px;color:#687f91;line-height:1.5;margin:0;max-width:720px}
+.tag{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#e4f7f1;color:#16836d;font-size:10px;font-weight:900;white-space:nowrap}.tag.gray{background:#edf2f6;color:#657a8a}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.tile{padding:19px 17px;min-width:0;position:relative;overflow:hidden}
+.tile:before{content:"";position:absolute;inset:0 0 auto;height:3px;background:#d7e5eb}.tile:nth-child(1):before{background:#2471ae}.tile:nth-child(2):before{background:#18a49a}.tile:nth-child(3):before{background:#8869c8}.tile:nth-child(4):before{background:#efa349}
+.tile-label{font-size:11px;font-weight:700;color:#6a8191}.tile-value{font-size:clamp(16px,1.9vw,24px);font-weight:850;letter-spacing:-.8px;color:#143954;margin:13px 0 7px;white-space:nowrap}.tile-sub{font-size:10px;color:#7f92a0}
+.notice{display:flex;gap:11px;padding:14px 18px;background:#fffaf1;border-color:#f1e2c4;font-size:12px;color:#8e6932;line-height:1.55}.notice strong{display:block;color:#8b5d18;margin-bottom:3px}
+.main-card{min-width:0;overflow:hidden}.tabs{display:flex;gap:2px;padding:7px 13px;border-bottom:1px solid #e5edf2;overflow-x:auto;white-space:nowrap}
+.tab{padding:11px 15px;border:0;background:transparent;color:#6b8293;border-radius:8px;font-size:12px;font-weight:800}.tab.active{background:#e8f7f3;color:#087b75}
+.tab-content{padding:23px 25px;min-height:170px}.tab-content h3{font-size:16px;color:#1b3a53;letter-spacing:-.3px;margin-bottom:8px}
+.muted{font-size:12px;color:#728595;line-height:1.6}.data-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-top:15px}
+.data-item{padding:14px 15px;background:#f7fafb;border:1px solid #edf1f3;border-radius:11px;min-width:0}
+.data-item span{display:block;font-size:10px;font-weight:750;color:#7b8e9c;margin-bottom:6px;text-transform:uppercase;letter-spacing:.35px}
+.data-item strong{font-size:13px;color:#234258;overflow-wrap:anywhere;line-height:1.5}
+.section-gap{margin-top:24px;padding-top:20px;border-top:1px solid #e8eef2}.table-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0}
+.table-tools input,.table-tools select{min-height:35px;max-width:220px;border:1px solid #d8e4ea;border-radius:8px;padding:7px 9px;background:#fff;color:#34546a;font-size:11px}
+.light-btn{border:1px solid #d6e5e9;background:#f3faf9;color:#1b7980;border-radius:8px;padding:8px 12px;font-size:11px;font-weight:800}
+.table-scroll{overflow:auto;border:1px solid #e5edf2;border-radius:11px}table{border-collapse:collapse;width:100%;font-size:12px}th{background:#f1f5f8;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.45px;color:#5d7688;padding:11px 13px;white-space:nowrap}
+td{padding:11px 13px;border-top:1px solid #edf1f4;color:#35546a;white-space:nowrap}tbody tr:hover{background:#f8fbfc}.num{text-align:right;font-variant-numeric:tabular-nums}.zero{padding:23px;color:#8397a5;font-size:12px;text-align:center;background:#fafcfd;border:1px dashed #d6e2e8;border-radius:10px}
+.category-dot{display:inline-block;width:8px;height:8px;background:#1da494;border-radius:50%;margin-right:7px}
+.loading-screen{display:grid;place-items:center;padding:100px 16px;text-align:center}.loader{border:3px solid #daeaee;border-top-color:#18a99b;width:38px;height:38px;border-radius:50%;animation:spin .75s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}.loading-screen h2{font-size:19px}.loading-screen p{font-size:12px;color:#738996}
+.login-shell{min-height:calc(100vh - 72px);display:grid;place-items:center;padding:24px;background:linear-gradient(145deg,#ecf4f6,#f8fafd)}
+.login-card{width:min(440px,100%);padding:34px 32px;background:white;border:1px solid #e1e9ed;border-radius:19px;box-shadow:0 20px 55px #1b3b5015}
+.login-card h1{font-size:24px;letter-spacing:-.8px}.login-card p{font-size:13px;color:#798c99;line-height:1.6}.login-card label{display:block;color:#4f6679;font-size:12px;font-weight:750;margin:16px 0 6px}
+.login-card input{width:100%;border-radius:10px;border:1px solid #d8e4ea;padding:12px 13px;color:#193952}.primary{background:#087f82;color:white;border:0;border-radius:9px;padding:12px 14px;font-size:13px;font-weight:800}
+.login-card .primary{width:100%;margin-top:22px}.error{margin-top:12px;color:#b1483f;font-size:12px;line-height:1.6}.login-help{margin-top:13px;font-size:11px;color:#8195a2}
+.login-help button{background:transparent;color:#147783;border:0;font-weight:750;padding:0}.footer{text-align:center;font-size:10px;color:#9aaab4;padding:15px}
+@media(max-width:1100px){.layout{grid-template-columns:255px 1fr}.metrics{grid-template-columns:repeat(2,1fr)}.tile-value{font-size:20px}}
+@media(max-width:760px){.topbar{height:65px;padding:0 15px}.brand-sub{display:none}.top-actions small{display:none}.intro{padding:24px 18px}.layout{display:flex;flex-direction:column;gap:13px;margin-top:13px;padding:0 12px}.side{position:static}.side-head{padding:15px}.pick-list{height:176px}.detail-head{padding:20px 17px;flex-direction:column}.metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.tile{padding:15px 12px}.tile-value{font-size:17px}.tab-content{padding:17px 14px}.data-grid{grid-template-columns:1fr}.tabs{padding:6px}.tab{padding:11px 10px}.summary-strip{margin-top:14px}}
 </style>
 </head>
 <body>
-<header class="site-header">
-  <img class="municipal-crest" alt="Brasão do Município de São Bernardo do Campo">
-  <div class="site-header-copy">
-    <h1>Consulta de Ajustes</h1>
-    <p class="municipal-name">MUNICÍPIO DE SÃO BERNARDO DO CAMPO</p>
-    <p class="agency-name">SEFAZ - SECRETARIA DA FAZENDA</p>
-    <p>DEPARTAMENTO DE ORÇAMENTO E GESTÃO - SEFAZ-4</p>
-  </div>
+<header class="topbar">
+ <div class="brand"><div class="brand-mark">A²</div><div><div class="brand-name">Consulta de Ajustes <span style="color:#6fe1d5">2.0</span></div><div class="brand-sub">Município de São Bernardo do Campo · Painel de consulta</div></div></div>
+ <div class="top-actions"><small id="signedEmail"></small><button id="logout" class="ghost-dark" hidden>Sair</button></div>
 </header>
-<main>
-  <section id="loginScreen" class="auth-wrap" aria-labelledby="loginTitle">
-    <div class="auth-card">
-      <div class="auth-brand">
-        <img class="auth-crest" alt="Brasão do Município de São Bernardo do Campo">
-        <div><strong>Painel de Ajustes</strong><span>MUNICÍPIO DE SÃO BERNARDO DO CAMPO</span><span>SEFAZ - SECRETARIA DA FAZENDA · SEFAZ-4</span></div>
-      </div>
-      <h2 id="loginTitle">Bem-vindo de volta</h2>
-      <p id="loginSubtitle" class="auth-subtitle">Entre com seu e-mail e senha para acessar as informações dos ajustes e suas ferramentas autorizadas.</p>
-      <form id="loginForm">
-        <div class="auth-field">
-          <label for="loginEmail">E-mail</label>
-          <input id="loginEmail" name="email" type="email" autocomplete="username" placeholder="nome@exemplo.com" required>
-        </div>
-        <div class="auth-field">
-          <label for="loginPassword">Senha</label>
-          <div class="auth-password">
-            <input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" required>
-            <button id="togglePassword" type="button" aria-label="Mostrar senha">Mostrar</button>
-          </div>
-        </div>
-        <div id="confirmPasswordField" class="auth-field" hidden>
-          <label for="confirmPassword">Confirmar senha</label>
-          <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" placeholder="Repita a senha" minlength="8">
-        </div>
-        <div class="auth-actions">
-          <button id="forgotPassword" class="auth-link" type="button">Esqueci minha senha</button>
-        </div>
-        <button id="loginButton" class="auth-submit" type="submit">Entrar no sistema</button>
-        <p style="text-align:center;font-size:12px;color:#78859a;margin:17px 0 0">
-          <span id="accountModeHint">Primeiro acesso?</span>
-          <button id="accountModeToggle" class="auth-link" type="button" style="margin-left:4px">Criar minha senha</button>
-        </p>
-      </form>
-            <section id="resetPasswordPanel" hidden>
-        <h2>Definir nova senha</h2>
-        <p class="auth-subtitle">Escolha uma nova senha para sua conta.</p>
-        <form id="resetPasswordForm">
-          <div class="auth-field"><label for="newPassword">Nova senha</label><input id="newPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Use pelo menos 8 caracteres"></div>
-          <div class="auth-field"><label for="newPasswordConfirm">Confirmar nova senha</label><input id="newPasswordConfirm" type="password" autocomplete="new-password" minlength="8" required placeholder="Repita a nova senha"></div>
-          <button class="auth-submit" id="saveNewPassword" type="submit">Salvar nova senha</button>
-        </form>
-      </section>
-      <div id="authMessage" class="auth-message" role="status" aria-live="polite" hidden></div>
-      <p class="auth-note">O acesso é individual e liberado pela administração do sistema. Não compartilhe sua senha.</p>
-    </div>
-  </section>
-  <div id="appShell" hidden>
-    <div class="account-bar">
-      <span id="signedInAs" class="account-email"></span>
-      <button id="logoutButton" class="account-button" type="button">Sair da conta</button>
-    </div>
-    <button id="generateFichaButton" class="ficha-pdf-fab" type="button" hidden title="Gerar ficha profissional do convênio em PDF">▤ Gerar Ficha de Convênio (PDF)</button>
-  <nav class="view-tabs" aria-label="Telas do Painel de Ajustes">
-    <button type="button" id="tabDetail" class="view-tab active" aria-selected="true">Consulta do ajuste</button>
-    <button type="button" id="tabOverview" class="view-tab" aria-selected="false">Visão geral dos ajustes</button>
-  </nav>
-  <div id="detailView">
-  <section class="panel">
-    <div class="section-head">
-      <h2>Seleção do ajuste</h2>
-      <span id="fileMeta" class="pill">Conectando ao Supabase…</span>
-    </div>
-    <div class="catalogue-picker">
-      <label for="conv">Número do ajuste</label>
-      <select id="conv" disabled aria-label="Selecione o número do ajuste">
-        <option value="">Carregando catálogo de ajustes…</option>
-      </select>
-      <p class="catalogue-hint">Percorra a lista com a barra de rolagem ou digite os primeiros dígitos com a lista aberta para localizar um número.</p>
-    </div>
-    <div class="selection-actions"><button id="clearAdjustmentSelection" type="button" class="account-button" disabled>Limpar seleção</button><span class="hint">Catálogo permanente com os números de ajustes concedidos.</span></div>
-    <input id="search" type="hidden" value="">
-    <div id="suggestions" hidden></div>
-    <select id="adjustmentYearFilter" hidden><option value="">Todos</option></select>
-    <select id="adjustmentLetterFilter" hidden><option value="">Todas</option></select>
-    <div id="selectionPagination" hidden></div>
-
-    <div id="status" class="status">Conectando ao Supabase e carregando a base mais recente…</div>
-  </section>
-
-  <section class="panel">
-    <div class="section-head"><h2>Identificação do ajuste</h2><span id="adjustmentStatusBadge" class="adjustment-status" hidden></span></div>
-    <div class="cards">
-      <div class="metric"><span>Ajuste</span><strong id="mConv">—</strong></div>
-      <div class="metric"><span>Entidade</span><strong id="mEnt" style="font-size:15px">—</strong></div>
-      <div class="metric"><span>Total cadastrado inicial</span><strong id="mCadInicial">—</strong></div>
-      <div class="metric"><span>Total cadastrado em aditamentos</span><strong id="mCadAditamentos">—</strong></div>
-      <div class="metric"><span>Total cadastrado</span><strong id="mTotalCadastrado">—</strong></div>
-      <div class="metric"><span>Total empenhado</span><strong id="mEmp">—</strong></div>
-      <div class="metric" id="saldoAjusteCard"><span>Saldo do ajuste</span><strong id="mSaldo">—</strong></div>
-      <div class="metric"><span>Total pago</span><strong id="mPago">—</strong></div>
-      <div class="metric"><span>Saldo total a pagar</span><strong id="mSaldoPagar">—</strong></div>
-    </div>
-  </section>
-
-  <section class="panel" id="cadMetadataPanel">
-    <div class="section-head"><h2>Dados cadastrais do ajuste</h2><span id="cadMetaStatus" class="pill">Cadastro complementar ainda não importado</span></div>
-    <div class="cad-meta-grid">
-      <div class="cad-meta-item"><span>Tipo do ajuste</span><strong id="cadMetaType">—</strong></div>
-      <div class="cad-meta-item"><span>Processo administrativo</span><strong id="cadMetaProcess">—</strong></div>
-      <div class="cad-meta-item"><span>Data de assinatura</span><strong id="cadMetaSigned">—</strong></div>
-      <div class="cad-meta-item"><span>Última vigência</span><strong id="cadMetaValidity">—</strong></div>
-    </div>
-    <div class="cad-meta-object"><span>Objeto</span><p id="cadMetaObject">Selecione um ajuste para consultar o objeto cadastrado.</p></div>
-    <details id="cadExtraDetails" class="cad-extra-details">
-      <summary>Consultar mais dados cadastrais do CadConvenios.txt</summary>
-      <p class="hint">Campos complementares do cadastro original, preservando as ocorrências repetidas de datas.</p>
-      <div id="cadExtraFieldsGrid" class="cad-extra-grid"><div class="empty">Selecione um ajuste para consultar os demais campos.</div></div>
-    </details>
-  </section>
-
-  <section class="panel">
-    <div class="section-head"><h2>1. Cruzamento entre valores cadastrados do ajuste inicial vs valores empenhados e pagos</h2><span class="pill">Visão consolidada</span></div>
-    <div id="reconTable" class="table-wrap"><div class="empty">Selecione um ajuste para visualizar a conciliação.</div></div>
-    <p class="hint">Esta visão soma custeio e capital para facilitar a leitura por fonte. A tabela seguinte detalha os valores cadastrados por categoria econômica.</p>
-  </section>
-
-  <section class="panel">
-    <div class="section-head"><h2>2. Valores cadastrados por fonte e categoria econômica</h2><span class="pill">Termo inicial e aditamentos conforme registros do arquivo</span></div>
-    <div id="cadTable" class="table-wrap"><div class="empty">Selecione um ajuste para visualizar os valores cadastrados.</div></div>
-    <div class="detail-subsection">
-      <h3>Detalhamento dos ajustes cadastrados</h3>
-      <p class="hint">Uma linha por cadastro e por fonte, com os valores de custeio e capital correspondentes a cada origem do recurso.</p>
-      <div id="cadDetailTable" class="table-wrap"><div class="empty">Selecione um ajuste para visualizar os cadastros.</div></div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="section-head"><h2>3. Empenhos por ano, fonte e categoria econômica</h2></div>
-    <div class="column-filters emp-column-filters">
-      <div><label for="empFilterYear">Ano</label><select id="empFilterYear"><option value="">Todos os anos</option></select></div>
-      <div><label for="empFilterNumber">Empenho</label><select id="empFilterNumber"><option value="">Todos os empenhos</option></select></div>
-      <div><label for="empFilterSource">Fonte</label><select id="empFilterSource"><option value="">Todas as fontes</option></select></div>
-      <div><label for="empFilterCusteio">Custeio</label><select id="empFilterCusteio"><option value="">Todos os valores de custeio</option></select></div>
-      <div><label for="empFilterCapital">Capital</label><select id="empFilterCapital"><option value="">Todos os valores de capital</option></select></div>
-    </div>
-    <div id="empTable" class="table-wrap"><div class="empty">Sem dados para exibir.</div></div>
-    <div id="empPagination" class="table-pagination" aria-label="Paginação dos empenhos"></div>
-  </section>
-
-  <section class="panel">
-    <div class="section-head"><h2>4. Pagamentos à entidade</h2><span id="payCount" class="pill">0 registros</span></div>
-    <div class="controls payment-filters" style="margin-bottom:12px">
-      <div><label for="dateFrom">Data inicial</label><input type="date" id="dateFrom" disabled></div>
-      <div><label for="dateTo">Data final</label><input type="date" id="dateTo" disabled></div>
-      <div><label for="yearFilter">Ano</label><select id="yearFilter" disabled><option value="">Todos os anos</option></select></div>
-      <div><label for="quadrimFilter">Quadrimestre</label><select id="quadrimFilter" disabled><option value="">Todos os quadrimestres</option><option value="1">1º quadrimestre (jan–abr)</option><option value="2">2º quadrimestre (mai–ago)</option><option value="3">3º quadrimestre (set–dez)</option></select></div>
-      <div class="payment-actions" style="display:flex;align-items:end;gap:8px"><button id="clearDates" type="button" disabled>Limpar filtros</button><button id="export" type="button" disabled>Exportar pagamentos CSV</button></div>
-    </div>
-    <div class="column-filters payment-column-filters">
-      <div><label for="payFilterOP">OP</label><select id="payFilterOP"><option value="">Todas as OPs</option></select></div>
-      <div><label for="payFilterEmpenho">Empenho</label><select id="payFilterEmpenho"><option value="">Todos os empenhos</option></select></div>
-      <div><label for="payFilterFonte">Fonte</label><select id="payFilterFonte"><option value="">Todas as fontes</option></select></div>
-      <div><label for="payFilterCusteio">Custeio</label><select id="payFilterCusteio"><option value="">Todos os valores de custeio</option></select></div>
-      <div><label for="payFilterCapital">Capital</label><select id="payFilterCapital"><option value="">Todos os valores de capital</option></select></div>
-    </div>
-    <div id="paySummary" class="pay-summary" hidden></div>
-    <div id="payTable" class="table-wrap"><div class="empty">Sem dados para exibir.</div></div>
-    <div id="payPagination" class="table-pagination" aria-label="Paginação dos pagamentos"></div>
-  </section>
-  </div>
-  <section id="overviewView" class="panel" hidden>
-    <div class="section-head">
-      <div><h2>Visão geral dos ajustes</h2><p class="hint">Todos os ajustes da base atual, com os saldos negativos destacados em vermelho. Clique no número do ajuste para abrir o detalhamento.</p></div>
-      <span id="overviewCount" class="pill">Carregando ajustes…</span>
-    </div>
-    <div class="controls" style="grid-template-columns:repeat(2,minmax(180px,1fr));margin-bottom:14px">
-      <div><label for="overviewSearch">Localizar ajuste ou entidade</label><input id="overviewSearch" type="search" placeholder="Digite o número do ajuste ou nome da entidade" autocomplete="off"></div>
-      <div><label for="overviewBalanceFilter">Exibição</label><select id="overviewBalanceFilter"><option value="all">Todos os ajustes</option><option value="negative">Somente saldo negativo</option></select></div>
-    </div>
-    <div id="overviewSummary" class="status">Aguardando dados do Supabase.</div>
-    <div id="overviewTable" class="table-wrap"><div class="empty">A lista será exibida após o carregamento da base.</div></div>
-    <div id="overviewPagination" class="table-pagination" aria-label="Paginação da visão geral dos ajustes"></div>
-  </section>
-  <div id="documentModal" class="document-modal" hidden role="dialog" aria-modal="true" aria-labelledby="documentModalTitle">
-    <button type="button" class="document-modal-backdrop" data-close-document aria-label="Fechar detalhes"></button>
-    <section class="document-modal-card">
-      <header class="document-modal-header">
-        <div><p class="eyebrow">Consulta de documento ORCOM</p><h2 id="documentModalTitle">Detalhes do documento</h2><p id="documentModalSubtitle" class="hint"></p></div>
-        <button type="button" id="closeDocumentModal" class="document-modal-close" aria-label="Fechar">×</button>
-      </header>
-      <div id="documentModalBody" class="document-modal-body"></div>
+<section id="loginView" class="login-shell">
+ <form id="loginForm" class="login-card">
+   <div class="eyebrow">Acesso autorizado</div>
+   <h1>Entre para consultar os ajustes</h1>
+   <p>Visualização rápida dos cadastros, fontes, empenhos e pagamentos com base nos dados disponíveis.</p>
+   <label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required placeholder="seu.email@dominio.gov.br">
+   <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" required placeholder="Sua senha">
+   <button class="primary" id="loginButton" type="submit">Entrar no painel</button>
+   <div id="loginError" class="error" role="alert" hidden></div>
+   <div class="login-help"><button type="button" id="resetPassword">Esqueci minha senha</button> · Acesso liberado pela administração</div>
+ </form>
+</section>
+<section id="loadView" class="loading-screen" hidden><div><div class="loader"></div><h2>Preparando a consulta</h2><p id="loadMessage">Recebendo os dados pré-calculados do Supabase…</p><p id="loadError" class="error" hidden></p><button id="retry" class="primary" hidden>Tentar novamente</button></div></section>
+<div id="appView" hidden>
+ <section class="intro">
+  <div class="eyebrow">Gestão de parcerias e convênios</div>
+  <h1>Informação organizada. Consulta imediata.</h1>
+  <p>O cadastro e os movimentos são preparados após a importação diária. Os ajustes já carregados são consultados instantaneamente, sem novas buscas no banco a cada seleção.</p>
+  <div class="summary-strip"><span class="summary-pill"><strong id="globalCount">—</strong> ajustes disponíveis</span><span class="summary-pill"><strong id="globalFinance">—</strong> com movimentos no RET</span><span class="summary-pill">Dados consolidados: <strong id="updatedAt">—</strong></span></div>
+ </section>
+ <div class="layout">
+  <aside class="side">
+   <div class="side-head">
+    <div class="section-title"><h2>Localizar ajuste</h2><span id="filteredCount" class="round-count">1.237</span></div>
+    <label for="search" class="field-label">Número ou entidade</label>
+    <div class="search-field"><span>⌕</span><input id="search" type="search" placeholder="Digite para localizar…" autocomplete="off"></div>
+    <div class="filter-chips"><button id="filterAll" class="filter-chip active" type="button">Todos</button><button id="filterWithRet" class="filter-chip" type="button">Com dados no RET</button></div>
+   </div>
+   <div class="list-head"><span>Ajustes disponíveis</span><span id="listIndicator"></span></div>
+   <div id="list" class="pick-list" role="listbox" aria-label="Ajustes disponíveis"></div>
+   <div class="side-foot">Catálogo permanente · A lista é filtrada localmente. Sem paginação nem consultas repetidas.</div>
+  </aside>
+  <main class="content">
+   <div id="emptySelection" class="main-card empty-hero"><div class="glyph">⌕</div><h2>Selecione um ajuste</h2><p>Escolha um número à esquerda para abrir o cadastro e os valores imediatamente. Use a busca para localizar pelo número ou entidade.</p></div>
+   <div id="details" hidden>
+    <section class="main-card detail-head">
+     <div><div class="detail-meta">Ficha do ajuste</div><h2 id="currentNumber">—</h2><p id="currentEntity">—</p><p id="currentProcess" style="margin-top:7px;font-size:11px"></p></div>
+     <span id="availabilityBadge" class="tag"></span>
     </section>
-  </div>
-  <div class="footer">Consulte os dados da última importação concluída. As informações devem ser conferidas com os registros oficiais antes de uso administrativo.</div>
-  </div>
-</main>
+    <div class="metrics">
+     <div class="tile"><div class="tile-label">Total cadastrado</div><div id="totalRegistered" class="tile-value">—</div><div class="tile-sub">Termo inicial + aditamentos</div></div>
+     <div class="tile"><div class="tile-label">Total empenhado</div><div id="totalCommitted" class="tile-value">—</div><div class="tile-sub">Informado no RET_FONTES</div></div>
+     <div class="tile"><div class="tile-label">Total pago</div><div id="totalPaid" class="tile-value">—</div><div class="tile-sub">OPs informadas no RET_FONTES</div></div>
+     <div class="tile"><div class="tile-label">Saldo a empenhar</div><div id="totalRemaining" class="tile-value">—</div><div class="tile-sub">Cadastrado – empenhado</div></div>
+    </div>
+    <div id="dataNotice" class="notice" hidden><span>ⓘ</span><div><strong>Movimentação ainda não disponível</strong><span>Este ajuste existe no CadConvenios, mas não há linhas correspondentes no RET_FONTES atualmente importado. A ausência de valores não significa que o ajuste não teve execução.</span></div></div>
+    <section class="main-card">
+      <div class="tabs" role="tablist">
+       <button type="button" class="tab active" data-tab="geral">Panorama</button>
+       <button type="button" class="tab" data-tab="empenhos">Empenhos <span id="empCount"></span></button>
+       <button type="button" class="tab" data-tab="pagamentos">Pagamentos <span id="payCount"></span></button>
+       <button type="button" class="tab" data-tab="cadastro">Cadastro e fontes</button>
+      </div>
+      <div class="tab-content" id="tabContent"></div>
+    </section>
+   </div>
+  </main>
+ </div>
+</div>
+<footer class="footer">Consulta de Ajustes 2.0 · Dados provenientes exclusivamente de CadConvenios.txt e RET_FONTES.txt.</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script>
-(() => {
-  const field = document.getElementById('loginPassword');
-  const button = document.getElementById('togglePassword');
-  if (!field || !button) return;
-  button.addEventListener('click', () => {
-    const visible = field.type === 'password';
-    field.type = visible ? 'text' : 'password';
-    button.textContent = visible ? 'Ocultar' : 'Mostrar';
-    button.setAttribute('aria-label', visible ? 'Ocultar senha' : 'Mostrar senha');
+'use strict';
+(function(){
+const URL_SUPABASE='https://qkjudfvlaatdcaosadun.supabase.co';
+const CHAVE_PUBLICA='sb_publishable_B3A7uwmQWUs8oOivjgJ6Qw_6rqx4U0W';
+const $=id=>document.getElementById(id);
+const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const normalize=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const fmtDate=raw=>{
+ const t=String(raw||'').replace(/\D/g,'');
+ return /^\d{8}$/.test(t)?t.slice(6,8)+'/'+t.slice(4,6)+'/'+t.slice(0,4):'—';
+};
+const partsDate=row=>{
+ const y=String(row.year||''),m=String(row.month||'').padStart(2,'0'),d=String(row.day||'').padStart(2,'0');
+ if(!/^\d{4}$/.test(y)||!/^\d{2}$/.test(m)||!/^\d{2}$/.test(d))return '—';
+ const date=new Date(Number(y),Number(m)-1,Number(d));
+ if(date.getFullYear()!==Number(y)||date.getMonth()!==Number(m)-1||date.getDate()!==Number(d))return '—';
+ return d+'/'+m+'/'+y;
+};
+const sourceLabel=raw=>{
+ const s=String(raw||'').trim().toUpperCase();
+ if(!s)return 'Não informada';
+ return ({'M':'Municipal','E':'Estadual','F':'Federal','O':'Outras','01':'Tesouro municipal','02':'Transferências estaduais','05':'Transferências federais','06':'Outras fontes'}[s]||s);
+};
+const typeLabel=code=>({'7':'Termo de colaboração','8':'Termo de fomento','10':'Acordo de cooperação','11':'Contrato de gestão','12':'Termo de parceria','13':'Convênio'}[String(Number(code||0))]||String(code||'Não informado'));
+let client,records=[],recordByNumber=new Map(),current=null,tab='geral',query='',onlyRet=false,filterYear='',filterSource='',filterText='',activeSession=null,requestSequence=0;
+function show(view){
+ for(const name of ['loginView','loadView','appView'])$(name).hidden=name!==view;
+ $('logout').hidden=view!=='appView';
+}
+function text(id,value){$(id).textContent=value;}
+function errorLogin(message){text('loginError',message);$('loginError').hidden=false;}
+function errorLoad(message){text('loadError',message);$('loadError').hidden=false;$('retry').hidden=false;}
+function catalogue(){
+ const terms=normalize(query);
+ const items=records.filter(r=>(!onlyRet||Number(r.ret_lines)>0)&&(!terms||normalize(r.number+' '+r.entity).includes(terms)));
+ const shown=items.slice(0,120);
+ text('filteredCount',items.length.toLocaleString('pt-BR'));
+ text('listIndicator',items.length>120?'120 primeiros':'Lista completa');
+ $('list').innerHTML=shown.map(r=>'<button type="button" class="pick '+(current&&current.number===r.number?'active':'')+'" data-number="'+esc(r.number)+'" role="option" aria-selected="'+String(!!current&&current.number===r.number)+'">'+
+   '<span class="pick-letter">'+esc((r.letter||'AJ').slice(0,3))+'</span><span class="pick-main"><span class="pick-num">'+esc(r.number)+'</span>'+
+   '<span class="pick-entity">'+esc(r.entity||'Entidade não informada')+'</span></span>'+
+   '<span class="pick-dot '+(Number(r.ret_lines)>0?'available':'')+'"></span></button>').join('')||
+   '<div class="zero">Nenhum ajuste corresponde à busca.</div>';
+}
+function select(number){
+ const next=recordByNumber.get(number);
+ if(!next)return;
+ current=next;tab='geral';filterYear='';filterSource='';filterText='';
+ $('emptySelection').hidden=true;$('details').hidden=false;
+ text('currentNumber',next.number);
+ text('currentEntity',next.entity||'Entidade não informada');
+ text('currentProcess',next.process?'Processo administrativo: '+next.process:'');
+ const available=Number(next.ret_lines)>0;
+ text('availabilityBadge',available?'Dados RET disponíveis':'Sem linhas RET');
+ $('availabilityBadge').className='tag'+(available?'':' gray');
+ $('dataNotice').hidden=available;
+ for(const key of ['totalRegistered','totalCommitted','totalPaid','totalRemaining']){
+   const value=key==='totalRegistered'?next.registered_total:key==='totalCommitted'?next.committed:key==='totalPaid'?next.paid_ret:Number(next.registered_total||0)-Number(next.committed||0);
+   text(key,available?money(value):'—');
+ }
+ text('empCount','('+(next.empenhos||[]).length+')');
+ text('payCount','('+(next.pagamentos||[]).length+')');
+ renderTab();catalogue();
+}
+function renderTab(){
+ document.querySelectorAll('.tab').forEach(el=>{el.classList.toggle('active',el.dataset.tab===tab);el.setAttribute('aria-selected',String(el.dataset.tab===tab));});
+ if(!current)return;
+ const o=current;
+ if(tab==='geral')$('tabContent').innerHTML=renderOverview(o);
+ else if(tab==='cadastro')$('tabContent').innerHTML=renderCadastro(o);
+ else $('tabContent').innerHTML=renderFinancial(o,tab==='empenhos'?'empenhos':'pagamentos');
+}
+function cell(label,value){return '<div class="data-item"><span>'+esc(label)+'</span><strong>'+esc(value||'Não informado')+'</strong></div>';}
+function renderOverview(o){
+ let out='<h3>Visão geral do ajuste</h3><p class="muted">Dados cadastrais disponíveis imediatamente. Os valores financeiros provêm exclusivamente do RET_FONTES importado.</p>';
+ out+='<div class="data-grid">'+cell('Número',o.number)+cell('Entidade',o.entity)+cell('Processo',o.process)+cell('Tipo',typeLabel(o.type_code))+
+ cell('Assinatura',fmtDate(o.signed))+cell('Última vigência',fmtDate(o.valid_until))+'</div>';
+ out+='<div class="section-gap"><h3>Objeto do ajuste</h3><p class="muted">'+esc(o.object||'Objeto não informado no cadastro.')+'</p></div>';
+ if(Number(o.ret_lines)>0){
+  out+='<div class="section-gap"><h3>Execução conforme RET_FONTES</h3><div class="data-grid">'+cell('Cadastrado no ajuste inicial',money(o.registered_initial))+
+   cell('Cadastrado nos aditamentos',money(o.registered_amendments))+cell('Saldo a pagar',money(Number(o.committed||0)-Number(o.paid_ret||0)))+
+   cell('Linhas de origem relacionadas',String(o.ret_lines))+'</div></div>';
+ }else{
+  out+='<div class="section-gap"><div class="zero">Não há linhas financeiras correspondentes no RET_FONTES atual. Os dados cadastrais acima continuam disponíveis.</div></div>';
+ }
+ return out;
+}
+function renderCadastro(o){
+ let out='<h3>Cadastro e distribuição por fonte</h3><p class="muted">Valores do termo inicial e dos aditamentos, quando presentes no arquivo RET_FONTES.</p><div class="data-grid">'+
+  cell('Entidade',o.entity)+cell('Número',o.number)+cell('Processo',o.process)+cell('Tipo de ajuste',typeLabel(o.type_code))+
+  cell('Assinatura',fmtDate(o.signed))+cell('Última vigência',fmtDate(o.valid_until))+'</div>';
+ out+='<div class="section-gap"><h3>Objeto</h3><p class="muted">'+esc(o.object||'Não informado.')+'</p></div>';
+ const reg=o.registered||[];
+ if(!reg.length)return out+'<div class="section-gap"><div class="zero">Não há registros de valor cadastrado por fonte no RET_FONTES para este ajuste.</div></div>';
+ out+='<div class="section-gap"><h3>Termo inicial e aditamentos por fonte</h3>'+renderTable(['Tipo','Aditamento','Fonte','Custeio','Reforma','Bem/Capital','Total'],reg.map(r=>[
+  String(r.type).toUpperCase()==='V'?'Termo inicial':'Aditamento',r.amendment_number||'—',sourceLabel(r.source),
+  money(r.custeio),money(r.reforma),money(r.bem),money(Number(r.custeio)+Number(r.reforma)+Number(r.bem))]))+'</div>';
+ return out;
+}
+function renderTable(headers,rows){
+ if(!rows.length)return '<div class="zero">Nenhum registro disponível para os filtros selecionados.</div>';
+ return '<div class="table-scroll"><table><thead><tr>'+headers.map(t=>'<th>'+esc(t)+'</th>').join('')+'</tr></thead><tbody>'+
+ rows.map(row=>'<tr>'+row.map((v,i)=>'<td '+(i>2?'class="num"':'')+'>'+esc(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+}
+function renderFinancial(o,kind){
+ const isEmp=kind==='empenhos',all=o[kind]||[];
+ const years=[...new Set(all.map(r=>String(r.year||'')).filter(Boolean))].sort().reverse();
+ const sources=[...new Set(all.map(r=>String(r.source||'')).filter(Boolean))].sort();
+ let out='<h3>'+ (isEmp?'Empenhos':'Pagamentos registrados')+'</h3><p class="muted">'+
+ (isEmp?'Documentos de empenho provenientes do RET_FONTES.':'Ordens de pagamento informadas no RET_FONTES. Sem classificação de cancelamentos ou de O/R que não constam do arquivo.')+'</p>';
+ out+='<div class="table-tools"><select id="yearSelect" aria-label="Filtrar por ano"><option value="">Todos os anos</option>'+years.map(y=>'<option value="'+esc(y)+'" '+(filterYear===y?'selected':'')+'>'+esc(y)+'</option>').join('')+'</select>';
+ out+='<select id="sourceSelect" aria-label="Filtrar por fonte"><option value="">Todas as fontes</option>'+sources.map(y=>'<option value="'+esc(y)+'" '+(filterSource===y?'selected':'')+'>'+esc(sourceLabel(y))+'</option>').join('')+'</select>';
+ out+='<input id="documentSearch" placeholder="Buscar OP ou empenho" aria-label="Buscar documento" value="'+esc(filterText)+'">';
+ out+='<button class="light-btn" id="downloadCsv" type="button">Exportar CSV</button></div>';
+ const shown=all.filter(r=>(!filterYear||String(r.year)===filterYear)&&(!filterSource||r.source===filterSource)&&
+ (!filterText||normalize((r.empenho||'')+' '+(r.op||'')).includes(normalize(filterText))));
+ const total=shown.reduce((n,r)=>n+Number(r.total||0),0);
+ out+='<p class="muted">'+shown.length.toLocaleString('pt-BR')+' registros · Total filtrado: <strong>'+esc(money(total))+'</strong></p>';
+ if(isEmp){
+  out+=renderTable(['Ano','Empenho','Fonte','Data','Custeio','Capital','Total'],shown.map(r=>[
+   r.year||'—',r.empenho||'—',sourceLabel(r.source),partsDate(r),money(r.custeio),money(r.capital),money(r.total)]));
+ }else{
+  out+=renderTable(['Ano','OP','Empenho','Fonte','Data','Custeio','Capital','Total'],shown.map(r=>[
+   r.year||'—',r.op||'—',r.empenho||'—',sourceLabel(r.source),partsDate(r),money(r.custeio),money(r.capital),money(r.total)]));
+ }
+ return out;
+}
+function exportCsv(){
+ if(!current)return;
+ const isEmp=tab==='empenhos',kind=isEmp?'empenhos':'pagamentos';
+ const rows=(current[kind]||[]).filter(r=>(!filterYear||String(r.year)===filterYear)&&(!filterSource||r.source===filterSource)&&
+ (!filterText||normalize((r.empenho||'')+' '+(r.op||'')).includes(normalize(filterText))));
+ const headings=isEmp?['Ano','Empenho','Fonte','Data','Custeio','Capital','Total']:['Ano','OP','Empenho','Fonte','Data','Custeio','Capital','Total'];
+ const values=rows.map(r=>isEmp?[r.year,r.empenho,sourceLabel(r.source),partsDate(r),r.custeio,r.capital,r.total]:
+ [r.year,r.op,r.empenho,sourceLabel(r.source),partsDate(r),r.custeio,r.capital,r.total]);
+ const csv='\uFEFF'+[headings,...values].map(r=>r.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+ const a=document.createElement('a');a.href=url;a.download=kind+'_'+current.number.replace(/[^a-zA-Z0-9-]/g,'_')+'.csv';a.click();
+ URL.revokeObjectURL(url);
+}
+async function dataLoad(session){
+ const id=++requestSequence;activeSession=session;
+ show('loadView');$('loadError').hidden=true;$('retry').hidden=true;text('loadMessage','Baixando os dados pré-calculados. Nenhuma consulta adicional será necessária ao selecionar um ajuste.');
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
+ try{
+  const response=await fetch(URL_SUPABASE+'/rest/v1/rpc/panel_v2_bundle',{
+    method:'POST',signal:controller.signal,headers:{
+      apikey:CHAVE_PUBLICA,Authorization:'Bearer '+session.access_token,
+      'Content-Type':'application/json',Accept:'application/json'
+    },body:'{}'
   });
+  if(!response.ok)throw new Error('Supabase respondeu '+response.status+'. '+(await response.text()).slice(0,250));
+  const json=await response.json();
+  if(id!==requestSequence)return;
+  if(!json||!Array.isArray(json.items)||json.items.length===0)throw new Error('Acesso não autorizado ou catálogo vazio. Confira sua permissão.');
+  records=json.items.filter(r=>r&&r.number);
+  records.sort((a,b)=>String(a.number).localeCompare(String(b.number),'pt-BR',{numeric:true}));
+  recordByNumber=new Map(records.map(r=>[r.number,r]));current=null;tab='geral';query='';onlyRet=false;
+  $('search').value='';$('filterAll').classList.add('active');$('filterWithRet').classList.remove('active');
+  text('globalCount',records.length.toLocaleString('pt-BR'));
+  text('globalFinance',records.filter(r=>Number(r.ret_lines)>0).length.toLocaleString('pt-BR'));
+  text('updatedAt',json.refreshed_at?new Date(json.refreshed_at).toLocaleString('pt-BR'):'—');
+  text('signedEmail',session.user?.email||'Acesso autenticado');
+  $('emptySelection').hidden=false;$('details').hidden=true;
+  catalogue();show('appView');
+ }catch(err){
+  if(id!==requestSequence)return;
+  errorLoad(err.name==='AbortError'?'Tempo limite de 25 segundos para receber os dados. Confira a conexão e tente novamente.':(err.message||String(err)));
+ }finally{clearTimeout(timer);}
+}
+async function authenticate(){
+ try{
+  if(!window.supabase)throw new Error('A biblioteca de autenticação não carregou. Verifique o acesso à rede.');
+  client=window.supabase.createClient(URL_SUPABASE,CHAVE_PUBLICA,{
+    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+  });
+  const {data,error}=await client.auth.getSession();if(error)throw error;
+  if(data.session)await dataLoad(data.session);else show('loginView');
+ }catch(err){show('loginView');errorLogin(err.message||'Não foi possível inicializar a autenticação.');}
+}
+$('loginForm').addEventListener('submit',async function(e){
+ e.preventDefault();$('loginError').hidden=true;
+ $('loginButton').disabled=true;text('loginButton','Entrando…');
+ try{
+  const {data,error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+  if(error)throw error;
+  if(!data.session)throw new Error('Não foi possível obter uma sessão válida.');
+  await dataLoad(data.session);
+ }catch(err){errorLogin(err.message||'Falha ao autenticar.');show('loginView');}
+ finally{$('loginButton').disabled=false;text('loginButton','Entrar no painel');}
+});
+$('resetPassword').addEventListener('click',async function(){
+ const email=$('email').value.trim();
+ if(!email){errorLogin('Informe primeiro seu e-mail.');return;}
+ const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:'https://paineldeajustes.github.io/site-consulta-convenios/'});
+ if(error)errorLogin(error.message);else errorLogin('Se houver cadastro, enviaremos as instruções para o e-mail informado.');
+});
+$('logout').addEventListener('click',async()=>{
+ ++requestSequence;
+ records=[];recordByNumber.clear();current=null;activeSession=null;
+ try{await client.auth.signOut({scope:'local'});}catch(err){console.warn(err);}
+ text('signedEmail','');$('password').value='';show('loginView');
+});
+$('retry').addEventListener('click',async()=>{
+ if(!activeSession){show('loginView');return;}
+ const {data}=await client.auth.getSession();
+ if(!data.session){show('loginView');errorLogin('Sessão expirada. Entre novamente.');return;}
+ await dataLoad(data.session);
+});
+$('search').addEventListener('input',e=>{query=e.target.value;catalogue();});
+$('filterAll').addEventListener('click',()=>{onlyRet=false;$('filterAll').classList.add('active');$('filterWithRet').classList.remove('active');catalogue();});
+$('filterWithRet').addEventListener('click',()=>{onlyRet=true;$('filterWithRet').classList.add('active');$('filterAll').classList.remove('active');catalogue();});
+$('list').addEventListener('click',e=>{const btn=e.target.closest('button[data-number]');if(btn)select(btn.dataset.number);});
+$('list').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target?.dataset?.number){e.preventDefault();select(e.target.dataset.number);}});
+document.querySelector('.tabs').addEventListener('click',e=>{
+ const btn=e.target.closest('[data-tab]');if(!btn)return;tab=btn.dataset.tab;filterYear='';filterSource='';filterText='';renderTab();
+});
+$('tabContent').addEventListener('change',e=>{
+ if(e.target.id==='yearSelect')filterYear=e.target.value;
+ if(e.target.id==='sourceSelect')filterSource=e.target.value;
+ if(e.target.id==='yearSelect'||e.target.id==='sourceSelect')renderTab();
+});
+$('tabContent').addEventListener('input',e=>{
+ if(e.target.id==='documentSearch'){
+  const i=e.target.selectionStart;filterText=e.target.value;renderTab();
+  const field=$('documentSearch');if(field){field.focus();field.setSelectionRange(i,i);}
+ }
+});
+$('tabContent').addEventListener('click',e=>{if(e.target.closest('#downloadCsv'))exportCsv();});
+authenticate();
 })();
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const $ = id => document.getElementById(id);
-
-const BRASAO_IMAGE_URL = 'https://www.logotypes101.com/logos/398/E5F8785AA062188E4F7E7B3121DE5B9D/S%C3%A3o_Bernardo_do_Campo.png';
-let FICHA_CREST_DATA = null;
-document.querySelectorAll('.municipal-crest,.auth-crest').forEach(img=>{
-  img.src=BRASAO_IMAGE_URL;
-  img.onerror=()=>{img.style.visibility='hidden';};
-});
-
-
-// Use somente a chave pública sb_publishable_. Nunca use service_role ou chave secret.
-const SUPABASE_URL = 'https://qkjudfvlaatdcaosadun.supabase.co';
-const SUPABASE_PUBLIC_KEY = 'sb_publishable_B3A7uwmQWUs8oOivjgJ6Qw_6rqx4U0W';
-
-const AUTH_REDIRECT_URL = 'https://paineldeajustes.github.io/site-consulta-convenios/';
-const supabaseClient = window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY,{
-  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
-});
-let currentSession=null;
-let currentProfile=null;
-
-// Estrutura fixa das colunas do RET_FONTES.txt (empenhos e pagamentos).
-const RET_SCHEMA=['CONVENIO','ENTIDADE','TIPOAD','NUMEROAD','TPCAD','TPFOTE','VL-BEM','VL-CUSTEIO','VL-REFORMA','EMPENHO','VALOR-NE','VALOR CUSTEIO','VALOR CAPITAL','FONTE-NE','ANO','MES','DIA','OP','EMPENHO_1','VALOR-OP','VALOR CUSTEIO_2','VALOR CAPITAL_3','FONTE-NE_4','ANO_5','MES_6','DIA_7','Column1'];
-// Estados da aplicação declarados antes de qualquer rotina de autenticação/carga.
-let allRows=[],headers=RET_SCHEMA.slice(),currentRows=[],currentEmpenhos=[],currentPayments=[],currentMovementRows=[],layoutInfo={hasPayments:false,maxFields:RET_SCHEMA.length};
-let activeAdjustmentFilterCode='';
-let cadMetadataByKey=new Map(),cadMetadataLoaded=false,cadMetadataFinishedAt='';
-let selectionRows=[],retFontesImportId='',retFontesImportPromise=null,retRowsLoadedFor='',selectionRequestId=0,selectionLoadRequestId=0;
-let selectionPage=1,selectionTotalCount=0,selectionFacets={years:[],letters:[]},currentSelectedOption=null,catalogItems=[],catalogLoaded=false;
-let movementContext=null,movementContextCache=new Map();
-let currentEmpMovementRows=[],currentPayMovementRows=[],empPageResult=null,payPageResult=null;
-let movementPageRequestIds={empenho:0,pagamento:0};
-const MOVEMENT_PAGE_SIZE=100;
-const MOVEMENT_CACHE_LIMIT=20;
-let empCurrentPage=1,payCurrentPage=1;
-const retRowsCache=new Map();
-function cacheMovementContext(key,value){
-  movementContextCache.delete(key);
-  movementContextCache.set(key,value);
-  while(movementContextCache.size>MOVEMENT_CACHE_LIMIT){
-    const oldestKey=movementContextCache.keys().next().value;
-    movementContextCache.delete(oldestKey);
-  }
-}
-
-let accountMode='login';
-let recoveryMode=false;
-$('logoutButton').addEventListener('click',async()=>{
-  const button=$('logoutButton');
-  button.disabled=true;
-  try{
-    const {error}=await supabaseClient.auth.signOut({scope:'local'});
-    if(error)throw error;
-  }catch(error){
-    console.error('Falha ao encerrar a sessão local',error);
-  }finally{
-    currentSession=null;currentProfile=null;recoveryMode=false;
-    movementContextCache.clear();retRowsCache.clear();
-    currentRows=[];currentMovementRows=[];currentEmpMovementRows=[];currentPayMovementRows=[];
-    currentEmpenhos=[];currentPayments=[];movementContext=null;empPageResult=null;payPageResult=null;
-    selectionRows=[];cadMetadataByKey.clear();window.CONVENIO_OPTIONS=[];
-    empCurrentPage=1;payCurrentPage=1;retRowsLoadedFor='';
-    $('conv').innerHTML='<option value="">Entre para carregar os ajustes</option>';
-    $('conv').disabled=true;
-    $('search').disabled=true;
-    $('loginPassword').value='';
-    $('loginForm').hidden=false;
-    $('resetPasswordPanel').hidden=true;
-    showLogin('Você saiu da sua conta.','info');
-    button.disabled=false;
-  }
-});
-
-function setAccountMode(mode){
-  accountMode=mode;
-  const creating=mode==='signup';
-  $('loginTitle').textContent=creating?'Criar acesso':'Bem-vindo de volta';
-  $('loginSubtitle').textContent=creating?'Crie uma senha para o e-mail autorizado pela administração. Somente contas previamente liberadas terão acesso aos dados.':'Entre com seu e-mail e senha para acessar as informações dos ajustes e suas ferramentas autorizadas.';
-  $('confirmPasswordField').hidden=!creating;
-  $('confirmPassword').required=creating;
-  $('loginPassword').autocomplete=creating?'new-password':'current-password';
-  $('forgotPassword').hidden=creating;
-  $('loginButton').textContent=creating?'Criar acesso':'Entrar no sistema';
-  $('accountModeHint').textContent=creating?'Já possui conta?':'Primeiro acesso?';
-  $('accountModeToggle').textContent=creating?'Voltar para entrar':'Criar minha senha';
-  $('loginPassword').value='';
-  $('confirmPassword').value='';
-  showAuthMessage('');
-}
-$('accountModeToggle').addEventListener('click',()=>setAccountMode(accountMode==='login'?'signup':'login'));
-$('loginForm').addEventListener('submit',async event=>{
-  event.preventDefault();
-  const button=$('loginButton');
-  const email=$('loginEmail').value.trim().toLowerCase();
-  const password=$('loginPassword').value;
-  button.disabled=true;button.textContent=accountMode==='signup'?'Criando acesso…':'Validando acesso…';
-  showAuthMessage('');
-  try{
-    if(accountMode==='signup'){
-      if(password.length<8)throw new Error('A senha precisa ter pelo menos 8 caracteres.');
-      if(password!==$('confirmPassword').value)throw new Error('As senhas informadas não são iguais.');
-      const {data,error}=await supabaseClient.auth.signUp({
-        email,password,
-        options:{emailRedirectTo:AUTH_REDIRECT_URL}
-      });
-      if(error)throw error;
-      if(data.session){
-        const allowed=await activateSession(data.session);
-        if(allowed)showAuthMessage('Seu acesso foi criado com sucesso.','success');
-      }else{
-        setAccountMode('login');
-        $('loginEmail').value=email;
-        showAuthMessage('Solicitação recebida. Confira a caixa de entrada do e-mail para confirmar a conta e depois entre no sistema. Se o e-mail não chegar, verifique a configuração de e-mail do Supabase.','success');
-      }
-    }else{
-      const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
-      if(error)throw error;
-      const allowed=await activateSession(data.session);
-      if(allowed)showAuthMessage('');
-    }
-  }catch(error){
-    const creating=accountMode==='signup';
-    showLogin(creating?(error.message||'Não foi possível criar o acesso. Verifique o e-mail e tente novamente.'):'Não foi possível entrar. Confira o e-mail e a senha ou use “Esqueci minha senha”.','error');
-    console.warn('Falha na autenticação do painel',error);
-  }finally{
-    button.disabled=false;
-    button.textContent=accountMode==='signup'?'Criar acesso':'Entrar no sistema';
-  }
-});
-$('forgotPassword').addEventListener('click',async()=>{
-  const email=$('loginEmail').value.trim().toLowerCase();
-  if(!email){
-    showAuthMessage('Informe seu e-mail acima para receber as instruções de redefinição da senha.','info');
-    $('loginEmail').focus();return;
-  }
-  const button=$('forgotPassword');
-  button.disabled=true;
-  try{
-    const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{
-      redirectTo:AUTH_REDIRECT_URL
-    });
-    if(error)throw error;
-    showAuthMessage('Se esse e-mail estiver cadastrado, você receberá uma mensagem com as instruções para redefinir a senha.','success');
-  }catch(error){
-    showAuthMessage('Não foi possível solicitar a redefinição. Verifique a configuração de URLs de autenticação e tente novamente.','error');
-    console.warn('Falha ao solicitar redefinição de senha',error);
-  }finally{button.disabled=false;}
-});
-$('resetPasswordForm').addEventListener('submit',async event=>{
-  event.preventDefault();
-  const password=$('newPassword').value;
-  const confirmation=$('newPasswordConfirm').value;
-  if(password.length<8){showAuthMessage('A senha precisa ter pelo menos 8 caracteres.','error');return;}
-  if(password!==confirmation){showAuthMessage('As senhas informadas não são iguais.','error');return;}
-  const button=$('saveNewPassword');button.disabled=true;button.textContent='Salvando…';
-  try{
-    const {error}=await supabaseClient.auth.updateUser({password});
-    if(error)throw error;
-    recoveryMode=false;
-    $('resetPasswordPanel').hidden=true;
-    $('loginForm').hidden=false;
-    showLogin('Senha atualizada. Entre com a nova senha.','success');
-    await supabaseClient.auth.signOut();
-    $('newPassword').value='';$('newPasswordConfirm').value='';
-  }catch(error){
-    showAuthMessage('Não foi possível salvar a nova senha. Abra novamente o link mais recente de recuperação e tente de novo.','error');
-    console.warn('Falha ao atualizar senha',error);
-  }finally{button.disabled=false;button.textContent='Salvar nova senha';}
-});
-supabaseClient.auth.onAuthStateChange((event,session)=>{
-  if(event==='PASSWORD_RECOVERY'){
-    recoveryMode=true;
-    $('appShell').hidden=true;$('loginScreen').hidden=false;
-    $('loginForm').hidden=true;$('resetPasswordPanel').hidden=false;
-    showAuthMessage('Link de recuperação validado. Defina sua nova senha abaixo.','info');
-  }else if(event==='SIGNED_OUT'&&!recoveryMode){
-    currentSession=null;currentProfile=null;
-  }
-});
-
-async function supabaseGet(path){
-  const {data:{session}}=await supabaseClient.auth.getSession();
-  if(!session?.access_token)throw new Error('Sua sessão expirou. Entre novamente no sistema.');
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),20000);
-  try{
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-      headers: { apikey: SUPABASE_PUBLIC_KEY, Authorization: `Bearer ${session.access_token}`, Accept: 'application/json' },
-      signal:controller.signal
-    });
-    if(!response.ok) throw new Error(`Supabase respondeu ${response.status}: ${await response.text()}`);
-    return await response.json();
-  }catch(error){
-    if(error?.name==='AbortError')throw new Error('Tempo limite de 20 segundos ao consultar o Supabase. Verifique a conexão e tente recarregar.');
-    throw error;
-  }finally{clearTimeout(timer);}
-}
-async function supabaseRpc(name,payload){
-  const {data:{session}}=await supabaseClient.auth.getSession();
-  if(!session?.access_token)throw new Error('Sua sessão expirou. Entre novamente no sistema.');
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),20000);
-  try{
-    const response=await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`,{
-      method:'POST',
-      headers:{
-        apikey:SUPABASE_PUBLIC_KEY,
-        Authorization:`Bearer ${session.access_token}`,
-        'Content-Type':'application/json',
-        Accept:'application/json'
-      },
-      body:JSON.stringify(payload||{}),
-      signal:controller.signal
-    });
-    if(!response.ok)throw new Error(`Supabase respondeu ${response.status}: ${await response.text()}`);
-    return await response.json();
-  }catch(error){
-    if(error?.name==='AbortError')throw new Error('Tempo limite de 20 segundos ao carregar o catálogo. Recarregue a página e tente novamente.');
-    throw error;
-  }finally{clearTimeout(timer);}
-}
-
-async function supabaseGetAll(path, pageSize=1000){
-  const results=[];
-  let offset=0;
-  while(true){
-    const batch=await supabaseGet(`${path}&limit=${pageSize}&offset=${offset}`);
-    results.push(...batch);
-    if(batch.length<pageSize)break;
-    offset+=batch.length;
-  }
-  return results;
-}
-
-const CAD_TYPE_LABELS={
-  '1':'AUXÍLIO-CONCESSÃO','2':'SUBVENÇÃO-CONCESSÃO','3':'CONTRIBUIÇÃO-CONCESSÃO',
-  '4':'AUXÍLIO-RECEBIDO','5':'SUBVENÇÃO-RECEBIDO','6':'CONTRIBUIÇÃO-RECEBIDO',
-  '7':'TERMO DE COLABORAÇÃO','8':'TERMO DE FOMENTO','9':'OUTROS',
-  '10':'ACORDO DE COOPERAÇÃO','11':'CONTRATO DE GESTÃO','12':'TERMO DE PARCERIA','13':'CONVÊNIO'
-};
-function cadTypeLabel(code){
-  const raw=String(code??'').trim();
-  const key=raw.replace(/^0+/,'')||raw;
-  return CAD_TYPE_LABELS[key]|| (raw?'Código '+raw:'Não informado');
-}
-function formatCadDate(value){
-  const raw=String(value??'').trim();
-  if(!/^\d{8}$/.test(raw)||raw==='00000000')return 'Não informado';
-  const year=Number(raw.slice(0,4)),month=Number(raw.slice(4,6)),day=Number(raw.slice(6,8));
-  const date=new Date(year,month-1,day);
-  if(date.getFullYear()!==year||date.getMonth()!==month-1||date.getDate()!==day)return 'Não informado';
-  return String(day).padStart(2,'0')+'/'+String(month).padStart(2,'0')+'/'+String(year);
-}
-function cadMetadataFor(code){
-  const key=normalizeAdjustmentSearch(formatAdjustmentNumber(code));
-  const fromPage=cadMetadataByKey.get(key);
-  if(fromPage)return fromPage;
-  if(currentSelectedOption&&normalizeAdjustmentSearch(formatAdjustmentNumber(currentSelectedOption.cv))===key){
-    return currentSelectedOption.metadata||null;
-  }
-  return null;
-}
-function formatCadCode(metadata){
-  if(!metadata)return '';
-  const number=String(metadata.number||'').replace(/\D/g,'').padStart(5,'0');
-  const year=String(metadata.year||'').replace(/\D/g,'').slice(-4);
-  const letter=String(metadata.letter||'').trim().toUpperCase();
-  if(number.length!==5||year.length!==4)return '';
-  return number+'/'+year+(letter?'-'+letter:'');
-}
-const CAD_EXTRA_FIELD_DEFINITIONS=[
-  ['DT-ASSINA','Data de assinatura'],['TP-PC','Tipo de prestação de contas'],['PROCESSO','Processo'],['TP-AJUSTE','Tipo do ajuste'],
-  ['CONC-RECEB','Concedente / recebedor'],['AJUSTE2','Identificação complementar'],['LEI','Lei'],['LEI-ESP','Lei específica'],
-  ['PROC-PCONTAS','Processo de prestação de contas'],['DT-INI','Data inicial'],['DT-FIM','Data final'],
-  ['INI+TA','Valor inicial + termos aditivos'],['ULT-TA','Último termo aditivo'],['OBJETO','Objeto'],
-  ['R-SOCIAL','Razão social'],['ENDERECO','Endereço'],['BAIRRO','Bairro'],['CIDADE','Cidade'],
-  ['CPF/CNPJ','CPF/CNPJ'],['CA1','CA1'],['CA2','CA2']
-];
-const CAD_DATE_FIELDS=new Set(['DT-ASSINA','DT-INI','DT-FIM']);
-function renderCadExtraFields(metadata){
-  const container=$('cadExtraFieldsGrid');
-  const details=$('cadExtraDetails');
-  if(!metadata){
-    container.innerHTML='<div class="empty">Selecione um ajuste para consultar os demais campos.</div>';
-    details.open=false;
-    return;
-  }
-  const extra=metadata.extra_fields||{};
-  container.innerHTML=CAD_EXTRA_FIELD_DEFINITIONS.map(([key,label])=>{
-    let value=String(extra[key]??'').trim();
-    if(CAD_DATE_FIELDS.has(key)&&value)value=formatCadDate(value);
-    if(key==='TP-AJUSTE'&&value)value=value+' — '+cadTypeLabel(value);
-    if(!value)value='Não informado';
-    return '<div class="cad-extra-field"><span>'+esc(label)+' · '+esc(key)+'</span><strong>'+esc(value)+'</strong></div>';
-  }).join('');
-}
-function setSelectOptions(id,values,emptyLabel,formatter){
-  const control=$(id);
-  if(!control)return;
-  const previous=control.value;
-  const clean=[...new Set(values.map(value=>String(value??'').trim()).filter(Boolean))]
-    .sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
-  control.innerHTML='<option value="">'+esc(emptyLabel)+'</option>'+
-    clean.map(value=>'<option value="'+esc(value)+'">'+esc(formatter?formatter(value):value)+'</option>').join('');
-  control.value=clean.includes(previous)?previous:'';
-  control.disabled=clean.length===0;
-}
-async function loadAdjustmentCatalog(){
-  const result=await supabaseRpc('get_orcom_adjustment_catalog',{});
-  catalogItems=(Array.isArray(result.items)?result.items:[]).map(item=>({cv:String(item.number||'').trim(),key:'',ent:''})).filter(item=>item.cv);
-  catalogLoaded=true;
-  window.CONVENIO_OPTIONS=catalogItems;
-  $('conv').innerHTML='<option value="">Selecione um ajuste ('+catalogItems.length.toLocaleString('pt-BR')+' disponíveis)</option>'+
-    catalogItems.map(item=>'<option value="'+esc(item.cv)+'">'+esc(item.cv)+'</option>').join('');
-  $('conv').value='';
-  $('conv').disabled=!catalogItems.length;
-  $('fileMeta').textContent=catalogItems.length.toLocaleString('pt-BR')+' números disponíveis · catálogo atualizado diariamente às 6h';
-}
-function renderAdjustmentOptionsFromCad(){
-  // A seleção principal é construída exclusivamente pelo catálogo de números.
-  // A Visão Geral usa esta rotina de compatibilidade sem alterar os 1.237 itens.
-  return;
-  const options=[];
-  for(const metadata of cadMetadataByKey.values()){
-    const cv=formatCadCode(metadata);
-    if(!cv)continue;
-    options.push({
-      cv,
-      ent:String(metadata.entity||metadata.extra_fields?.['R-SOCIAL']||'').trim(),
-      year:String(metadata.year||'').trim(),
-      letter:String(metadata.letter||'').trim().toUpperCase(),
-      key:String(metadata.join_key||''),
-      metadata
-    });
-  }
-  options.sort((a,b)=>
-    a.year.localeCompare(b.year,'pt-BR',{numeric:true})||
-    a.letter.localeCompare(b.letter,'pt-BR')||
-    formatAdjustmentNumber(a.cv).localeCompare(formatAdjustmentNumber(b.cv),'pt-BR',{numeric:true})
-  );
-  const year=$('adjustmentYearFilter').value;
-  const letter=$('adjustmentLetterFilter').value;
-  const searchValue=(!$('overviewView').hidden?$('overviewSearch').value:$('search').value).trim();
-  const normalizedSearch=normalizeAdjustmentSearch(searchValue);
-  const suggestions=options.filter(option=>
-    !normalizedSearch||normalizeAdjustmentSearch(option.cv+' '+formatAdjustmentNumber(option.cv)+' '+option.ent).includes(normalizedSearch)
-  );
-  window.CONVENIO_OPTIONS=suggestions;
-  const list=[...suggestions];
-  if(currentSelectedOption&&!list.some(option=>normalizeAdjustmentSearch(option.cv)===normalizeAdjustmentSearch(currentSelectedOption.cv))){
-    list.unshift(currentSelectedOption);
-  }
-  $('conv').innerHTML='<option value="">Selecione um ajuste</option>'+
-    list.map(option=>'<option value="'+esc(option.cv)+'">'+esc(formatAdjustmentNumber(option.cv))+' — '+esc(option.ent||'Entidade não informada')+'</option>').join('');
-  $('conv').disabled=list.length===0;
-  $('search').disabled=false;
-  $('adjustmentYearFilter').disabled=selectionFacets.years.length===0;
-  $('adjustmentLetterFilter').disabled=selectionFacets.letters.length===0;
-  setSelectOptions('adjustmentYearFilter',selectionFacets.years,'Todos os anos',value=>value);
-  setSelectOptions('adjustmentLetterFilter',selectionFacets.letters,'Todas as letras',value=>value);
-  $('adjustmentYearFilter').value=year;
-  $('adjustmentLetterFilter').value=letter;
-  const selected=currentSelectedOption?.cv||'';
-  $('conv').value=list.some(option=>normalizeAdjustmentSearch(option.cv)===normalizeAdjustmentSearch(selected))?selected:'';
-  $('clearAdjustmentSelection').disabled=!selected;
-}
-function renderAdjustmentPagination(containerId){
-  const container=$(containerId);
-  if(!container)return;
-  const totalPages=Math.max(1,Math.ceil(selectionTotalCount/100));
-  const first=selectionTotalCount?(selectionPage-1)*100+1:0;
-  const last=Math.min(selectionPage*100,selectionTotalCount);
-  const button=(label,page,disabled,aria)=>'<button type="button" data-page="'+page+'" aria-label="'+aria+'" '+(disabled?'disabled':'')+'>'+label+'</button>';
-  const actions=totalPages>1
-    ?'<div class="table-pagination-actions">'+
-      button('«',1,selectionPage===1,'Primeira página de ajustes')+
-      button('‹',selectionPage-1,selectionPage===1,'Página anterior de ajustes')+
-      '<span class="table-pagination-page">Página '+selectionPage.toLocaleString('pt-BR')+' de '+totalPages.toLocaleString('pt-BR')+'</span>'+
-      button('›',selectionPage+1,selectionPage===totalPages,'Próxima página de ajustes')+
-      button('»',totalPages,selectionPage===totalPages,'Última página de ajustes')+
-      '</div>'
-    :'<span class="table-pagination-page">Página 1 de 1</span>';
-  container.innerHTML='<span>Exibindo '+first.toLocaleString('pt-BR')+'–'+last.toLocaleString('pt-BR')+
-    ' de '+selectionTotalCount.toLocaleString('pt-BR')+' ajustes. Pesquise pelo número ou entidade para localizar qualquer ajuste.</span>'+actions;
-  container.querySelectorAll('button[data-page]').forEach(button=>
-    button.addEventListener('click',()=>loadCadMetadataFromSupabase({page:Number(button.getAttribute('data-page'))}))
-  );
-}
-function parseCadDateValue(value){
-  const raw=String(value??'').trim();
-  let year,month,day;
-  if(/^\d{8}$/.test(raw)&&raw!=='00000000'){
-    year=Number(raw.slice(0,4));month=Number(raw.slice(4,6));day=Number(raw.slice(6,8));
-  }else{
-    const iso=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if(!iso)return null;
-    year=Number(iso[1]);month=Number(iso[2]);day=Number(iso[3]);
-  }
-  const date=new Date(year,month-1,day);
-  if(date.getFullYear()!==year||date.getMonth()!==month-1||date.getDate()!==day)return null;
-  date.setHours(0,0,0,0);
-  return date;
-}
-function renderAdjustmentStatus(code,metadata){
-  const badge=$('adjustmentStatusBadge');
-  if(!badge)return;
-  if(!code){
-    badge.hidden=true;badge.textContent='';badge.className='adjustment-status';return;
-  }
-  const endDate=metadata?parseCadDateValue(metadata.last_validity):null;
-  badge.hidden=false;
-  if(!endDate){
-    badge.textContent='Vigência não informada';
-    badge.className='adjustment-status status-unknown';
-    badge.title='A situação não pode ser determinada porque a data de última vigência não está disponível ou é inválida.';
-    return;
-  }
-  const today=new Date();today.setHours(0,0,0,0);
-  if(endDate.getTime()>=today.getTime()){
-    badge.textContent='Ajuste Vigente';
-    badge.className='adjustment-status status-current';
-    badge.title='A data de última vigência é hoje ou futura.';
-  }else{
-    badge.textContent='Ajuste Encerrado!';
-    badge.className='adjustment-status status-closed';
-    badge.title='A data de última vigência é anterior à data de hoje.';
-  }
-}
-function renderCadMetadata(code){
-  const metadata=code?cadMetadataFor(code):null;
-  $('cadMetaStatus').textContent=metadata?'Cadastro encontrado':(cadMetadataLoaded?'Ajuste não encontrado no cadastro complementar':'Cadastro complementar ainda não importado');
-  $('cadMetaType').textContent=metadata?cadTypeLabel(metadata.type_code):'—';
-  $('cadMetaProcess').textContent=metadata?(metadata.process||'Não informado'):'—';
-  $('cadMetaSigned').textContent=metadata?formatCadDate(metadata.signed_date):'—';
-  $('cadMetaValidity').textContent=metadata?formatCadDate(metadata.last_validity):'—';
-  $('cadMetaObject').textContent=metadata?(metadata.object_full||metadata.object||'Não informado'):(code?'Não há dados cadastrais carregados para este ajuste.':'Selecione um ajuste para consultar o objeto cadastrado.');
-  renderCadExtraFields(metadata);
-  renderAdjustmentStatus(code,metadata);
-}
-async function loadCadMetadataFromSupabase(options={}){
-  const page=Math.max(1,Number(options.page||1));
-  const requestId=++selectionLoadRequestId;
-  const searchValue=options.search!==undefined?String(options.search||''):(
-    !$('overviewView').hidden?$('overviewSearch').value:$('search').value
-  );
-  const year=$('adjustmentYearFilter').value||null;
-  const letter=$('adjustmentLetterFilter').value||null;
-  const negativeOnly=!$('overviewView').hidden&&$('overviewBalanceFilter').value==='negative';
-  if(!cadMetadataLoaded){
-    $('overviewTable').innerHTML='<div class="empty">Carregando a primeira página de ajustes…</div>';
-    $('status').hidden=false;
-    $('status').textContent='Carregando a primeira página da seleção…';
-  }
-  try{
-    const result=await supabaseRpc('orcom_adjustment_selection_page',{
-      p_page:page,p_page_size:100,p_year:year,p_letter:letter,
-      p_search:searchValue.trim()||null,p_negative_only:negativeOnly
-    });
-    if(requestId!==selectionLoadRequestId)return;
-    selectionPage=Number(result.page||page);
-    selectionTotalCount=Number(result.total_count||0);
-    selectionFacets={
-      years:Array.isArray(result.years)?result.years:[],
-      letters:Array.isArray(result.letters)?result.letters:[]
-    };
-    cadMetadataByKey=new Map();
-    selectionRows=[];
-    for(const record of (Array.isArray(result.rows)?result.rows:[])){
-      let metadata=record.fields;
-      if(typeof metadata==='string'){try{metadata=JSON.parse(metadata);}catch{metadata={};}}
-      if(!metadata||typeof metadata!=='object'||Array.isArray(metadata))metadata={};
-      metadata={
-        ...metadata,
-        join_key:record.adjustment_key,
-        year:record.adjustment_year,
-        number:record.adjustment_number,
-        letter:record.adjustment_letter,
-        entity:record.entity||metadata.entity||metadata.extra_fields?.['R-SOCIAL']||'',
-        selection:record
-      };
-      const key=normalizeAdjustmentSearch(record.adjustment_key);
-      cadMetadataByKey.set(key,metadata);
-      selectionRows.push({...record,_metadata:metadata});
-    }
-    cadMetadataLoaded=true;
-    renderAdjustmentOptionsFromCad();
-    renderCadMetadata($('conv').value);
-    renderOverview();
-    renderAdjustmentPagination('selectionPagination');
-    renderAdjustmentPagination('overviewPagination');
-    const snapshotDate=result.snapshot_refreshed_at||cadMetadataFinishedAt;
-    $('fileMeta').textContent=
-      selectionTotalCount.toLocaleString('pt-BR')+' ajustes elegíveis · página '+selectionPage+
-      (snapshotDate?' · resumo consolidado em '+new Date(snapshotDate).toLocaleString('pt-BR'):'');
-    $('status').hidden=false;
-    $('status').textContent=selectionTotalCount
-      ?'Seleção pronta. Os ajustes são carregados em páginas de 100; use a busca para localizar qualquer registro.'
-      :'Nenhum ajuste concedido com pagamentos a partir de 2020 foi encontrado.';
-  }catch(error){
-    if(requestId!==selectionLoadRequestId)return;
-    console.error('Não foi possível carregar a página de ajustes elegíveis.',error);
-    $('status').hidden=false;
-    $('status').textContent='Não foi possível carregar os ajustes: '+(error?.message||String(error));
-    if(!cadMetadataLoaded){
-      $('overviewTable').innerHTML='<div class="empty">Não foi possível carregar a primeira página de ajustes.</div>';
-    }
-  }
-}
-function retCompactKey(metadata){
-  const year=String(metadata?.year||'').replace(/\D/g,'').slice(-4);
-  const number=String(metadata?.number||'').replace(/\D/g,'').padStart(5,'0').slice(-5);
-  const letter=String(metadata?.letter||'').replace(/[^A-Za-z0-9]/g,'').toUpperCase();
-  return year.length===4&&number.length===5?year+number+letter:'';
-}
-function retRowsToObjects(records){
-  return records.map(record=>{
-    let values=record.fields;
-    if(typeof values==='string'){try{values=JSON.parse(values);}catch{values=[];}}
-    if(!Array.isArray(values))values=[];
-    const row={_row_number:record.row_number};
-    RET_SCHEMA.forEach((header,index)=>row[header]=values[index]??'');
-    return row;
-  });
-}
-async function loadRetRowsForAdjustment(code,requestId){
-  currentRows=[];
-  if(!retFontesImportId&&retFontesImportPromise)await retFontesImportPromise;
-  const metadata=cadMetadataFor(code);
-  const compact=retCompactKey(metadata);
-  if(!retFontesImportId||!compact){
-    retRowsLoadedFor='';
-    return;
-  }
-  const cacheKey=retFontesImportId+'|'+compact;
-  if(retRowsCache.has(cacheKey)){
-    currentRows=retRowsCache.get(cacheKey);
-    retRowsLoadedFor=metadata?.join_key||normalizeAdjustmentSearch(formatAdjustmentNumber(code));
-    return;
-  }
-  const query=new URLSearchParams();
-  query.set('select','row_number,fields');
-  query.set('import_id','eq.'+retFontesImportId);
-  query.set('fields->>0','eq.'+compact);
-  query.set('order','row_number.asc');
-  const records=await supabaseGetAll('ret_fontes_rows?'+query.toString(),500);
-  if(requestId!==selectionRequestId)return;
-  currentRows=retRowsToObjects(records);
-  retRowsCache.set(cacheKey,currentRows);
-  retRowsLoadedFor=metadata?.join_key||normalizeAdjustmentSearch(formatAdjustmentNumber(code));
-}
-function retDateISO(year,month,day){
-  const y=String(year??'').trim(),m=String(month??'').trim().padStart(2,'0'),d=String(day??'').trim().padStart(2,'0');
-  if(!/^\d{4}$/.test(y)||!/^\d{2}$/.test(m)||!/^\d{2}$/.test(d))return '';
-  const date=new Date(Number(y),Number(m)-1,Number(d));
-  if(date.getFullYear()!==Number(y)||date.getMonth()!==Number(m)-1||date.getDate()!==Number(d))return '';
-  return y+'-'+m+'-'+d;
-}
-function retEmpenhoItems(rows=currentRows){
-  return (rows||[]).filter(row=>String(row.EMPENHO||'').trim()).map(row=>{
-    const number=String(row.EMPENHO||'').trim();
-    const year=String(row.ANO||'').trim()||number.split('/')[1]||'';
-    const amount=num(row['VALOR-NE'])||(num(row['VALOR CUSTEIO'])+num(row['VALOR CAPITAL']));
-    const c=num(row['VALOR CUSTEIO']),cap=num(row['VALOR CAPITAL']);
-    const sourceCode=String(row['FONTE-NE']||'').trim();
-    return {
-      record:row,fields:{...row},year,empenho:number,documentKey:number,
-      source:sourceLabelFromFT(sourceCode),sourceCode,c,cap,
-      other:amount-c-cap,total:amount,annulment:''
-    };
-  });
-}
-function retPaymentItems(rows=currentRows){
-  return (rows||[]).filter(row=>{
-    const op=String(row.OP||'').trim(),year=String(row.ANO_5||'').trim();
-    return op && /^\d{4}$/.test(year) && Number(year)>=2020;
-  }).map(row=>{
-    const op=String(row.OP||'').trim(),ne=String(row.EMPENHO_1||'').trim();
-    const year=String(row.ANO_5||'').trim(),month=String(row.MES_6||'').trim(),day=String(row.DIA_7||'').trim();
-    const dateISO=retDateISO(year,month,day);
-    const dt=dateISO?parseISODate(dateISO):null;
-    const c=num(row['VALOR CUSTEIO_2']),cap=num(row['VALOR CAPITAL_3']);
-    const amount=num(row['VALOR-OP'])||(c+cap);
-    const sourceCode=String(row['FONTE-NE_4']||'').trim();
-    return {
-      record:row,fields:{...row},dt,dateISO,op,documentKey:op,ne,linkedEmpKey:ne,
-      source:sourceLabelFromFT(sourceCode),sourceCode,c,cap,other:amount-c-cap,total:amount,
-      valid:null,cancel:'',annulment:'',transactionKind:'',accountingAdjustment:''
-    };
-  });
-}
-function retUnique(values){
-  return [...new Set((values||[]).map(value=>String(value??'').trim()).filter(Boolean))]
-    .sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
-}
-function buildRetMovementContext(rows=currentRows){
-  const empenhos=retEmpenhoItems(rows),pagamentos=retPaymentItems(rows);
-  const total=(items,key)=>items.reduce((sum,item)=>sum+(Number(item[key])||0),0);
-  const sourceMap=new Map();
-  for(const item of empenhos){
-    const key=item.sourceCode||'';
-    if(!sourceMap.has(key))sourceMap.set(key,{source_code:key,total_empenhado:0,total_pago_bruto:0,total_pago_valido:0});
-    sourceMap.get(key).total_empenhado+=item.total;
-  }
-  for(const item of pagamentos){
-    const key=item.sourceCode||'';
-    if(!sourceMap.has(key))sourceMap.set(key,{source_code:key,total_empenhado:0,total_pago_bruto:0,total_pago_valido:0});
-    sourceMap.get(key).total_pago_bruto+=item.total;
-    sourceMap.get(key).total_pago_valido+=item.total;
-  }
-  const paymentYears=pagamentos.map(item=>item.dateISO.slice(0,4));
-  return {
-    summary:{
-      empenho_count:empenhos.length,pagamento_count:pagamentos.length,
-      total_empenhado:total(empenhos,'total'),total_pago_bruto:total(pagamentos,'total'),
-      total_pago_valido:total(pagamentos,'total')
-    },
-    sources:[...sourceMap.values()],
-    facets:{
-      empenhos:{
-        years:retUnique(empenhos.map(item=>item.year)),
-        numbers:retUnique(empenhos.map(item=>item.empenho)),
-        sources:retUnique(empenhos.map(item=>item.sourceCode)),
-        custeio:retUnique(empenhos.map(item=>item.c)),
-        capital:retUnique(empenhos.map(item=>item.cap))
-      },
-      pagamentos:{
-        years:retUnique(paymentYears),
-        ops:retUnique(pagamentos.map(item=>item.op)),
-        empenhos:retUnique(pagamentos.map(item=>item.ne)),
-        sources:retUnique(pagamentos.map(item=>item.sourceCode)),
-        custeio:retUnique(pagamentos.map(item=>item.c)),
-        capital:retUnique(pagamentos.map(item=>item.cap))
-      }
-    }
-  };
-}
-function retFilterItems(items,fileType,filters){
-  return (items||[]).filter(item=>{
-    if(filters.year && String(fileType==='empenho'?item.year:(item.dateISO||'').slice(0,4))!==String(filters.year))return false;
-    if(fileType==='empenho'){
-      if(filters.number && item.empenho!==String(filters.number))return false;
-      if(filters.source && item.sourceCode!==String(filters.source))return false;
-      if(filters.custeio && Math.abs(item.c-num(filters.custeio))>0.005)return false;
-      if(filters.capital && Math.abs(item.cap-num(filters.capital))>0.005)return false;
-      return true;
-    }
-    if(filters.op && item.op!==String(filters.op))return false;
-    if(filters.number && item.ne!==String(filters.number))return false;
-    if(filters.source && item.sourceCode!==String(filters.source))return false;
-    if(filters.custeio && Math.abs(item.c-num(filters.custeio))>0.005)return false;
-    if(filters.capital && Math.abs(item.cap-num(filters.capital))>0.005)return false;
-    if(filters.date_from && (!item.dateISO||item.dateISO<filters.date_from))return false;
-    if(filters.date_to && (!item.dateISO||item.dateISO>filters.date_to))return false;
-    if(filters.quadrimester){
-      if(!item.dt)return false;
-      const q=Number(filters.quadrimester),month=item.dt.getMonth()+1;
-      if(month<(q-1)*4+1||month>q*4)return false;
-    }
-    return true;
-  });
-}
-async function loadMovementContextForAdjustment(code,requestId){
-  if(requestId!==selectionRequestId||$('conv').value!==code)return null;
-  movementContext=buildRetMovementContext(currentRows);
-  cacheMovementContext(cadMetadataFor(code)?.join_key||normalizeAdjustmentSearch(formatAdjustmentNumber(code)),movementContext);
-  return movementContext;
-}
-function getMovementFilters(fileType){
-  if(fileType==='empenho')return {
-    year:$('empFilterYear').value||null,number:$('empFilterNumber').value||null,
-    source:$('empFilterSource').value||null,custeio:$('empFilterCusteio').value||null,
-    capital:$('empFilterCapital').value||null
-  };
-  return {
-    year:$('yearFilter').value||null,quadrimester:$('quadrimFilter').value||null,
-    op:$('payFilterOP').value||null,number:$('payFilterEmpenho').value||null,
-    source:$('payFilterFonte').value||null,custeio:$('payFilterCusteio').value||null,
-    capital:$('payFilterCapital').value||null,date_from:$('dateFrom').value||null,date_to:$('dateTo').value||null
-  };
-}
-async function loadMovementPageForAdjustment(fileType,page=1,selectionRequest=selectionRequestId,options={}){
-  const code=$('conv').value;
-  if(!code||selectionRequest!==selectionRequestId)return null;
-  const requestId=++movementPageRequestIds[fileType];
-  const filters=options.filters||getMovementFilters(fileType);
-  const allItems=fileType==='empenho'?retEmpenhoItems(currentRows):retPaymentItems(currentRows);
-  const filtered=retFilterItems(allItems,fileType,filters);
-  const pageSize=Math.max(1,Number(options.pageSize||MOVEMENT_PAGE_SIZE));
-  const start=(Math.max(1,page)-1)*pageSize;
-  const records=filtered.slice(start,start+pageSize);
-  const sum=key=>filtered.reduce((total,item)=>total+(Number(item[key])||0),0);
-  const result={
-    page:Math.max(1,page),page_size:pageSize,total_count:filtered.length,
-    totals:{
-      total_count:filtered.length,total_amount:sum('total'),total_custeio:sum('c'),
-      total_capital:sum('cap'),total_other:sum('other'),total_valid:sum('total'),exceptions:0
-    },
-    rows:records
-  };
-  if(selectionRequest!==selectionRequestId||requestId!==movementPageRequestIds[fileType]||$('conv').value!==code)return null;
-  if(fileType==='empenho'){
-    currentEmpMovementRows=records;currentEmpenhos=records;
-    empPageResult=result;empCurrentPage=result.page;
-    renderEmpenhoTable(currentEmpenhos,empPageResult,options.allRecords===true);
-  }else{
-    currentPayMovementRows=records;currentPayments=records;
-    payPageResult=result;payCurrentPage=result.page;
-    renderPayments(currentPayments,payPageResult,options.allRecords===true);
-  }
-  currentMovementRows=[...currentEmpMovementRows,...currentPayMovementRows];
-  return result;
-}
-async function fetchAllMovementRows(fileType,filters=null){
-  const selectedFilters=filters||getMovementFilters(fileType);
-  const allItems=fileType==='empenho'?retEmpenhoItems(currentRows):retPaymentItems(currentRows);
-  const rows=retFilterItems(allItems,fileType,selectedFilters);
-  const sum=key=>rows.reduce((total,item)=>total+(Number(item[key])||0),0);
-  return {rows,total_count:rows.length,totals:{total_amount:sum('total'),total_valid:sum('total')}};
-}
-async function loadLatestFromSupabase(){
-  if(!SUPABASE_PUBLIC_KEY || SUPABASE_PUBLIC_KEY === 'COLE_SUA_CHAVE_PUBLICA_AQUI'){
-    $('status').hidden=false;$('status').textContent='Falta configurar a chave pública do Supabase no index.html.';return;
-  }
-  $('status').hidden=false;$('status').textContent='Conectado. Carregando o catálogo permanente de ajustes…';
-  try{
-    headers=RET_SCHEMA.slice();allRows=[];currentRows=[];currentEmpenhos=[];currentPayments=[];currentMovementRows=[];
-    currentEmpMovementRows=[];currentPayMovementRows=[];movementContext=null;movementContextCache.clear();retRowsCache.clear();
-    empPageResult=null;payPageResult=null;empCurrentPage=1;payCurrentPage=1;retRowsLoadedFor='';
-    // A primeira página da seleção é carregada em paralelo com a identificação da última versão RET.
-    const selectionRequest=loadAdjustmentCatalog();
-    retFontesImportPromise=supabaseGet(
-      'ret_fontes_imports?select=id,file_name,status,row_count,finished_at&file_name=eq.RET_FONTES.txt&status=eq.success&order=finished_at.desc&limit=1'
-    ).then(imports=>{
-      if(!imports?.length)throw new Error('Não há importação concluída de RET_FONTES.txt.');
-      retFontesImportId=imports[0].id;
-      return imports;
-    });
-    await Promise.all([selectionRequest,retFontesImportPromise]);
-    retFontesImportPromise=null;
-    $('status').hidden=false;
-    $('status').textContent='Catálogo carregado com '+catalogItems.length.toLocaleString('pt-BR')+' números. Selecione um ajuste para consultar os dados.';
-  }catch(error){
-    retFontesImportPromise=null;
-    $('status').hidden=false;$('status').textContent='Não foi possível carregar a consulta: '+(error?.message||String(error));
-    console.error('Falha ao carregar a seleção de ajustes.',error);
-  }
-}
-
-const money = n => {
-  const value=Number(n)||0;
-  const cents=Math.round(Math.abs(value)*100);
-  const roundedValue=cents===0?0:Math.sign(value)*cents/100;
-  return roundedValue.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-};
-function isNegativeMoney(n){
-  const value=Number(n)||0;
-  return value<0 && Math.round(Math.abs(value)*100)>0;
-}
-function norm(s){return String(s??'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
-function num(v){
-  if(typeof v==='number') return v;
-  let s=String(v??'').trim(); if(!s) return 0;
-  s=s.replace(/\s/g,'');
-  if(s.includes(',') && s.includes('.')) s=s.replace(/\./g,'').replace(',','.');
-  else if(s.includes(',')) s=s.replace(',','.');
-  const x=Number(s); return Number.isFinite(x)?x:0;
-}
-function splitLine(line, delim){
-  const out=[]; let cur='', q=false;
-  for(let i=0;i<line.length;i++){
-    const c=line[i];
-    if(c==='"'){ if(q && line[i+1]==='"'){cur+='"';i++;} else q=!q; }
-    else if(c===delim && !q){out.push(cur);cur='';}
-    else cur+=c;
-  }
-  out.push(cur); return out;
-}
-function detectDelimiter(text){
-  const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(x=>x.trim()).slice(0,8);
-  const candidates=['\t',';','|',','];
-  let best='\t', score=-1;
-  for(const d of candidates){
-    const counts=lines.map(l=>splitLine(l,d).length);
-    const consistent=counts.filter(c=>c>1).length;
-    const avg=counts.reduce((a,b)=>a+b,0)/Math.max(1,counts.length);
-    const sc=consistent*100+avg;
-    if(sc>score){score=sc;best=d;}
-  }
-  return best;
-}
-function parseText(text){
-  const d=detectDelimiter(text);
-  const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(l=>l.trim()!=='');
-  let hs=splitLine(lines[0],d).map(x=>x.trim().replace(/^\uFEFF/,'').replace(/^"|"$/g,''));
-  // O TXT do relatório pode repetir cabeçalhos em blocos (empenhos e pagamentos).
-  // Como a estrutura foi confirmada como fixa, damos nomes únicos às colunas por posição.
-  const schema=['CONVENIO','ENTIDADE','TIPOAD','NUMEROAD','TPCAD','TPFOTE','VL-BEM','VL-CUSTEIO','VL-REFORMA','EMPENHO','VALOR-NE','VALOR CUSTEIO','VALOR CAPITAL','FONTE-NE','ANO','MES','DIA','OP','EMPENHO_1','VALOR-OP','VALOR CUSTEIO_2','VALOR CAPITAL_3','FONTE-NE_4','ANO_5','MES_6','DIA_7','Column1'];
-  const maxFields=lines.slice(1).reduce((max,line)=>Math.max(max,splitLine(line,d).length),hs.length);
-  if(maxFields>=26 && norm(hs[0])==='CONVENIO' && norm(hs[1])==='ENTIDADE'){
-    hs=hs.map((h,i)=>i<schema.length?schema[i]:h);
-  }
-  const rows=lines.slice(1).map(line=>{
-    const a=splitLine(line,d); const obj={};
-    hs.forEach((h,i)=>obj[h]=a[i]??'');
-    return obj;
-  });
-  const hasPayments=hs.some(h=>norm(h)==='OP') && hs.some(h=>norm(h)==='VALOR-OP');
-  return {hs,rows,delimiter:d,maxFields,hasPayments};
-}
-function get(row, name){const key=headers.find(h=>norm(h)===norm(name));return key?row[key]:'';}
-function dateParts(row,prefix){
-  const y=Number(get(row,prefix==='pay'?'ANO_5':'ANO'));
-  const m=Number(get(row,prefix==='pay'?'MES_6':'MES'));
-  const d=Number(get(row,prefix==='pay'?'DIA_7':'DIA'));
-  if(y>1900&&m>=1&&m<=12&&d>=1&&d<=31){const dt=new Date(y,m-1,d);if(dt.getFullYear()===y&&dt.getMonth()===m-1&&dt.getDate()===d)return dt;}
-  return null;
-}
-function fmtDate(dt){return dt?dt.toLocaleDateString('pt-BR'):'—';}
-function iso(dt){return dt?`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`:'';}
-function sourceLabel(v){
-  const raw=String(v??'').trim();
-  if(!raw)return 'Não informada';
-  const labels={M:'Municipal',E:'Estadual',F:'Federal',O:'Outras'};
-  return labels[norm(raw)]||raw;
-}
-
-function sourceLabelFromFT(value){
-  const raw=String(value??'').trim();
-  if(!raw)return 'Não informada';
-  const code=String(Number(raw));
-  const labels={
-    '1':'01 — Tesouro (Municipal)',
-    '2':'02 — Transferências e convênios estaduais',
-    '3':'03 — Recursos próprios de fundos especiais',
-    '4':'04 — Recursos próprios da administração indireta',
-    '5':'05 — Transferências e convênios federais',
-    '6':'06 — Outras fontes de recursos',
-    '7':'07 — Operações de crédito',
-    '8':'08 — Emendas parlamentares individuais — Legislativo Municipal',
-    '19':'19 — Recursos extraorçamentários',
-    '91':'91 — Tesouro — Exercícios anteriores',
-    '92':'92 — Transferências estaduais — Exercícios anteriores',
-    '93':'93 — Fundos especiais — Exercícios anteriores',
-    '94':'94 — Administração indireta — Exercícios anteriores',
-    '95':'95 — Transferências federais — Exercícios anteriores',
-    '96':'96 — Outras fontes — Exercícios anteriores',
-    '97':'97 — Operações de crédito — Exercícios anteriores',
-    '98':'98 — Emendas parlamentares — Exercícios anteriores'
-  };
-  return labels[code]||raw+' — Fonte não catalogada';
-}
-function sourceBroadLabelFromFT(value){
-  const raw=String(value??'').trim();
-  const code=String(Number(raw));
-  const labels={'1':'Municipal','91':'Municipal','2':'Estadual','92':'Estadual','5':'Federal','95':'Federal','3':'Fundos especiais','93':'Fundos especiais','4':'Administração indireta','94':'Administração indireta','6':'Outras fontes','96':'Outras fontes','7':'Operações de crédito','97':'Operações de crédito','8':'Emendas parlamentares municipais','98':'Emendas parlamentares municipais','19':'Recursos extraorçamentários'};
-  return labels[code]||sourceLabelFromFT(value);
-}
-function parseISODate(value){
-  const raw=String(value??'').trim();
-  const match=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if(!match)return null;
-  const date=new Date(Number(match[1]),Number(match[2])-1,Number(match[3]));
-  if(date.getFullYear()!==Number(match[1])||date.getMonth()!==Number(match[2])-1||date.getDate()!==Number(match[3]))return null;
-  return date;
-}
-function formatAdjustmentNumber(value){
-  const raw=String(value??'').trim();
-  if(!raw)return raw;
-
-  // Formato separado antigo/legível precisa ser verificado antes de remover barras.
-  const separatedMatch=raw.match(/^(\d{1,5})\s*\/\s*(\d{4})\s*-?\s*([A-Za-z0-9].*)?$/);
-  if(separatedMatch){
-    const suffix=String(separatedMatch[3]??'').trim();
-    return `${separatedMatch[1].padStart(5,'0')}/${separatedMatch[2]}${suffix?'-'+suffix:''}`;
-  }
-
-  // Formato compacto do RET_FONTES: ano + número de cinco dígitos + sufixo opcional.
-  const compact=raw.replace(/[^A-Za-z0-9]/g,'');
-  const compactMatch=compact.match(/^(\d{4})(\d{5})([A-Za-z0-9].*)?$/);
-  if(compactMatch){
-    const suffix=String(compactMatch[3]??'').trim();
-    return `${compactMatch[2].padStart(5,'0')}/${compactMatch[1]}${suffix?'-'+suffix:''}`;
-  }
-
-  return raw;
-}
-function normalizeAdjustmentSearch(value){return norm(value).replace(/[^A-Z0-9]/g,'');}
-function makeTable(container, cols, rows, empty){
-  if(!rows.length){$(container).innerHTML=`<div class="empty">${empty||'Nenhum registro encontrado.'}</div>`;return;}
-  let html='<table><thead><tr>'+cols.map(c=>`<th>${esc(c.label)}</th>`).join('')+'</tr></thead><tbody>';
-  for(const row of rows){html+='<tr>'+cols.map(c=>{const v=c.get(row);return `<td class="${c.num?'num':''}">${esc(v??'')}</td>`}).join('')+'</tr>';}
-  html+='</tbody></table>'; $(container).innerHTML=html;
-}
-function renderCadAmendments(rows){
-  // Cada documento cadastral é separado por fonte. Registros de mesma fonte e mesmo documento são somados.
-  const makeSourceTotals=()=>new Map();
-  const addSourceValue=(sourceTotals,row)=>{
-    const rawSource=String(get(row,'TPFOTE')??'').trim();
-    const source=rawSource?sourceLabel(rawSource):'Não informada';
-    const key=rawSource?norm(rawSource):'__SEM_FONTE__';
-    if(!sourceTotals.has(key))sourceTotals.set(key,{source,c:0,cap:0,total:0});
-    const item=sourceTotals.get(key);
-    item.c+=num(get(row,'VL-CUSTEIO'))+num(get(row,'VL-REFORMA'));
-    item.cap+=num(get(row,'VL-BEM'));
-  };
-  const sortSourceRows=sourceTotals=>[...sourceTotals.values()]
-    .map(item=>({...item,total:item.c+item.cap}))
-    .sort((a,b)=>a.source.localeCompare(b.source,'pt-BR'));
-
-  const initialRows=rows.filter(row=>norm(get(row,'TPCAD'))==='V');
-  const initialSources=makeSourceTotals();
-  for(const row of initialRows)addSourceValue(initialSources,row);
-
-  // Mantém cada aditamento independente e desdobra suas fontes em linhas separadas.
-  const details=new Map();
-  const amendments=rows.filter(row=>norm(get(row,'TPCAD'))==='A');
-  for(const row of amendments){
-    const type=String(get(row,'TIPOAD')??'').trim()||'Não informado';
-    const number=String(get(row,'NUMEROAD')??'').trim()||'Não informado';
-    const key=norm(type)+'\u241f'+norm(number);
-    if(!details.has(key)){
-      details.set(key,{label:`Aditamento ${number}`,type,number,sourceTotals:makeSourceTotals()});
-    }
-    addSourceValue(details.get(key).sourceTotals,row);
-  }
-  const amendmentsOrdered=[...details.values()].sort((a,b)=>{
-    const n=a.number.localeCompare(b.number,'pt-BR',{numeric:true});
-    return n||a.type.localeCompare(b.type,'pt-BR');
-  });
-
-  const displayRows=[];
-  if(initialRows.length){
-    for(const item of sortSourceRows(initialSources)){
-      displayRows.push({label:'Ajuste inicial',...item});
-    }
-  }
-  for(const amendment of amendmentsOrdered){
-    for(const item of sortSourceRows(amendment.sourceTotals)){
-      displayRows.push({label:amendment.label,...item});
-    }
-  }
-  const logicalDocumentCount=(initialRows.length?1:0)+amendmentsOrdered.length;
-  if(!displayRows.length){
-    $('cadDetailTable').innerHTML='<div class="empty">Não há registros de ajuste inicial (TPCAD=V) nem aditamentos (TPCAD=A) para este ajuste.</div>';
-    return;
-  }
-
-  let html='<table><thead><tr><th>Cadastro</th><th>Fonte</th><th>Custeio</th><th>Capital</th><th>Total</th></tr></thead><tbody>';
-  for(const item of displayRows){
-    html+=`<tr><td>${esc(item.label)}</td><td>${esc(item.source)}</td><td class="num">${esc(money(item.c))}</td><td class="num">${esc(money(item.cap))}</td><td class="num">${esc(money(item.total))}</td></tr>`;
-  }
-  const totalC=displayRows.reduce((sum,item)=>sum+item.c,0);
-  const totalCap=displayRows.reduce((sum,item)=>sum+item.cap,0);
-  const total=displayRows.reduce((sum,item)=>sum+item.total,0);
-  html+='<tfoot><tr><td colspan="2">TOTAL DOS AJUSTES CADASTRADOS ('+logicalDocumentCount.toLocaleString('pt-BR')+' cadastro(s))</td><td class="num">'+esc(money(totalC))+'</td><td class="num">'+esc(money(totalCap))+'</td><td class="num">'+esc(money(total))+'</td></tr></tfoot></table>';
-  $('cadDetailTable').innerHTML=html;
-}
-function renderReconVertical(rows){
-  const el=$('reconTable');
-  if(!rows.length){el.innerHTML='<div class="empty">Não há valores de cadastro, empenhos ou pagamentos para este ajuste.</div>';return;}
-  const metrics=[
-    ['Cadastro inicial','initial','base'],
-    ['Aditamentos (+/−)','additions','base'],
-    ['TOTAL CADASTRADO','registered','total'],
-    ['Total empenhado','emp','flow'],
-    ['Saldo cadastrado − empenhado','uncommitted','balance'],
-    ['Total de pagamentos','paid','paid'],
-    ['Saldo empenhado − pago','empPaidBalance','balance']
-  ];
-  let html='<div class="recon-grid">';
-  for(const r of rows){
-    html+=`<article class="recon-card"><div class="recon-card-head"><strong>Fonte ${esc(r.source)}</strong></div><table class="recon-metrics"><tbody>`;
-    metrics.forEach(m=>{
-      const cls=m[2]==='total'?'metric-total':m[2]==='balance'?'metric-balance':m[2]==='flow'?'metric-flow':m[2]==='paid'?'metric-paid':'';
-      html+=`<tr class="${cls}"><td>${esc(m[0])}</td><td>${money(r[m[1]])}</td></tr>`;
-    });
-    html+='</tbody></table><div class="recon-card-foot">Valores somados de custeio e capital</div></article>';
-  }
-  html+='</div>';
-  el.innerHTML=html;
-}
-function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function aggregate(rows,keyFn,valuesFn){
-  const m=new Map();
-  for(const r of rows){const k=keyFn(r);if(!m.has(k))m.set(k,valuesFn(r));else{const a=m.get(k),b=valuesFn(r);a.c+=b.c;a.cap+=b.cap;a.total+=b.total;}}
-  return [...m.entries()].map(([k,v])=>({key:k,...v}));
-}
-function filterMatches(value,query){
-  const q=String(query??'').trim();
-  if(!q)return true;
-  return norm(String(value??'')).includes(norm(q));
-}
-function moneyMatches(value,query){
-  const q=String(query??'').trim();
-  if(!q)return true;
-  return filterMatches(money(value),q)||filterMatches(String(Number(value)||0),q);
-}
-function populateColumnSelect(id,values,emptyLabel,formatter){
-  const control=$(id);
-  if(!control)return;
-  const previous=control.value;
-  const normalized=new Map();
-  values.forEach(value=>{
-    if(value===null||value===undefined||String(value).trim()==='')return;
-    const raw=String(value);
-    normalized.set(raw,raw);
-  });
-  const sorted=[...normalized.keys()].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
-  control.innerHTML='<option value="">'+esc(emptyLabel)+'</option>'+
-    sorted.map(value=>'<option value="'+esc(value)+'">'+esc(formatter?formatter(value):value)+'</option>').join('');
-  control.value=normalized.has(previous)?previous:'';
-  control.disabled=sorted.length===0;
-}
-function resetColumnFilters(){
-  ['empFilterYear','empFilterNumber','empFilterSource','empFilterCusteio','empFilterCapital',
-   'payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital'
-  ].forEach(id=>{if($(id))$(id).value='';});
-}
-function setRawFacetOptions(id,values,emptyLabel,formatter=value=>value){
-  const control=$(id);if(!control)return;
-  const previous=control.value;
-  const unique=[...new Set((values||[]).filter(value=>value!==null&&value!==undefined&&String(value)!=='').map(value=>String(value)))];
-  control.innerHTML='<option value="">'+esc(emptyLabel)+'</option>'+
-    unique.map(value=>'<option value="'+esc(value)+'">'+esc(formatter(value))+'</option>').join('');
-  control.value=unique.includes(previous)?previous:'';
-  control.disabled=unique.length===0;
-}
-function configureEmpenhoColumnFilters(){
-  const facets=movementContext?.facets?.empenhos||{};
-  setRawFacetOptions('empFilterYear',facets.years,'Todos os anos');
-  setRawFacetOptions('empFilterNumber',facets.numbers,'Todos os empenhos');
-  setRawFacetOptions('empFilterSource',facets.sources,'Todas as fontes',sourceLabelFromFT);
-  setRawFacetOptions('empFilterCusteio',facets.custeio,'Todos os valores de custeio',value=>money(value));
-  setRawFacetOptions('empFilterCapital',facets.capital,'Todos os valores de capital',value=>money(value));
-}
-function configurePaymentFilters(){
-  const facets=movementContext?.facets?.pagamentos||{};
-  setRawFacetOptions('yearFilter',facets.years,'Todos os anos');
-  setRawFacetOptions('payFilterOP',facets.ops,'Todas as OPs');
-  setRawFacetOptions('payFilterEmpenho',facets.empenhos,'Todos os empenhos');
-  setRawFacetOptions('payFilterFonte',facets.sources,'Todas as fontes',sourceLabelFromFT);
-  setRawFacetOptions('payFilterCusteio',facets.custeio,'Todos os valores de custeio',value=>money(value));
-  setRawFacetOptions('payFilterCapital',facets.capital,'Todos os valores de capital',value=>money(value));
-  $('quadrimFilter').value='';
-  const enabled=Number(movementContext?.summary?.pagamento_count||0)>0;
-  ['yearFilter','quadrimFilter','dateFrom','dateTo','clearDates','export','payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital']
-    .forEach(id=>{if($(id))$(id).disabled=!enabled;});
-}
-function renderTablePagination(containerId,currentPage,totalRows,onPageChange){
-  const container=$(containerId);if(!container)return;
-  if(!totalRows){container.innerHTML='';return;}
-  const totalPages=Math.max(1,Math.ceil(totalRows/MOVEMENT_PAGE_SIZE));
-  const first=((currentPage-1)*MOVEMENT_PAGE_SIZE)+1,last=Math.min(currentPage*MOVEMENT_PAGE_SIZE,totalRows);
-  const button=(label,page,disabled,aria)=>'<button type="button" data-page="'+page+'" aria-label="'+aria+'" '+(disabled?'disabled':'')+'>'+label+'</button>';
-  const actions=totalPages>1?'<div class="table-pagination-actions">'+
-    button('«',1,currentPage===1,'Primeira página')+button('‹',currentPage-1,currentPage===1,'Página anterior')+
-    '<span class="table-pagination-page">Página '+currentPage.toLocaleString('pt-BR')+' de '+totalPages.toLocaleString('pt-BR')+'</span>'+
-    button('›',currentPage+1,currentPage===totalPages,'Próxima página')+button('»',totalPages,currentPage===totalPages,'Última página')+'</div>':
-    '<span class="table-pagination-page">Página 1 de 1</span>';
-  container.innerHTML='<span>Exibindo '+first.toLocaleString('pt-BR')+'–'+last.toLocaleString('pt-BR')+
-    ' de '+totalRows.toLocaleString('pt-BR')+' registros. Os totais consideram todos os registros filtrados.</span>'+actions;
-  container.querySelectorAll('button[data-page]').forEach(button=>button.addEventListener('click',()=>onPageChange(Number(button.getAttribute('data-page')))));
-}
-function movementTotals(result){return result?.totals||{};}
-function renderEmpenhoTable(rows=currentEmpenhos,result=empPageResult,allRecords=false){
-  const container=$('empTable'),totals=movementTotals(result),totalCount=Number(result?.total_count||0);
-  if(!totalCount){
-    container.innerHTML='<div class="empty">Nenhum empenho encontrado para este ajuste ou para os filtros selecionados.</div>';
-    $('empPagination').innerHTML='';return;
-  }
-  let html='<table><thead><tr><th>Ano</th><th>Empenho</th><th>Fonte</th><th>Custeio</th><th>Capital</th><th>Outros</th><th>Total</th></tr></thead><tbody>';
-  for(const item of (rows||[])){
-    const link=item.documentKey?'<button type="button" class="document-link" data-open-document="empenho" data-document-key="'+esc(item.documentKey)+'" data-document-label="'+esc(item.empenho)+'">'+esc(item.empenho)+'</button>':esc(item.empenho);
-    html+='<tr class="emp-detail"><td>'+esc(item.year)+'</td><td>'+link+(item.annulment?' · Anulação':'')+'</td><td>'+esc(item.source)+'</td>'+
-      '<td class="num">'+esc(money(item.c))+'</td><td class="num">'+esc(money(item.cap))+'</td><td class="num">'+esc(money(item.other))+'</td><td class="num">'+esc(money(item.total))+'</td></tr>';
-  }
-  html+='</tbody><tfoot><tr><td colspan="3">TOTAL GERAL FILTRADO ('+totalCount.toLocaleString('pt-BR')+' registros)</td>'+
-    '<td class="num">'+esc(money(totals.total_custeio))+'</td><td class="num">'+esc(money(totals.total_capital))+'</td>'+
-    '<td class="num">'+esc(money(totals.total_other))+'</td><td class="num">'+esc(money(totals.total_amount))+'</td></tr></tfoot></table>';
-  container.innerHTML=html;
-  if(allRecords){$('empPagination').innerHTML='';return;}
-  renderTablePagination('empPagination',Number(result?.page||empCurrentPage),totalCount,page=>{
-    empCurrentPage=page;loadMovementPageForAdjustment('empenho',page,selectionRequestId);
-  });
-}
-function paymentSituation(item){
-  return item.dt?'Informado no RET_FONTES.txt':'Data não informada no RET_FONTES.txt';
-}
-function renderPayments(rows=currentPayments,result=payPageResult,allRecords=false){
-  const totals=movementTotals(result),totalCount=Number(result?.total_count||0);
-  const page=Number(result?.page||payCurrentPage),pageSize=Number(result?.page_size||MOVEMENT_PAGE_SIZE);
-  const first=totalCount?(page-1)*pageSize+1:0,last=Math.min(page*pageSize,totalCount);
-  $('payCount').textContent=totalCount?'Exibindo '+first.toLocaleString('pt-BR')+'–'+last.toLocaleString('pt-BR')+' de '+totalCount.toLocaleString('pt-BR')+' pagamentos do RET_FONTES':'0 pagamentos do RET_FONTES';
-  const gross=Number(totals.total_amount||0),net=Number(totals.total_valid||0);
-  $('paySummary').hidden=!totalCount;
-  $('paySummary').innerHTML=totalCount?[
-    ['Total informado no RET_FONTES.txt','pay-summary-card',money(gross)],
-    ['Registros na consulta','pay-summary-card net',totalCount.toLocaleString('pt-BR')+' pagamento(s)']
-  ].map(([label,cls,value])=>'<div class="'+cls+'"><span>'+label+'</span><strong>'+value+'</strong></div>').join(''):'';
-  if(!totalCount){
-    $('payTable').innerHTML='<div class="empty">Nenhum pagamento encontrado no RET_FONTES.txt para este ajuste ou para os filtros selecionados.</div>';
-    $('payPagination').innerHTML='';return;
-  }
-  let html='<table><thead><tr><th>Data do pagamento (RET_FONTES)</th><th>OP</th><th>Empenho</th><th>Fonte</th><th>Custeio</th><th>Capital</th><th>Outros</th><th>Total do movimento</th><th>Situação</th></tr></thead><tbody>';
-  for(const item of (rows||[])){
-    const date=item.dt?item.dt.toLocaleDateString('pt-BR'):'—';
-    const opLink=item.documentKey?'<button type="button" class="document-link" data-open-document="pagamento" data-document-key="'+esc(item.documentKey)+'" data-document-label="'+esc(item.op)+'">'+esc(item.op)+'</button>':esc(item.op);
-    const empLink=item.linkedEmpKey?'<button type="button" class="document-link" data-open-document="empenho" data-document-key="'+esc(item.linkedEmpKey)+'" data-document-label="'+esc(item.ne)+'">'+esc(item.ne)+'</button>':esc(item.ne||'—');
-    html+='<tr><td>'+esc(date)+'</td><td>'+opLink+'</td><td>'+empLink+'</td><td>'+esc(item.source)+'</td>'+
-      '<td class="num">'+esc(money(item.c))+'</td><td class="num">'+esc(money(item.cap))+'</td><td class="num">'+esc(money(item.other))+'</td>'+
-      '<td class="num">'+esc(money(item.total))+'</td><td>'+esc(paymentSituation(item))+'</td></tr>';
-  }
-  html+='</tbody><tfoot><tr><td colspan="4">TOTAL DOS PAGAMENTOS INFORMADOS NO RET_FONTES ('+totalCount.toLocaleString('pt-BR')+' linhas)</td>'+
-    '<td class="num">'+esc(money(totals.total_custeio))+'</td><td class="num">'+esc(money(totals.total_capital))+'</td>'+
-    '<td class="num">'+esc(money(totals.total_other))+'</td><td class="num">'+esc(money(gross))+'</td><td>—</td></tr></tfoot></table>';
-  $('payTable').innerHTML=html;
-  if(allRecords){$('payPagination').innerHTML='';return;}
-  renderTablePagination('payPagination',page,totalCount,nextPage=>{
-    payCurrentPage=nextPage;loadMovementPageForAdjustment('pagamento',nextPage,selectionRequestId);
-  });
-}
-function render(){
-  const cv=$('conv').value;updateFichaButtonVisibility();if(!cv)return;
-  if(activeAdjustmentFilterCode!==cv){resetColumnFilters();empCurrentPage=1;payCurrentPage=1;activeAdjustmentFilterCode=cv;}
-  const metadata=cadMetadataFor(cv);
-  const entity=metadata?.entity||metadata?.extra_fields?.['R-SOCIAL']||currentRows.map(row=>String(get(row,'ENTIDADE')).trim()).find(Boolean)||'—';
-  $('mConv').textContent=formatAdjustmentNumber(cv);$('mEnt').textContent=entity;renderCadMetadata(cv);
-  const recMap=new Map();
-  function recAdd(source,field,value){
-    const key=String(source||'Não informada');
-    if(!recMap.has(key))recMap.set(key,{source:key,initial:0,additions:0,registered:0,emp:0,paid:0});
-    recMap.get(key)[field]+=Number(value)||0;
-  }
-  for(const row of currentRows){
-    const tpcad=norm(get(row,'TPCAD')),source=get(row,'TPFOTE');
-    if(String(source??'').trim()&&(tpcad==='V'||tpcad==='A')){
-      const field=tpcad==='V'?'initial':'additions';
-      recAdd(sourceLabel(source),field,num(get(row,'VL-CUSTEIO'))+num(get(row,'VL-REFORMA'))+num(get(row,'VL-BEM')));
-    }
-  }
-  for(const source of (movementContext?.sources||[])){
-    const label=sourceBroadLabelFromFT(source.source_code);
-    recAdd(label,'emp',source.total_empenhado);recAdd(label,'paid',source.total_pago_valido);
-  }
-  const recon=[...recMap.values()].map(item=>({...item,registered:item.initial+item.additions,uncommitted:item.initial+item.additions-item.emp,empPaidBalance:item.emp-item.paid})).sort((a,b)=>a.source.localeCompare(b.source,'pt-BR'));
-  renderReconVertical(recon);
-  const cad=aggregate(
-    currentRows.filter(row=>String(get(row,'TPFOTE')).trim()!==''),
-    row=>sourceLabel(get(row,'TPFOTE')),
-    row=>{const c=num(get(row,'VL-CUSTEIO'))+num(get(row,'VL-REFORMA'));const cap=num(get(row,'VL-BEM'));return {c,cap,total:c+cap};}
-  );
-  makeTable('cadTable',[
-    {label:'Fonte',get:row=>row.key},{label:'Custeio',num:true,get:row=>money(row.c)},
-    {label:'Capital',num:true,get:row=>money(row.cap)},{label:'Total',num:true,get:row=>money(row.total)}
-  ],cad,'Não há valores cadastrados com fonte preenchida.');
-  renderCadAmendments(currentRows);
-  configureEmpenhoColumnFilters();configurePaymentFilters();
-  renderEmpenhoTable(currentEmpenhos,empPageResult);renderPayments(currentPayments,payPageResult);
-  const summary=movementContext?.summary||{},totalEmpenhado=Number(summary.total_empenhado||0);
-  const totalInicial=recon.reduce((sum,item)=>sum+item.initial,0),totalAditamentos=recon.reduce((sum,item)=>sum+item.additions,0);
-  const totalCadastrado=totalInicial+totalAditamentos,totalPago=Number(summary.total_pago_valido||0);
-  const saldoAjuste=totalCadastrado-totalEmpenhado,saldoAPagar=totalEmpenhado-totalPago;
-  $('mCadInicial').textContent=money(totalInicial);$('mCadAditamentos').textContent=money(totalAditamentos);
-  $('mTotalCadastrado').textContent=money(totalCadastrado);$('mEmp').textContent=money(totalEmpenhado);
-  $('mSaldo').textContent=money(saldoAjuste);$('saldoAjusteCard').classList.toggle('negative-balance',isNegativeMoney(saldoAjuste));
-  $('mPago').textContent=layoutInfo.hasPayments?money(totalPago):'Não disponível';
-  $('mSaldoPagar').textContent=layoutInfo.hasPayments?money(saldoAPagar):'Não disponível';
-}
-
-
-function loadTextIntoPage(text, filename){
-  $('status').hidden=false;
-  try{
-    if(!text || !String(text).trim()){
-      $('status').textContent='O arquivo foi localizado, mas está vazio. Confira RET_FONTES.txt.';
-      return;
-    }
-    const parsed=parseText(text);
-    headers=parsed.hs;allRows=parsed.rows;layoutInfo={hasPayments:parsed.hasPayments,maxFields:parsed.maxFields};
-    const convHeader=headers.find(h=>norm(h.replace(/^\uFEFF/, '').replace(/^\"|\"$/g,''))==='CONVENIO');
-    if(!convHeader){
-      $('status').textContent=`Arquivo lido (${String(text).length.toLocaleString('pt-BR')} caracteres), mas o campo que identifica o ajuste (CONVENIO) não foi identificado. Separador detectado: ${parsed.delimiter==='\t'?'TAB':JSON.stringify(parsed.delimiter)}; colunas encontradas: ${headers.length}. Verifique se o TXT é delimitado ou de largura fixa.`;
-      console.error('Falha ao reconhecer cabeçalho do TXT', {headers, delimiter:parsed.delimiter, preview:String(text).slice(0,500)});
-      return;
-    }
-    $('conv').innerHTML='<option value="">Carregando CadConvenios.txt…</option>';
-    $('conv').disabled=true;
-    $('search').value='';
-    $('search').disabled=true;
-    window.CONVENIO_OPTIONS=[];
-        $('status').hidden=true;
-    $('conv').value='';$('search').value='';activeAdjustmentFilterCode='';resetColumnFilters();$('mConv').textContent='—';$('mEnt').textContent='—';renderCadMetadata('');$('mCadInicial').textContent='—';$('mCadAditamentos').textContent='—';$('mTotalCadastrado').textContent='—';$('mEmp').textContent='—';$('mPago').textContent='—';$('mSaldo').textContent='—';$('saldoAjusteCard').classList.remove('negative-balance');$('mSaldoPagar').textContent='—';
-        ['reconTable','cadTable','cadDetailTable','empTable','payTable'].forEach(id=>$(id).innerHTML='<div class="empty">Selecione um ajuste para visualizar os dados.</div>');
-    $('empPagination').innerHTML='';$('payPagination').innerHTML='';
-    $('dateFrom').disabled=true;$('dateTo').disabled=true;$('clearDates').disabled=true;$('export').disabled=true;
-    $('payCount').textContent='0 registros';
-    currentMovementRows=[];currentEmpMovementRows=[];currentPayMovementRows=[];currentEmpenhos=[];currentPayments=[];movementContext=null;empPageResult=null;payPageResult=null;
-    renderOverview();
-    $('status').hidden=true;
-  }catch(err){
-    $('status').hidden=false;
-    $('status').textContent='Falha ao processar o TXT: '+(err&&err.message?err.message:String(err));
-    console.error('Falha no carregamento da consulta',err);
-  }
-}
-function paymentTotal(row){
-  const raw=String(get(row,'VALOR-OP')??'').trim();
-  if(raw!=='') return num(raw);
-  return num(get(row,'VALOR CUSTEIO_2'))+num(get(row,'VALOR CAPITAL_3'));
-}
-
-function renderOverview(){
-  if(!cadMetadataLoaded){
-    $('overviewTable').innerHTML='<div class="empty">Carregando a lista de ajustes elegíveis…</div>';
-    return;
-  }
-  const allAdjustments=selectionRows.map(record=>{
-    const metadata=record._metadata||{};
-    const code=formatCadCode(metadata);
-    const initial=Number(record.total_cadastrado_inicial)||0;
-    const additions=Number(record.total_cadastrado_aditamentos)||0;
-    const registered=Number(record.total_cadastrado)||initial+additions;
-    const emp=Number(record.total_empenhado)||0;
-    const paid=Number(record.total_pago_valido)||0;
-    return {
-      code,entity:record.entity||metadata.entity||'—',
-      initial,additions,registered,emp,paid,
-      balance:registered-emp,balancePay:emp-paid,
-      cadType:cadTypeLabel(metadata.type_code),
-      process:metadata.process||'—',
-      signedDate:formatCadDate(metadata.signed_date),
-      lastValidity:formatCadDate(metadata.last_validity),
-      object:metadata.object_full||metadata.object||'—'
-    };
-  }).filter(item=>item.code);
-  allAdjustments.sort((a,b)=>{
-    const an=isNegativeMoney(a.balance),bn=isNegativeMoney(b.balance);
-    if(an!==bn)return an?-1:1;
-    if(an&&a.balance!==b.balance)return a.balance-b.balance;
-    return formatAdjustmentNumber(a.code).localeCompare(formatAdjustmentNumber(b.code),'pt-BR');
-  });
-  const filtered=allAdjustments;
-  const negativeCount=allAdjustments.filter(item=>isNegativeMoney(item.balance)).length;
-  $('overviewCount').textContent=filtered.length.toLocaleString('pt-BR')+' nesta página · '+selectionTotalCount.toLocaleString('pt-BR')+' ajustes no filtro';
-  $('overviewSummary').textContent=selectionTotalCount.toLocaleString('pt-BR')+' ajustes concedidos no catálogo permanente'+(negativeCount?' · '+negativeCount.toLocaleString('pt-BR')+' nesta página com saldo negativo.':'.');
-  if(!filtered.length){
-    $('overviewTable').innerHTML='<div class="empty">Nenhum ajuste encontrado para os filtros selecionados.</div>';
-    return;
-  }
-  let html='<table><thead><tr><th>Ajuste</th><th>Entidade</th><th>Tipo</th><th>Processo</th><th>Data de assinatura</th><th>Última vigência</th><th>Objeto</th><th>Total cadastrado inicial</th><th>Total cadastrado em aditamentos</th><th>Total cadastrado</th><th>Total empenhado</th><th>Saldo do ajuste</th><th>Total pago no RET_FONTES</th><th>Saldo total a pagar</th></tr></thead><tbody>';
-  for(const item of filtered){
-    const balanceClass=isNegativeMoney(item.balance)?'negative-value':'';
-    html+='<tr><td><button type="button" class="overview-select" data-adjustment="'+esc(item.code)+'">'+esc(formatAdjustmentNumber(item.code))+'</button></td><td>'+esc(item.entity)+'</td><td>'+esc(item.cadType)+'</td><td>'+esc(item.process)+'</td><td>'+esc(item.signedDate)+'</td><td>'+esc(item.lastValidity)+'</td><td class="object-cell" title="'+esc(item.object)+'">'+esc(item.object)+'</td><td class="num">'+esc(money(item.initial))+'</td><td class="num">'+esc(money(item.additions))+'</td><td class="num">'+esc(money(item.registered))+'</td><td class="num">'+esc(money(item.emp))+'</td><td class="num '+balanceClass+'">'+esc(money(item.balance))+'</td><td class="num">'+esc(money(item.paid))+'</td><td class="num">'+esc(money(item.balancePay))+'</td></tr>';
-  }
-  html+='</tbody></table>';
-  $('overviewTable').innerHTML=html;
-  $('overviewTable').querySelectorAll('button[data-adjustment]').forEach(button=>
-    button.addEventListener('click',()=>{
-      showAppView('detail');
-      chooseConv(button.getAttribute('data-adjustment'));
-      window.scrollTo({top:0,behavior:'smooth'});
-    })
-  );
-}
-function showAppView(view){
-  const overview=view==='overview';
-  $('detailView').hidden=overview;
-  $('overviewView').hidden=!overview;
-  $('tabDetail').classList.toggle('active',!overview);
-  $('tabOverview').classList.toggle('active',overview);
-  $('tabDetail').setAttribute('aria-selected',String(!overview));
-  $('tabOverview').setAttribute('aria-selected',String(overview));
-  if(overview){
-    if(!cadMetadataLoaded)loadCadMetadataFromSupabase({page:1,search:$('overviewSearch').value||''});
-    else renderOverview();
-  }
-}
-function clearAdjustmentSelection(){
-  selectionRequestId++;selectionLoadRequestId++;
-  activeAdjustmentFilterCode='';currentSelectedOption=null;
-  currentRows=[];currentMovementRows=[];currentEmpMovementRows=[];currentPayMovementRows=[];
-  currentEmpenhos=[];currentPayments=[];movementContext=null;empPageResult=null;payPageResult=null;
-  movementPageRequestIds.empenho++;movementPageRequestIds.pagamento++;
-  retRowsLoadedFor='';empCurrentPage=1;payCurrentPage=1;layoutInfo.hasPayments=false;
-  $('conv').value='';$('search').value='';$('suggestions').hidden=true;
-  $('clearAdjustmentSelection').disabled=true;
-  ['mConv','mEnt','mCadInicial','mCadAditamentos','mTotalCadastrado','mEmp','mPago','mSaldo','mSaldoPagar'].forEach(id=>$(id).textContent='—');
-  $('saldoAjusteCard').classList.remove('negative-balance');
-  renderCadMetadata('');
-  $('reconTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar a conciliação.</div>';
-  $('cadTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar os valores cadastrados.</div>';
-  $('cadDetailTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar os cadastros.</div>';
-  $('empTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar os empenhos.</div>';
-  $('payTable').innerHTML='<div class="empty">Selecione um ajuste para visualizar os pagamentos.</div>';
-  $('empPagination').innerHTML='';$('payPagination').innerHTML='';
-  $('paySummary').hidden=true;$('payCount').textContent='0 registros';
-  $('dateFrom').value='';$('dateTo').value='';
-  $('dateFrom').disabled=true;$('dateTo').disabled=true;$('yearFilter').disabled=true;$('quadrimFilter').disabled=true;
-  $('clearDates').disabled=true;$('export').disabled=true;resetColumnFilters();
-  ['empFilterYear','empFilterNumber','empFilterSource','empFilterCusteio','empFilterCapital','payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital'].forEach(id=>{if($(id))$(id).disabled=true;});
-  updateFichaButtonVisibility();
-  $('status').hidden=false;$('status').textContent='Seleção limpa. Escolha um ajuste ou aplique os filtros de ano e letra.';
-}
-
-
-async function chooseConv(value){
-  const cv=String(value||'').trim();if(!cv)return;
-  const found=(window.CONVENIO_OPTIONS||[]).find(option=>normalizeAdjustmentSearch(option.cv)===normalizeAdjustmentSearch(cv))
-    ||(currentSelectedOption&&normalizeAdjustmentSearch(currentSelectedOption.cv)===normalizeAdjustmentSearch(cv)?currentSelectedOption:null);
-  if(!found){
-    $('status').hidden=false;
-    $('status').textContent='O número selecionado não foi encontrado na lista carregada. Recarregue a página.';
-    return;
-  }
-  const requestId=++selectionRequestId;currentSelectedOption=found;
-  $('status').hidden=false;
-  $('status').textContent='Consultando os dados cadastrais do ajuste '+found.cv+'…';
-  try{
-    const rec=await supabaseRpc('orcom_adjustment_metadata',{p_adjustment_number:found.cv});
-    if(requestId!==selectionRequestId)return;
-    if(!rec||!rec.adjustment_key)throw new Error('Número não localizado no catálogo cadastral preservado.');
-    let meta=rec.fields;
-    if(typeof meta==='string'){try{meta=JSON.parse(meta)}catch{meta={}}}
-    if(!meta||typeof meta!=='object'||Array.isArray(meta))meta={};
-    meta={...meta,join_key:rec.adjustment_key,year:rec.adjustment_year,number:rec.adjustment_number,
-      letter:rec.adjustment_letter,entity:rec.entity||meta.entity||'',selection:rec};
-    cadMetadataByKey.set(normalizeAdjustmentSearch(rec.adjustment_key),meta);
-    cadMetadataByKey.set(normalizeAdjustmentSearch(found.cv),meta);
-    currentSelectedOption={...found,key:rec.adjustment_key,metadata:meta};
-    selectionRows=[{...rec,_metadata:meta}];cadMetadataLoaded=false;
-  }catch(error){
-    $('status').hidden=false;
-    $('status').textContent='Não foi possível localizar os dados do ajuste selecionado: '+(error?.message||String(error));
-    console.error('Falha ao carregar o cadastro do ajuste',error);
-    return;
-  }
-  $('status').hidden=false;
-  $('status').textContent='Cadastro localizado. Preparando os dados do ajuste '+found.cv+'…';
-  $('conv').value=found.cv;$('search').value=formatAdjustmentNumber(found.cv);
-  $('suggestions').hidden=true;$('clearAdjustmentSelection').disabled=false;
-  currentRows=[];currentMovementRows=[];currentEmpMovementRows=[];currentPayMovementRows=[];
-  currentEmpenhos=[];currentPayments=[];movementContext=null;empPageResult=null;payPageResult=null;
-  movementPageRequestIds.empenho++;movementPageRequestIds.pagamento++;
-  retRowsLoadedFor='';empCurrentPage=1;payCurrentPage=1;layoutInfo.hasPayments=false;
-  ['dateFrom','dateTo'].forEach(id=>$(id).value='');
-  ['yearFilter','quadrimFilter','payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital',
-   'empFilterYear','empFilterNumber','empFilterSource','empFilterCusteio','empFilterCapital'].forEach(id=>{if($(id))$(id).value='';});
-  $('paySummary').hidden=true;
-  $('empTable').innerHTML='<div class="empty">Carregando a primeira página de empenhos do RET_FONTES…</div>';
-  $('payTable').innerHTML='<div class="empty">Carregando a primeira página de pagamentos do RET_FONTES…</div>';
-  $('empPagination').innerHTML='';$('payPagination').innerHTML='';
-  render();
-  $('status').hidden=false;$('status').textContent='Carregando os dados do ajuste '+formatAdjustmentNumber(found.cv)+' diretamente do RET_FONTES.txt…';
-  updateFichaButtonVisibility();
-  try{
-    await loadRetRowsForAdjustment(found.cv,requestId);
-    if(requestId!==selectionRequestId||$('conv').value!==found.cv)return;
-    await loadMovementContextForAdjustment(found.cv,requestId);
-    if(requestId!==selectionRequestId||$('conv').value!==found.cv)return;
-    layoutInfo.hasPayments=Number(movementContext?.summary?.pagamento_count||0)>0;
-    configureEmpenhoColumnFilters();configurePaymentFilters();
-    await Promise.all([
-      loadMovementPageForAdjustment('empenho',1,requestId),
-      loadMovementPageForAdjustment('pagamento',1,requestId)
-    ]);
-    if(requestId!==selectionRequestId||$('conv').value!==found.cv)return;
-    render();
-    $('status').hidden=false;
-    const retText=currentRows.length?currentRows.length.toLocaleString('pt-BR')+' linhas do RET_FONTES':'nenhum lançamento correspondente no RET_FONTES.txt mais recente';
-    $('status').textContent=retText+' · '+Number(movementContext?.summary?.empenho_count||0).toLocaleString('pt-BR')+
-      ' empenhos · '+Number(movementContext?.summary?.pagamento_count||0).toLocaleString('pt-BR')+' pagamentos (RET_FONTES).';
-  }catch(error){
-    if(requestId!==selectionRequestId)return;
-    $('status').hidden=false;$('status').textContent='Falha ao carregar os dados do ajuste: '+(error?.message||String(error));
-    console.error('Falha ao abrir ajuste',error);
-  }
-}
-function showSuggestions(){
-  const panel=$('suggestions');
-  const q=normalizeAdjustmentSearch($('search').value);
-  if(!q || !window.CONVENIO_OPTIONS || !window.CONVENIO_OPTIONS.length){panel.hidden=true;panel.innerHTML='';return;}
-  const matches=window.CONVENIO_OPTIONS.filter(o=>normalizeAdjustmentSearch(o.cv+' '+formatAdjustmentNumber(o.cv)+' '+o.ent).includes(q)).slice(0,15);
-  if(!matches.length){panel.innerHTML='<div class="empty">Nenhum ajuste encontrado.</div>';panel.hidden=false;return;}
-  panel.innerHTML=matches.map(o=>`<button type="button" class="suggestion" data-cv="${esc(o.cv)}"><strong>${esc(formatAdjustmentNumber(o.cv))}</strong><span>${esc(o.ent||'Entidade não informada')}</span></button>`).join('');
-  panel.querySelectorAll('button[data-cv]').forEach(btn=>btn.addEventListener('click',()=>chooseConv(btn.getAttribute('data-cv'))));
-  panel.hidden=false;
-}
-$('tabDetail').addEventListener('click',()=>showAppView('detail'));
-$('tabOverview').addEventListener('click',()=>showAppView('overview'));
-$('overviewSearch').addEventListener('input',()=>{
-  selectionPage=1;
-  clearTimeout(adjustmentSearchTimer);
-  adjustmentSearchTimer=setTimeout(()=>loadCadMetadataFromSupabase({page:1,search:$('overviewSearch').value}),250);
-});
-$('overviewBalanceFilter').addEventListener('change',()=>loadCadMetadataFromSupabase({page:1}));
-$('conv').addEventListener('change',()=>{if($('conv').value)chooseConv($('conv').value);});
-$('adjustmentYearFilter').addEventListener('change',()=>loadCadMetadataFromSupabase({page:1}));
-$('adjustmentLetterFilter').addEventListener('change',()=>loadCadMetadataFromSupabase({page:1}));
-$('clearAdjustmentSelection').addEventListener('click',clearAdjustmentSelection);
-let adjustmentSearchTimer=null;
-$('search').addEventListener('input',()=>{
-  const q=normalizeAdjustmentSearch($('search').value);
-  const opts=(window.CONVENIO_OPTIONS||[]).filter(o=>!q||normalizeAdjustmentSearch(o.cv).includes(q));
-  $('conv').innerHTML=opts.map(o=>'<option value="'+esc(o.cv)+'">'+esc(o.cv)+'</option>').join('');
-  $('conv').disabled=!opts.length;
-});
-$('search').addEventListener('keydown',e=>{
-  if(e.key==='Enter'){
-    e.preventDefault();
-    const val=$('search').value.trim();
-    const matches=(window.CONVENIO_OPTIONS||[]).filter(o=>normalizeAdjustmentSearch(o.cv+' '+formatAdjustmentNumber(o.cv)+' '+o.ent).includes(normalizeAdjustmentSearch(val)));
-    if(matches.length===1)chooseConv(matches[0].cv);
-    else if(matches.length>1)showSuggestions();
-  } else if(e.key==='Escape') $('suggestions').hidden=true;
-});
-document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))$('suggestions').hidden=true;});
-$('dateFrom').addEventListener('change',()=>{payCurrentPage=1;loadMovementPageForAdjustment('pagamento',1,selectionRequestId);});
-$('dateTo').addEventListener('change',()=>{payCurrentPage=1;loadMovementPageForAdjustment('pagamento',1,selectionRequestId);});
-$('yearFilter').addEventListener('change',()=>{payCurrentPage=1;loadMovementPageForAdjustment('pagamento',1,selectionRequestId);});
-$('quadrimFilter').addEventListener('change',()=>{payCurrentPage=1;loadMovementPageForAdjustment('pagamento',1,selectionRequestId);});
-['empFilterYear','empFilterNumber','empFilterSource','empFilterCusteio','empFilterCapital']
-  .forEach(id=>$(id).addEventListener('change',()=>{empCurrentPage=1;loadMovementPageForAdjustment('empenho',1,selectionRequestId);}));
-['payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital']
-  .forEach(id=>$(id).addEventListener('change',()=>{payCurrentPage=1;loadMovementPageForAdjustment('pagamento',1,selectionRequestId);}));
-$('clearDates').addEventListener('click',()=>{
-  $('dateFrom').value='';$('dateTo').value='';$('yearFilter').value='';$('quadrimFilter').value='';
-  ['payFilterOP','payFilterEmpenho','payFilterFonte','payFilterCusteio','payFilterCapital'].forEach(id=>$(id).value='');
-  payCurrentPage=1;loadMovementPageForAdjustment('pagamento',1,selectionRequestId);
-});
-async function exportAllPaymentsCSV(){
-  const button=$('export'),originalText=button.textContent;
-  button.disabled=true;button.textContent='Preparando CSV…';
-  try{
-    const result=await fetchAllMovementRows('pagamento',getMovementFilters('pagamento'));
-    const rows=result.rows||[];
-    const data=[['Data pagamento','OP','Empenho','Fonte','Custeio','Capital','Total pago'],
-      ...rows.map(item=>[fmtDate(item.dt),item.op,item.ne,item.source,item.c.toFixed(2).replace('.',','),item.cap.toFixed(2).replace('.',','),item.total.toFixed(2).replace('.',',')])];
-    const csv='\uFEFF'+data.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
-    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download='pagamentos_'+formatAdjustmentNumber($('conv').value).replace(/[^\w.-]+/g,'_')+'.csv';a.click();
-    URL.revokeObjectURL(url);
-    $('status').textContent='CSV exportado com '+rows.length.toLocaleString('pt-BR')+' pagamentos filtrados.';
-  }catch(error){$('status').textContent='Não foi possível exportar os pagamentos: '+(error?.message||String(error));}
-  finally{button.disabled=false;button.textContent=originalText;}
-}
-$('export').addEventListener('click',exportAllPaymentsCSV);
-
-
-function showAuthMessage(message,type='info'){
-  const box=$('authMessage');
-  box.textContent=message;
-  box.className='auth-message '+type;
-  box.hidden=!message;
-}
-function showLogin(message='',type='info'){
-  $('appShell').hidden=true;
-  $('loginScreen').hidden=false;
-  if(message)showAuthMessage(message,type);
-}
-async function activateSession(session){
-  if(!session?.user?.email){showLogin();return false;}
-  const email=session.user.email.trim().toLowerCase();
-  const {data:profile,error}=await supabaseClient
-    .from('panel_users')
-    .select('email,is_admin,is_active')
-    .eq('email',email)
-    .maybeSingle();
-  if(error){
-    await supabaseClient.auth.signOut();
-    currentSession=null;currentProfile=null;
-    showLogin('Não foi possível validar suas permissões. Confira a configuração de acesso ou contate o administrador.','error');
-    console.error('Erro ao verificar perfil do painel',error);
-    return false;
-  }
-  if(!profile || profile.is_active!==true){
-    await supabaseClient.auth.signOut();
-    currentSession=null;currentProfile=null;
-    showLogin('A conta foi autenticada, mas ainda não tem acesso liberado ao Painel de Ajustes. Solicite liberação à administração.','error');
-    return false;
-  }
-  currentSession=session;currentProfile=profile;
-  $('loginScreen').hidden=true;
-  $('appShell').hidden=false;
-  $('signedInAs').textContent=email;
-  void loadLatestFromSupabase();
-  return true;
-}
-
-
-function closeDocumentModal(){
-  $('documentModal').hidden=true;
-  $('documentModalBody').innerHTML='';
-}
-async function openMovementDocument(type,documentKey,label){
-  const title=type==='empenho'?'Empenho':'Ordem de Pagamento';
-  $('documentModalTitle').textContent=title+' '+(label||'');
-  $('documentModalSubtitle').textContent='Consultando o RET_FONTES.txt…';
-  $('documentModalBody').innerHTML='<div class="empty">Carregando detalhes…</div>';
-  $('documentModal').hidden=false;
-  const isEmp=type==='empenho';
-  const matches=(currentRows||[]).filter(row=>String(row[isEmp?'EMPENHO':'OP']||'').trim()===String(documentKey||'').trim());
-  $('documentModalSubtitle').textContent=matches.length.toLocaleString('pt-BR')+' linha(s) correspondente(s) no RET_FONTES.txt.';
-  if(!matches.length){
-    $('documentModalBody').innerHTML='<div class="empty">Não foram localizados detalhes deste documento no RET_FONTES.txt atual.</div>';
-    return;
-  }
-  const fieldNames=isEmp
-    ?[['Empenho','EMPENHO'],['Ano','ANO'],['Valor do empenho','VALOR-NE'],['Custeio','VALOR CUSTEIO'],['Capital','VALOR CAPITAL'],['Fonte','FONTE-NE'],['Dia','DIA'],['Mês','MES']]
-    :[['OP','OP'],['Empenho vinculado','EMPENHO_1'],['Valor da OP','VALOR-OP'],['Custeio','VALOR CUSTEIO_2'],['Capital','VALOR CAPITAL_3'],['Fonte','FONTE-NE_4'],['Ano','ANO_5'],['Mês','MES_6'],['Dia','DIA_7']];
-  $('documentModalBody').innerHTML=matches.map((row,index)=>{
-    const fields=fieldNames.filter(([,key])=>String(row[key]??'').trim()!=='');
-    const fieldHtml=fields.map(([label,key])=>'<div class="document-field"><span>'+esc(label)+'</span><strong>'+esc(row[key])+'</strong></div>').join('');
-    return '<article class="document-record-card"><div class="document-record-title"><strong>'+esc(title+' '+(label||''))+'</strong><span class="pill">Linha RET '+esc(row._row_number||index+1)+'</span></div><div class="document-field-grid">'+fieldHtml+'</div></article>';
-  }).join('');
-}
-$('closeDocumentModal').addEventListener('click',closeDocumentModal);
-document.querySelectorAll('[data-close-document]').forEach(el=>el.addEventListener('click',closeDocumentModal));
-document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('documentModal').hidden)closeDocumentModal();});
-document.addEventListener('click',event=>{
-  const button=event.target.closest('[data-open-document]');
-  if(button)openMovementDocument(button.getAttribute('data-open-document'),button.getAttribute('data-document-key'),button.getAttribute('data-document-label'));
-});
-
-async function callImportFunction(name,token,payload={}){
-  const response=await fetch(`${SUPABASE_URL}/functions/v1/${name}`,{
-    method:'POST',
-    headers:{apikey:SUPABASE_PUBLIC_KEY,Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
-    body:JSON.stringify(payload)
-  });
-  let result={};
-  try{result=await response.json();}catch{}
-  if(!response.ok||result.success===false)throw new Error(result.error||`Falha na importação (${response.status}).`);
-  return result;
-}
-$('generateFichaButton').addEventListener('click',generateFichaPDF);
-$('conv').addEventListener('change',updateFichaButtonVisibility);
-
-async function initializeAuthentication(){
-  $('appShell').hidden=true;
-  $('loginScreen').hidden=false;
-  try{
-    const {data:{session},error}=await supabaseClient.auth.getSession();
-    if(error)throw error;
-    if(session)await activateSession(session);
-    else showLogin();
-  }catch(error){
-    showLogin('Não foi possível inicializar a autenticação. Atualize a página e tente novamente.','error');
-    console.error('Falha ao inicializar autenticação',error);
-  }
-}
-initializeAuthentication();
 </script>
 </body>
 </html>

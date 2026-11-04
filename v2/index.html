@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0c2540">
+<title>Consulta 2.0 | Ajustes e Parcerias</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#17314a;background:#f4f7fa;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;min-height:100vh}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.48}
+[hidden]{display:none!important}a{color:#147c8b}h1,h2,h3,p{margin-top:0}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #81d9d1;outline-offset:2px}
+.topbar{height:72px;background:#0c253f;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,3vw,44px);color:#fff;gap:14px}
+.brand{display:flex;align-items:center;gap:12px}.brand-mark{width:37px;height:37px;background:#24b8aa;color:#062f3a;border-radius:12px;display:grid;place-items:center;font-weight:900;font-size:17px}
+.brand-name{font-size:15px;font-weight:800;letter-spacing:-.4px}.brand-sub{font-size:11px;color:#9fc5d4;margin-top:3px}
+.top-actions{display:flex;gap:12px;align-items:center}.top-actions small{color:#a5c5d1;font-size:11px;text-align:right}
+.ghost-dark{border:1px solid #436075;background:transparent;color:#e6f5fc;border-radius:9px;padding:9px 12px;font-size:12px;font-weight:700}
+.intro{padding:30px clamp(18px,3vw,44px) 23px;background:linear-gradient(113deg,#102f4d,#0e4656);color:#fff}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#7fe7d6;font-weight:800;margin-bottom:7px}
+.intro h1{font-size:clamp(23px,2.6vw,35px);letter-spacing:-1px;margin-bottom:8px}.intro p{font-size:13px;color:#c9e2e8;margin:0;max-width:780px;line-height:1.6}
+.summary-strip{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.summary-pill{border:1px solid #4e7281;border-radius:999px;padding:7px 11px;font-size:11px;color:#dfedf2}
+.summary-pill strong{color:#fff}.layout{display:grid;grid-template-columns:310px minmax(0,1fr);gap:20px;max-width:1700px;margin:22px auto 60px;padding:0 clamp(16px,2.5vw,40px)}
+.side,.main-card,.notice,.tile{background:#fff;border:1px solid #e3eaf0;border-radius:16px;box-shadow:0 3px 15px #14355107}
+.side{position:sticky;top:14px;align-self:start;overflow:hidden}.side-head{padding:19px 18px 15px;border-bottom:1px solid #e7eef3}
+.section-title{display:flex;align-items:center;justify-content:space-between;gap:10px}.section-title h2{font-size:14px;margin:0;letter-spacing:-.1px}
+.round-count{padding:5px 9px;background:#eaf6f6;color:#087b7d;font-size:11px;border-radius:999px;font-weight:800}
+.field-label{display:block;font-size:11px;font-weight:800;color:#546c7e;margin:17px 0 7px}.search-field{display:flex;align-items:center;background:#f7f9fb;border:1px solid #d5e2e9;border-radius:10px;padding:0 12px;gap:8px}
+.search-field:focus-within{border-color:#24a4a5;background:#fff;box-shadow:0 0 0 3px #24a4a511}.search-field span{font-size:17px;color:#7590a0}
+.search-field input{border:0;background:transparent;width:100%;min-width:0;padding:13px 0;color:#15364d;outline:none;font-size:13px}
+.filter-chips{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}.filter-chip{background:#f4f7f9;color:#577184;border:1px solid #e4ebf0;border-radius:999px;font-size:10px;font-weight:800;padding:7px 10px}
+.filter-chip.active{background:#e0f5f1;color:#116d6c;border-color:#aee0db}
+.list-head{display:flex;justify-content:space-between;padding:13px 18px 9px;font-size:11px;color:#637b8c}
+.pick-list{padding:0 8px 10px;height:min(59vh,630px);overflow-y:auto;scrollbar-color:#cddbe1 transparent}
+.pick{display:flex;align-items:center;width:100%;border:1px solid transparent;border-radius:11px;text-align:left;background:transparent;padding:12px 11px;margin-bottom:4px;gap:9px;color:#193952}
+.pick:hover{background:#f4f8fa}.pick.active{background:#e9f6f5;border-color:#b7e5dd}
+.pick-letter{height:30px;min-width:30px;border-radius:9px;display:grid;place-items:center;background:#eaf0f5;font-size:11px;font-weight:900;color:#51748a}
+.pick.active .pick-letter{background:#20a89e;color:#fff}.pick-main{min-width:0;flex:1}.pick-num{font-size:12px;font-weight:800;letter-spacing:.1px}
+.pick-entity{display:block;font-size:10px;color:#718698;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
+.pick-dot{width:7px;height:7px;border-radius:50%;background:#c9d6de}.pick-dot.available{background:#18b092}
+.side-foot{padding:12px 18px;border-top:1px solid #e8eef2;font-size:10px;color:#8193a0;line-height:1.4}
+.content{min-width:0;display:flex;flex-direction:column;gap:16px}.empty-hero{padding:90px 24px;text-align:center}.empty-hero .glyph{display:grid;place-items:center;margin:0 auto 16px;height:60px;width:60px;border-radius:19px;background:#e4f7f5;color:#1a898b;font-size:29px}
+.empty-hero h2{font-size:20px;margin-bottom:8px}.empty-hero p{font-size:13px;color:#708493;max-width:470px;margin:0 auto;line-height:1.6}
+.detail-head{padding:23px 26px;display:flex;align-items:start;justify-content:space-between;gap:20px}.detail-meta{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.1px;color:#118e8e;margin-bottom:7px}
+.detail-head h2{font-size:clamp(21px,2.4vw,30px);margin:0 0 7px;color:#123551;letter-spacing:-.8px}.detail-head p{font-size:13px;color:#687f91;line-height:1.5;margin:0;max-width:720px}
+.tag{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#e4f7f1;color:#16836d;font-size:10px;font-weight:900;white-space:nowrap}.tag.gray{background:#edf2f6;color:#657a8a}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.tile{padding:19px 17px;min-width:0;position:relative;overflow:hidden}
+.tile:before{content:"";position:absolute;inset:0 0 auto;height:3px;background:#d7e5eb}.tile:nth-child(1):before{background:#2471ae}.tile:nth-child(2):before{background:#18a49a}.tile:nth-child(3):before{background:#8869c8}.tile:nth-child(4):before{background:#efa349}
+.tile-label{font-size:11px;font-weight:700;color:#6a8191}.tile-value{font-size:clamp(16px,1.9vw,24px);font-weight:850;letter-spacing:-.8px;color:#143954;margin:13px 0 7px;white-space:nowrap}.tile-sub{font-size:10px;color:#7f92a0}
+.notice{display:flex;gap:11px;padding:14px 18px;background:#fffaf1;border-color:#f1e2c4;font-size:12px;color:#8e6932;line-height:1.55}.notice strong{display:block;color:#8b5d18;margin-bottom:3px}
+.main-card{min-width:0;overflow:hidden}.tabs{display:flex;gap:2px;padding:7px 13px;border-bottom:1px solid #e5edf2;overflow-x:auto;white-space:nowrap}
+.tab{padding:11px 15px;border:0;background:transparent;color:#6b8293;border-radius:8px;font-size:12px;font-weight:800}.tab.active{background:#e8f7f3;color:#087b75}
+.tab-content{padding:23px 25px;min-height:170px}.tab-content h3{font-size:16px;color:#1b3a53;letter-spacing:-.3px;margin-bottom:8px}
+.muted{font-size:12px;color:#728595;line-height:1.6}.data-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-top:15px}
+.data-item{padding:14px 15px;background:#f7fafb;border:1px solid #edf1f3;border-radius:11px;min-width:0}
+.data-item span{display:block;font-size:10px;font-weight:750;color:#7b8e9c;margin-bottom:6px;text-transform:uppercase;letter-spacing:.35px}
+.data-item strong{font-size:13px;color:#234258;overflow-wrap:anywhere;line-height:1.5}
+.section-gap{margin-top:24px;padding-top:20px;border-top:1px solid #e8eef2}.table-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0}
+.table-tools input,.table-tools select{min-height:35px;max-width:220px;border:1px solid #d8e4ea;border-radius:8px;padding:7px 9px;background:#fff;color:#34546a;font-size:11px}
+.light-btn{border:1px solid #d6e5e9;background:#f3faf9;color:#1b7980;border-radius:8px;padding:8px 12px;font-size:11px;font-weight:800}
+.table-scroll{overflow:auto;border:1px solid #e5edf2;border-radius:11px}table{border-collapse:collapse;width:100%;font-size:12px}th{background:#f1f5f8;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.45px;color:#5d7688;padding:11px 13px;white-space:nowrap}
+td{padding:11px 13px;border-top:1px solid #edf1f4;color:#35546a;white-space:nowrap}tbody tr:hover{background:#f8fbfc}.num{text-align:right;font-variant-numeric:tabular-nums}.zero{padding:23px;color:#8397a5;font-size:12px;text-align:center;background:#fafcfd;border:1px dashed #d6e2e8;border-radius:10px}
+.category-dot{display:inline-block;width:8px;height:8px;background:#1da494;border-radius:50%;margin-right:7px}
+.loading-screen{display:grid;place-items:center;padding:100px 16px;text-align:center}.loader{border:3px solid #daeaee;border-top-color:#18a99b;width:38px;height:38px;border-radius:50%;animation:spin .75s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}.loading-screen h2{font-size:19px}.loading-screen p{font-size:12px;color:#738996}
+.login-shell{min-height:calc(100vh - 72px);display:grid;place-items:center;padding:24px;background:linear-gradient(145deg,#ecf4f6,#f8fafd)}
+.login-card{width:min(440px,100%);padding:34px 32px;background:white;border:1px solid #e1e9ed;border-radius:19px;box-shadow:0 20px 55px #1b3b5015}
+.login-card h1{font-size:24px;letter-spacing:-.8px}.login-card p{font-size:13px;color:#798c99;line-height:1.6}.login-card label{display:block;color:#4f6679;font-size:12px;font-weight:750;margin:16px 0 6px}
+.login-card input{width:100%;border-radius:10px;border:1px solid #d8e4ea;padding:12px 13px;color:#193952}.primary{background:#087f82;color:white;border:0;border-radius:9px;padding:12px 14px;font-size:13px;font-weight:800}
+.login-card .primary{width:100%;margin-top:22px}.error{margin-top:12px;color:#b1483f;font-size:12px;line-height:1.6}.login-help{margin-top:13px;font-size:11px;color:#8195a2}
+.login-help button{background:transparent;color:#147783;border:0;font-weight:750;padding:0}.footer{text-align:center;font-size:10px;color:#9aaab4;padding:15px}
+@media(max-width:1100px){.layout{grid-template-columns:255px 1fr}.metrics{grid-template-columns:repeat(2,1fr)}.tile-value{font-size:20px}}
+@media(max-width:760px){.topbar{height:65px;padding:0 15px}.brand-sub{display:none}.top-actions small{display:none}.intro{padding:24px 18px}.layout{display:flex;flex-direction:column;gap:13px;margin-top:13px;padding:0 12px}.side{position:static}.side-head{padding:15px}.pick-list{height:176px}.detail-head{padding:20px 17px;flex-direction:column}.metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.tile{padding:15px 12px}.tile-value{font-size:17px}.tab-content{padding:17px 14px}.data-grid{grid-template-columns:1fr}.tabs{padding:6px}.tab{padding:11px 10px}.summary-strip{margin-top:14px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+ <div class="brand"><div class="brand-mark">A²</div><div><div class="brand-name">Consulta de Ajustes <span style="color:#6fe1d5">2.0</span></div><div class="brand-sub">Município de São Bernardo do Campo · Painel de consulta</div></div></div>
+ <div class="top-actions"><small id="signedEmail"></small><button id="logout" class="ghost-dark" hidden>Sair</button></div>
+</header>
+<section id="loginView" class="login-shell">
+ <form id="loginForm" class="login-card">
+   <div class="eyebrow">Acesso autorizado</div>
+   <h1>Entre para consultar os ajustes</h1>
+   <p>Visualização rápida dos cadastros, fontes, empenhos e pagamentos com base nos dados disponíveis.</p>
+   <label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required placeholder="seu.email@dominio.gov.br">
+   <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" required placeholder="Sua senha">
+   <button class="primary" id="loginButton" type="submit">Entrar no painel</button>
+   <div id="loginError" class="error" role="alert" hidden></div>
+   <div class="login-help"><button type="button" id="resetPassword">Esqueci minha senha</button> · Acesso liberado pela administração</div>
+ </form>
+</section>
+<section id="loadView" class="loading-screen" hidden><div><div class="loader"></div><h2>Preparando a consulta</h2><p id="loadMessage">Recebendo os dados pré-calculados do Supabase…</p><p id="loadError" class="error" hidden></p><button id="retry" class="primary" hidden>Tentar novamente</button></div></section>
+<div id="appView" hidden>
+ <section class="intro">
+  <div class="eyebrow">Gestão de parcerias e convênios</div>
+  <h1>Informação organizada. Consulta imediata.</h1>
+  <p>O cadastro e os movimentos são preparados após a importação diária. Os ajustes já carregados são consultados instantaneamente, sem novas buscas no banco a cada seleção.</p>
+  <div class="summary-strip"><span class="summary-pill"><strong id="globalCount">—</strong> ajustes disponíveis</span><span class="summary-pill"><strong id="globalFinance">—</strong> com movimentos no RET</span><span class="summary-pill">Dados consolidados: <strong id="updatedAt">—</strong></span></div>
+ </section>
+ <div class="layout">
+  <aside class="side">
+   <div class="side-head">
+    <div class="section-title"><h2>Localizar ajuste</h2><span id="filteredCount" class="round-count">1.237</span></div>
+    <label for="search" class="field-label">Número ou entidade</label>
+    <div class="search-field"><span>⌕</span><input id="search" type="search" placeholder="Digite para localizar…" autocomplete="off"></div>
+    <div class="filter-chips"><button id="filterAll" class="filter-chip active" type="button">Todos</button><button id="filterWithRet" class="filter-chip" type="button">Com dados no RET</button></div>
+   </div>
+   <div class="list-head"><span>Ajustes disponíveis</span><span id="listIndicator"></span></div>
+   <div id="list" class="pick-list" role="listbox" aria-label="Ajustes disponíveis"></div>
+   <div class="side-foot">Catálogo permanente · A lista é filtrada localmente. Sem paginação nem consultas repetidas.</div>
+  </aside>
+  <main class="content">
+   <div id="emptySelection" class="main-card empty-hero"><div class="glyph">⌕</div><h2>Selecione um ajuste</h2><p>Escolha um número à esquerda para abrir o cadastro e os valores imediatamente. Use a busca para localizar pelo número ou entidade.</p></div>
+   <div id="details" hidden>
+    <section class="main-card detail-head">
+     <div><div class="detail-meta">Ficha do ajuste</div><h2 id="currentNumber">—</h2><p id="currentEntity">—</p><p id="currentProcess" style="margin-top:7px;font-size:11px"></p></div>
+     <span id="availabilityBadge" class="tag"></span>
+    </section>
+    <div class="metrics">
+     <div class="tile"><div class="tile-label">Total cadastrado</div><div id="totalRegistered" class="tile-value">—</div><div class="tile-sub">Termo inicial + aditamentos</div></div>
+     <div class="tile"><div class="tile-label">Total empenhado</div><div id="totalCommitted" class="tile-value">—</div><div class="tile-sub">Informado no RET_FONTES</div></div>
+     <div class="tile"><div class="tile-label">Total pago</div><div id="totalPaid" class="tile-value">—</div><div class="tile-sub">OPs informadas no RET_FONTES</div></div>
+     <div class="tile"><div class="tile-label">Saldo a empenhar</div><div id="totalRemaining" class="tile-value">—</div><div class="tile-sub">Cadastrado – empenhado</div></div>
+    </div>
+    <div id="dataNotice" class="notice" hidden><span>ⓘ</span><div><strong>Movimentação ainda não disponível</strong><span>Este ajuste existe no CadConvenios, mas não há linhas correspondentes no RET_FONTES atualmente importado. A ausência de valores não significa que o ajuste não teve execução.</span></div></div>
+    <section class="main-card">
+      <div class="tabs" role="tablist">
+       <button type="button" class="tab active" data-tab="geral">Panorama</button>
+       <button type="button" class="tab" data-tab="empenhos">Empenhos <span id="empCount"></span></button>
+       <button type="button" class="tab" data-tab="pagamentos">Pagamentos <span id="payCount"></span></button>
+       <button type="button" class="tab" data-tab="cadastro">Cadastro e fontes</button>
+      </div>
+      <div class="tab-content" id="tabContent"></div>
+    </section>
+   </div>
+  </main>
+ </div>
+</div>
+<footer class="footer">Consulta de Ajustes 2.0 · Dados provenientes exclusivamente de CadConvenios.txt e RET_FONTES.txt.</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
+<script>
+'use strict';
+(function(){
+const URL_SUPABASE='https://qkjudfvlaatdcaosadun.supabase.co';
+const CHAVE_PUBLICA='sb_publishable_B3A7uwmQWUs8oOivjgJ6Qw_6rqx4U0W';
+const $=id=>document.getElementById(id);
+const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const normalize=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const fmtDate=raw=>{
+ const t=String(raw||'').replace(/\D/g,'');
+ return /^\d{8}$/.test(t)?t.slice(6,8)+'/'+t.slice(4,6)+'/'+t.slice(0,4):'—';
+};
+const partsDate=row=>{
+ const y=String(row.year||''),m=String(row.month||'').padStart(2,'0'),d=String(row.day||'').padStart(2,'0');
+ if(!/^\d{4}$/.test(y)||!/^\d{2}$/.test(m)||!/^\d{2}$/.test(d))return '—';
+ const date=new Date(Number(y),Number(m)-1,Number(d));
+ if(date.getFullYear()!==Number(y)||date.getMonth()!==Number(m)-1||date.getDate()!==Number(d))return '—';
+ return d+'/'+m+'/'+y;
+};
+const sourceLabel=raw=>{
+ const s=String(raw||'').trim().toUpperCase();
+ if(!s)return 'Não informada';
+ return ({'M':'Municipal','E':'Estadual','F':'Federal','O':'Outras','01':'Tesouro municipal','02':'Transferências estaduais','05':'Transferências federais','06':'Outras fontes'}[s]||s);
+};
+const typeLabel=code=>({'7':'Termo de colaboração','8':'Termo de fomento','10':'Acordo de cooperação','11':'Contrato de gestão','12':'Termo de parceria','13':'Convênio'}[String(Number(code||0))]||String(code||'Não informado'));
+let client,records=[],recordByNumber=new Map(),current=null,tab='geral',query='',onlyRet=false,filterYear='',filterSource='',filterText='',activeSession=null,requestSequence=0;
+function show(view){
+ for(const name of ['loginView','loadView','appView'])$(name).hidden=name!==view;
+ $('logout').hidden=view!=='appView';
+}
+function text(id,value){$(id).textContent=value;}
+function errorLogin(message){text('loginError',message);$('loginError').hidden=false;}
+function errorLoad(message){text('loadError',message);$('loadError').hidden=false;$('retry').hidden=false;}
+function catalogue(){
+ const terms=normalize(query);
+ const items=records.filter(r=>(!onlyRet||Number(r.ret_lines)>0)&&(!terms||normalize(r.number+' '+r.entity).includes(terms)));
+ const shown=items.slice(0,120);
+ text('filteredCount',items.length.toLocaleString('pt-BR'));
+ text('listIndicator',items.length>120?'120 primeiros':'Lista completa');
+ $('list').innerHTML=shown.map(r=>'<button type="button" class="pick '+(current&&current.number===r.number?'active':'')+'" data-number="'+esc(r.number)+'" role="option" aria-selected="'+String(!!current&&current.number===r.number)+'">'+
+   '<span class="pick-letter">'+esc((r.letter||'AJ').slice(0,3))+'</span><span class="pick-main"><span class="pick-num">'+esc(r.number)+'</span>'+
+   '<span class="pick-entity">'+esc(r.entity||'Entidade não informada')+'</span></span>'+
+   '<span class="pick-dot '+(Number(r.ret_lines)>0?'available':'')+'"></span></button>').join('')||
+   '<div class="zero">Nenhum ajuste corresponde à busca.</div>';
+}
+function select(number){
+ const next=recordByNumber.get(number);
+ if(!next)return;
+ current=next;tab='geral';filterYear='';filterSource='';filterText='';
+ $('emptySelection').hidden=true;$('details').hidden=false;
+ text('currentNumber',next.number);
+ text('currentEntity',next.entity||'Entidade não informada');
+ text('currentProcess',next.process?'Processo administrativo: '+next.process:'');
+ const available=Number(next.ret_lines)>0;
+ text('availabilityBadge',available?'Dados RET disponíveis':'Sem linhas RET');
+ $('availabilityBadge').className='tag'+(available?'':' gray');
+ $('dataNotice').hidden=available;
+ for(const key of ['totalRegistered','totalCommitted','totalPaid','totalRemaining']){
+   const value=key==='totalRegistered'?next.registered_total:key==='totalCommitted'?next.committed:key==='totalPaid'?next.paid_ret:Number(next.registered_total||0)-Number(next.committed||0);
+   text(key,available?money(value):'—');
+ }
+ text('empCount','('+(next.empenhos||[]).length+')');
+ text('payCount','('+(next.pagamentos||[]).length+')');
+ renderTab();catalogue();
+}
+function renderTab(){
+ document.querySelectorAll('.tab').forEach(el=>{el.classList.toggle('active',el.dataset.tab===tab);el.setAttribute('aria-selected',String(el.dataset.tab===tab));});
+ if(!current)return;
+ const o=current;
+ if(tab==='geral')$('tabContent').innerHTML=renderOverview(o);
+ else if(tab==='cadastro')$('tabContent').innerHTML=renderCadastro(o);
+ else $('tabContent').innerHTML=renderFinancial(o,tab==='empenhos'?'empenhos':'pagamentos');
+}
+function cell(label,value){return '<div class="data-item"><span>'+esc(label)+'</span><strong>'+esc(value||'Não informado')+'</strong></div>';}
+function renderOverview(o){
+ let out='<h3>Visão geral do ajuste</h3><p class="muted">Dados cadastrais disponíveis imediatamente. Os valores financeiros provêm exclusivamente do RET_FONTES importado.</p>';
+ out+='<div class="data-grid">'+cell('Número',o.number)+cell('Entidade',o.entity)+cell('Processo',o.process)+cell('Tipo',typeLabel(o.type_code))+
+ cell('Assinatura',fmtDate(o.signed))+cell('Última vigência',fmtDate(o.valid_until))+'</div>';
+ out+='<div class="section-gap"><h3>Objeto do ajuste</h3><p class="muted">'+esc(o.object||'Objeto não informado no cadastro.')+'</p></div>';
+ if(Number(o.ret_lines)>0){
+  out+='<div class="section-gap"><h3>Execução conforme RET_FONTES</h3><div class="data-grid">'+cell('Cadastrado no ajuste inicial',money(o.registered_initial))+
+   cell('Cadastrado nos aditamentos',money(o.registered_amendments))+cell('Saldo a pagar',money(Number(o.committed||0)-Number(o.paid_ret||0)))+
+   cell('Linhas de origem relacionadas',String(o.ret_lines))+'</div></div>';
+ }else{
+  out+='<div class="section-gap"><div class="zero">Não há linhas financeiras correspondentes no RET_FONTES atual. Os dados cadastrais acima continuam disponíveis.</div></div>';
+ }
+ return out;
+}
+function renderCadastro(o){
+ let out='<h3>Cadastro e distribuição por fonte</h3><p class="muted">Valores do termo inicial e dos aditamentos, quando presentes no arquivo RET_FONTES.</p><div class="data-grid">'+
+  cell('Entidade',o.entity)+cell('Número',o.number)+cell('Processo',o.process)+cell('Tipo de ajuste',typeLabel(o.type_code))+
+  cell('Assinatura',fmtDate(o.signed))+cell('Última vigência',fmtDate(o.valid_until))+'</div>';
+ out+='<div class="section-gap"><h3>Objeto</h3><p class="muted">'+esc(o.object||'Não informado.')+'</p></div>';
+ const reg=o.registered||[];
+ if(!reg.length)return out+'<div class="section-gap"><div class="zero">Não há registros de valor cadastrado por fonte no RET_FONTES para este ajuste.</div></div>';
+ out+='<div class="section-gap"><h3>Termo inicial e aditamentos por fonte</h3>'+renderTable(['Tipo','Aditamento','Fonte','Custeio','Reforma','Bem/Capital','Total'],reg.map(r=>[
+  String(r.type).toUpperCase()==='V'?'Termo inicial':'Aditamento',r.amendment_number||'—',sourceLabel(r.source),
+  money(r.custeio),money(r.reforma),money(r.bem),money(Number(r.custeio)+Number(r.reforma)+Number(r.bem))]))+'</div>';
+ return out;
+}
+function renderTable(headers,rows){
+ if(!rows.length)return '<div class="zero">Nenhum registro disponível para os filtros selecionados.</div>';
+ return '<div class="table-scroll"><table><thead><tr>'+headers.map(t=>'<th>'+esc(t)+'</th>').join('')+'</tr></thead><tbody>'+
+ rows.map(row=>'<tr>'+row.map((v,i)=>'<td '+(i>2?'class="num"':'')+'>'+esc(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+}
+function renderFinancial(o,kind){
+ const isEmp=kind==='empenhos',all=o[kind]||[];
+ const years=[...new Set(all.map(r=>String(r.year||'')).filter(Boolean))].sort().reverse();
+ const sources=[...new Set(all.map(r=>String(r.source||'')).filter(Boolean))].sort();
+ let out='<h3>'+ (isEmp?'Empenhos':'Pagamentos registrados')+'</h3><p class="muted">'+
+ (isEmp?'Documentos de empenho provenientes do RET_FONTES.':'Ordens de pagamento informadas no RET_FONTES. Sem classificação de cancelamentos ou de O/R que não constam do arquivo.')+'</p>';
+ out+='<div class="table-tools"><select id="yearSelect" aria-label="Filtrar por ano"><option value="">Todos os anos</option>'+years.map(y=>'<option value="'+esc(y)+'" '+(filterYear===y?'selected':'')+'>'+esc(y)+'</option>').join('')+'</select>';
+ out+='<select id="sourceSelect" aria-label="Filtrar por fonte"><option value="">Todas as fontes</option>'+sources.map(y=>'<option value="'+esc(y)+'" '+(filterSource===y?'selected':'')+'>'+esc(sourceLabel(y))+'</option>').join('')+'</select>';
+ out+='<input id="documentSearch" placeholder="Buscar OP ou empenho" aria-label="Buscar documento" value="'+esc(filterText)+'">';
+ out+='<button class="light-btn" id="downloadCsv" type="button">Exportar CSV</button></div>';
+ const shown=all.filter(r=>(!filterYear||String(r.year)===filterYear)&&(!filterSource||r.source===filterSource)&&
+ (!filterText||normalize((r.empenho||'')+' '+(r.op||'')).includes(normalize(filterText))));
+ const total=shown.reduce((n,r)=>n+Number(r.total||0),0);
+ out+='<p class="muted">'+shown.length.toLocaleString('pt-BR')+' registros · Total filtrado: <strong>'+esc(money(total))+'</strong></p>';
+ if(isEmp){
+  out+=renderTable(['Ano','Empenho','Fonte','Data','Custeio','Capital','Total'],shown.map(r=>[
+   r.year||'—',r.empenho||'—',sourceLabel(r.source),partsDate(r),money(r.custeio),money(r.capital),money(r.total)]));
+ }else{
+  out+=renderTable(['Ano','OP','Empenho','Fonte','Data','Custeio','Capital','Total'],shown.map(r=>[
+   r.year||'—',r.op||'—',r.empenho||'—',sourceLabel(r.source),partsDate(r),money(r.custeio),money(r.capital),money(r.total)]));
+ }
+ return out;
+}
+function exportCsv(){
+ if(!current)return;
+ const isEmp=tab==='empenhos',kind=isEmp?'empenhos':'pagamentos';
+ const rows=(current[kind]||[]).filter(r=>(!filterYear||String(r.year)===filterYear)&&(!filterSource||r.source===filterSource)&&
+ (!filterText||normalize((r.empenho||'')+' '+(r.op||'')).includes(normalize(filterText))));
+ const headings=isEmp?['Ano','Empenho','Fonte','Data','Custeio','Capital','Total']:['Ano','OP','Empenho','Fonte','Data','Custeio','Capital','Total'];
+ const values=rows.map(r=>isEmp?[r.year,r.empenho,sourceLabel(r.source),partsDate(r),r.custeio,r.capital,r.total]:
+ [r.year,r.op,r.empenho,sourceLabel(r.source),partsDate(r),r.custeio,r.capital,r.total]);
+ const csv='\uFEFF'+[headings,...values].map(r=>r.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+ const a=document.createElement('a');a.href=url;a.download=kind+'_'+current.number.replace(/[^a-zA-Z0-9-]/g,'_')+'.csv';a.click();
+ URL.revokeObjectURL(url);
+}
+async function dataLoad(session){
+ const id=++requestSequence;activeSession=session;
+ show('loadView');$('loadError').hidden=true;$('retry').hidden=true;text('loadMessage','Baixando os dados pré-calculados. Nenhuma consulta adicional será necessária ao selecionar um ajuste.');
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
+ try{
+  const response=await fetch(URL_SUPABASE+'/rest/v1/rpc/panel_v2_bundle',{
+    method:'POST',signal:controller.signal,headers:{
+      apikey:CHAVE_PUBLICA,Authorization:'Bearer '+session.access_token,
+      'Content-Type':'application/json',Accept:'application/json'
+    },body:'{}'
+  });
+  if(!response.ok)throw new Error('Supabase respondeu '+response.status+'. '+(await response.text()).slice(0,250));
+  const json=await response.json();
+  if(id!==requestSequence)return;
+  if(!json||!Array.isArray(json.items)||json.items.length===0)throw new Error('Acesso não autorizado ou catálogo vazio. Confira sua permissão.');
+  records=json.items.filter(r=>r&&r.number);
+  records.sort((a,b)=>String(a.number).localeCompare(String(b.number),'pt-BR',{numeric:true}));
+  recordByNumber=new Map(records.map(r=>[r.number,r]));current=null;tab='geral';query='';onlyRet=false;
+  $('search').value='';$('filterAll').classList.add('active');$('filterWithRet').classList.remove('active');
+  text('globalCount',records.length.toLocaleString('pt-BR'));
+  text('globalFinance',records.filter(r=>Number(r.ret_lines)>0).length.toLocaleString('pt-BR'));
+  text('updatedAt',json.refreshed_at?new Date(json.refreshed_at).toLocaleString('pt-BR'):'—');
+  text('signedEmail',session.user?.email||'Acesso autenticado');
+  $('emptySelection').hidden=false;$('details').hidden=true;
+  catalogue();show('appView');
+ }catch(err){
+  if(id!==requestSequence)return;
+  errorLoad(err.name==='AbortError'?'Tempo limite de 25 segundos para receber os dados. Confira a conexão e tente novamente.':(err.message||String(err)));
+ }finally{clearTimeout(timer);}
+}
+async function authenticate(){
+ try{
+  if(!window.supabase)throw new Error('A biblioteca de autenticação não carregou. Verifique o acesso à rede.');
+  client=window.supabase.createClient(URL_SUPABASE,CHAVE_PUBLICA,{
+    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+  });
+  const {data,error}=await client.auth.getSession();if(error)throw error;
+  if(data.session)await dataLoad(data.session);else show('loginView');
+ }catch(err){show('loginView');errorLogin(err.message||'Não foi possível inicializar a autenticação.');}
+}
+$('loginForm').addEventListener('submit',async function(e){
+ e.preventDefault();$('loginError').hidden=true;
+ $('loginButton').disabled=true;text('loginButton','Entrando…');
+ try{
+  const {data,error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+  if(error)throw error;
+  if(!data.session)throw new Error('Não foi possível obter uma sessão válida.');
+  await dataLoad(data.session);
+ }catch(err){errorLogin(err.message||'Falha ao autenticar.');show('loginView');}
+ finally{$('loginButton').disabled=false;text('loginButton','Entrar no painel');}
+});
+$('resetPassword').addEventListener('click',async function(){
+ const email=$('email').value.trim();
+ if(!email){errorLogin('Informe primeiro seu e-mail.');return;}
+ const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:'https://paineldeajustes.github.io/site-consulta-convenios/'});
+ if(error)errorLogin(error.message);else errorLogin('Se houver cadastro, enviaremos as instruções para o e-mail informado.');
+});
+$('logout').addEventListener('click',async()=>{
+ ++requestSequence;
+ records=[];recordByNumber.clear();current=null;activeSession=null;
+ try{await client.auth.signOut({scope:'local'});}catch(err){console.warn(err);}
+ text('signedEmail','');$('password').value='';show('loginView');
+});
+$('retry').addEventListener('click',async()=>{
+ if(!activeSession){show('loginView');return;}
+ const {data}=await client.auth.getSession();
+ if(!data.session){show('loginView');errorLogin('Sessão expirada. Entre novamente.');return;}
+ await dataLoad(data.session);
+});
+$('search').addEventListener('input',e=>{query=e.target.value;catalogue();});
+$('filterAll').addEventListener('click',()=>{onlyRet=false;$('filterAll').classList.add('active');$('filterWithRet').classList.remove('active');catalogue();});
+$('filterWithRet').addEventListener('click',()=>{onlyRet=true;$('filterWithRet').classList.add('active');$('filterAll').classList.remove('active');catalogue();});
+$('list').addEventListener('click',e=>{const btn=e.target.closest('button[data-number]');if(btn)select(btn.dataset.number);});
+$('list').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target?.dataset?.number){e.preventDefault();select(e.target.dataset.number);}});
+document.querySelector('.tabs').addEventListener('click',e=>{
+ const btn=e.target.closest('[data-tab]');if(!btn)return;tab=btn.dataset.tab;filterYear='';filterSource='';filterText='';renderTab();
+});
+$('tabContent').addEventListener('change',e=>{
+ if(e.target.id==='yearSelect')filterYear=e.target.value;
+ if(e.target.id==='sourceSelect')filterSource=e.target.value;
+ if(e.target.id==='yearSelect'||e.target.id==='sourceSelect')renderTab();
+});
+$('tabContent').addEventListener('input',e=>{
+ if(e.target.id==='documentSearch'){
+  const i=e.target.selectionStart;filterText=e.target.value;renderTab();
+  const field=$('documentSearch');if(field){field.focus();field.setSelectionRange(i,i);}
+ }
+});
+$('tabContent').addEventListener('click',e=>{if(e.target.closest('#downloadCsv'))exportCsv();});
+authenticate();
+})();
+</script>
+</body>
+</html>

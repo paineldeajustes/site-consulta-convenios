@@ -1201,6 +1201,8 @@ async function loadLatestFromSupabase(){
     });
     await Promise.all([selectionRequest,retFontesImportPromise]);
     retFontesImportPromise=null;
+    $('status').hidden=false;
+    $('status').textContent='Catálogo carregado com '+catalogItems.length.toLocaleString('pt-BR')+' números. Selecione um ajuste para consultar os dados.';
   }catch(error){
     retFontesImportPromise=null;
     $('status').hidden=false;$('status').textContent='Não foi possível carregar a consulta: '+(error?.message||String(error));

@@ -1771,8 +1771,14 @@ async function chooseConv(value){
   const cv=String(value||'').trim();if(!cv)return;
   const found=(window.CONVENIO_OPTIONS||[]).find(option=>normalizeAdjustmentSearch(option.cv)===normalizeAdjustmentSearch(cv))
     ||(currentSelectedOption&&normalizeAdjustmentSearch(currentSelectedOption.cv)===normalizeAdjustmentSearch(cv)?currentSelectedOption:null);
-  if(!found)return;
+  if(!found){
+    $('status').hidden=false;
+    $('status').textContent='O número selecionado não foi encontrado na lista carregada. Recarregue a página.';
+    return;
+  }
   const requestId=++selectionRequestId;currentSelectedOption=found;
+  $('status').hidden=false;
+  $('status').textContent='Consultando os dados cadastrais do ajuste '+found.cv+'…';
   try{
     const rec=await supabaseRpc('orcom_adjustment_metadata',{p_adjustment_number:found.cv});
     if(requestId!==selectionRequestId)return;
@@ -1792,6 +1798,8 @@ async function chooseConv(value){
     console.error('Falha ao carregar o cadastro do ajuste',error);
     return;
   }
+  $('status').hidden=false;
+  $('status').textContent='Cadastro localizado. Preparando os dados do ajuste '+found.cv+'…';
   $('conv').value=found.cv;$('search').value=formatAdjustmentNumber(found.cv);
   $('suggestions').hidden=true;$('clearAdjustmentSelection').disabled=false;
   currentRows=[];currentMovementRows=[];currentEmpMovementRows=[];currentPayMovementRows=[];

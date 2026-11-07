@@ -643,3 +643,129 @@ body[data-theme="dark"] .attachment-external-link{color:#a7d9b9}
   margin-bottom:8px!important;
  }
 }
+
+
+/* Lembretes: componente idêntico aos checkboxes padrão, fora de .field.
+   Evita que regras de input de texto estiquem as caixas no iOS. */
+#app .settings-screen .settings-delay-grid{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:11px;
+ margin:10px 0 12px;
+}
+#app .settings-screen .settings-delay-control{
+ min-width:0;
+ background:var(--bg);
+ border:1px solid var(--line);
+ border-radius:12px;
+ padding:12px;
+ box-sizing:border-box;
+}
+#app .settings-screen .settings-inline-checkbox{
+ display:flex!important;
+ flex-direction:row!important;
+ justify-content:flex-start!important;
+ align-items:center!important;
+ width:auto!important;
+ max-width:100%;
+ min-height:24px;
+ gap:9px!important;
+ padding:0!important;
+ margin:0!important;
+ font-size:12px!important;
+ font-weight:650!important;
+ line-height:1.4!important;
+ text-align:left!important;
+ color:var(--ink)!important;
+ cursor:pointer;
+}
+#app .settings-screen .settings-inline-checkbox input[type="checkbox"]{
+ appearance:checkbox!important;
+ -webkit-appearance:checkbox!important;
+ display:inline-block!important;
+ position:static!important;
+ box-sizing:border-box!important;
+ flex:0 0 18px!important;
+ inline-size:18px!important;
+ block-size:18px!important;
+ width:18px!important;
+ height:18px!important;
+ min-width:18px!important;
+ min-height:18px!important;
+ max-width:18px!important;
+ max-height:18px!important;
+ padding:0!important;
+ margin:0!important;
+ transform:none!important;
+ box-shadow:none!important;
+ accent-color:#205a45;
+ vertical-align:middle;
+}
+#app .settings-screen .settings-inline-checkbox span{
+ display:block;
+ flex:1 1 auto;
+ min-width:0;
+ margin:0;
+ font-size:12px;
+ font-weight:650;
+ line-height:1.4;
+ overflow-wrap:anywhere;
+}
+#app .settings-screen .settings-delay-time{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px;
+ margin-top:12px;
+}
+#app .settings-screen .settings-delay-time > label{
+ flex:1 1 auto;
+ min-width:0;
+ font-size:11px;
+ font-weight:600;
+ color:var(--muted);
+ line-height:1.3;
+}
+#app .settings-screen .settings-delay-time > input[type="time"]{
+ display:block;
+ flex:0 0 112px;
+ box-sizing:border-box;
+ width:112px;
+ max-width:112px;
+ min-width:0;
+ height:39px;
+ min-height:39px;
+ padding:7px 10px;
+ border:1px solid var(--line);
+ border-radius:10px;
+ background:var(--paper);
+ color:var(--ink);
+ text-align:center;
+ font-size:14px;
+ font-variant-numeric:tabular-nums;
+}
+#app .settings-screen .settings-confirm-row{
+ background:var(--bg);
+ border:1px solid var(--line);
+ border-radius:12px;
+ padding:12px;
+ margin:8px 0 4px;
+ box-sizing:border-box;
+}
+#app[data-theme="dark"] .settings-delay-time > input[type="time"]{
+ background:#17201b;
+ color:#eaf0eb;
+ border-color:#425146;
+ color-scheme:dark;
+}
+@media(max-width:620px){
+ #app .settings-screen .settings-delay-grid{
+   grid-template-columns:minmax(0,1fr);
+   gap:9px;
+ }
+ #app .settings-screen .settings-delay-control{
+   padding:11px 12px;
+ }
+ #app .settings-screen .settings-delay-time{margin-top:9px}
+ #app .settings-screen .settings-confirm-row{padding:12px}
+}

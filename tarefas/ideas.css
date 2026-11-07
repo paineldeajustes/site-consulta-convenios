@@ -1,5 +1,6 @@
 
 /* Clareza · editor de tarefas e Diário de Ideias */
+body[data-theme="dark"] #taskModal{--ink:#eaf0eb;--muted:#aab8ae;--line:#344139;--paper:#1e2722;}
 #app .search-toolbar{display:flex;width:100%;min-width:0}
 #app .search-toolbar .search{position:relative;display:block;flex:1 1 100%;min-width:0;width:100%}
 #app .search-toolbar .search::before{content:"";position:absolute;left:17px;top:50%;width:13px;height:13px;border:2px solid var(--muted);border-radius:50%;transform:translateY(-66%);pointer-events:none;z-index:1;font-size:0}

@@ -1,0 +1,155 @@
+/* Clareza · cartões padronizados e compactos (2026-11-07). */
+/* O ambiente segue colorindo o cartão; apenas o resumo fica na lista. */
+#app .tasks{gap:7px}
+#app .task.task-compact-card{
+  grid-template-columns:24px minmax(0,1fr) 26px;
+  align-items:center;
+  gap:11px;
+  min-width:0;
+  min-height:70px;
+  padding:10px 12px;
+  border-width:1px 1px 1px 4px!important;
+  border-radius:13px;
+  border-left-color:color-mix(in srgb,var(--task-tint) 60%,#33644d)!important;
+  overflow:hidden;
+  box-sizing:border-box;
+}
+#app .task.task-compact-card .check{
+  margin:0;
+  align-self:center;
+  width:23px;
+  height:23px;
+  border-radius:7px;
+}
+#app .task.task-compact-card .taskbody{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:5px;
+  margin:0;
+  overflow:hidden;
+  padding:0;
+  cursor:pointer;
+}
+#app .task.task-compact-card .tasktitle{
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  line-clamp:2;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  overflow-wrap:anywhere;
+  font-size:14px;
+  line-height:1.34;
+  font-weight:750;
+  letter-spacing:-.12px;
+  margin:0;
+}
+#app .task.task-compact-card .task-mini-meta{
+  display:flex;
+  align-items:center;
+  gap:5px 9px;
+  flex-wrap:wrap;
+  min-width:0;
+  max-height:42px;
+  overflow:hidden;
+  font-size:11px;
+  line-height:1.35;
+}
+#app .task.task-compact-card .task-mini-environment{
+  max-width:125px;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-weight:650;
+  color:inherit;
+  opacity:.77;
+}
+#app .task.task-compact-card .task-mini-date,
+#app .task.task-compact-card .task-mini-priority,
+#app .task.task-compact-card .task-mini-assignee,
+#app .task.task-compact-card .task-mini-status{
+  display:inline-flex;
+  align-items:center;
+  max-width:180px;
+  min-width:0;
+  font-size:10.5px;
+  line-height:1.3;
+  font-weight:720;
+  border-radius:7px;
+  padding:3px 6px;
+  background:rgba(255,255,255,.55);
+  color:#354a3c;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  overflow:hidden;
+}
+#app .task.task-compact-card .task-mini-date.overdue{background:#ffe7e4;color:#a52c25}
+#app .task.task-compact-card .task-mini-date.due{background:#e5f2d9;color:#3f642d}
+#app .task.task-compact-card .task-mini-date.complete{background:#e4ece6;color:#45624c}
+#app .task.task-compact-card .task-mini-priority.urgent{background:#ffe4e0;color:#9f2723}
+#app .task.task-compact-card .task-mini-priority.high{background:#fff0dd;color:#89511a}
+#app .task.task-compact-card .task-mini-priority.low{background:#e6ecf6;color:#49648c}
+#app .task.task-compact-card .task-mini-status{background:#fff3cf;color:#795a24}
+#app .task.task-compact-card .task-mini-assignee{max-width:160px}
+#app .task.task-compact-card .more{
+  width:26px;
+  height:32px;
+  padding:0;
+  margin:0;
+  align-self:center;
+  font-size:25px;
+  line-height:1;
+  border-radius:8px;
+  color:inherit;
+  opacity:.72;
+  background:transparent;
+}
+#app .task.task-compact-card:hover{
+  box-shadow:0 7px 20px rgba(30,62,42,.11);
+}
+#app .task.task-compact-card .taskbody:focus-visible,
+#app .task.task-compact-card .more:focus-visible,
+#app .task.task-compact-card .check:focus-visible{
+  outline:2px solid #337a55;
+  outline-offset:3px;
+  border-radius:5px;
+}
+#app.compact .task.task-compact-card{
+  min-height:61px;
+  padding:8px 10px;
+  gap:9px;
+}
+#app.compact .task.task-compact-card .tasktitle{font-size:13.5px}
+#app[data-theme="dark"] .task.task-compact-card .task-mini-date,
+#app[data-theme="dark"] .task.task-compact-card .task-mini-priority,
+#app[data-theme="dark"] .task.task-compact-card .task-mini-assignee,
+#app[data-theme="dark"] .task.task-compact-card .task-mini-status{
+ background:rgba(0,0,0,.25);
+ color:#dce7de;
+}
+#app[data-theme="dark"] .task.task-compact-card .task-mini-date.overdue,
+#app[data-theme="dark"] .task.task-compact-card .task-mini-priority.urgent{background:#572a28;color:#ffc8c2}
+#app[data-theme="dark"] .task.task-compact-card .task-mini-date.due{background:#284b37;color:#b9edc6}
+#app[data-theme="dark"] .task.task-compact-card .task-mini-priority.high,
+#app[data-theme="dark"] .task.task-compact-card .task-mini-status{background:#49371e;color:#ffe3b0}
+#app[data-theme="dark"] .task.task-compact-card .task-mini-priority.low{background:#283e57;color:#c6e0fa}
+#app[data-theme="dark"] .task.task-compact-card .more{background:transparent;color:#edf5ef!important}
+@media(max-width:620px){
+ #app .task.task-compact-card{grid-template-columns:23px minmax(0,1fr) 22px;gap:8px;padding:10px 9px;min-height:65px}
+ #app .task.task-compact-card .tasktitle{font-size:13.5px}
+ #app .task.task-compact-card .task-mini-meta{gap:4px 6px}
+ #app .task.task-compact-card .task-mini-environment{max-width:82px}
+ #app .task.task-compact-card .task-mini-assignee{max-width:105px}
+ #app .task.task-compact-card .task-mini-date,
+ #app .task.task-compact-card .task-mini-priority,
+ #app .task.task-compact-card .task-mini-assignee,
+ #app .task.task-compact-card .task-mini-status{font-size:10px;padding:2px 5px}
+ #app .task.task-compact-card .more{width:22px}
+}
+@media(max-width:380px){
+ #app .task.task-compact-card .task-mini-environment{display:none}
+ #app .task.task-compact-card .task-mini-assignee{max-width:90px}
+}

@@ -1,5 +1,5 @@
-const CACHE = "clareza-shell-v25";
-const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./settings.css", "./settings.js", "./workflow.js", "./ideas.css", "./ideas.js"];
+const CACHE = "clareza-shell-v26";
+const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./settings.css", "./task-list.css", "./settings.js", "./workflow.js", "./ideas.css", "./ideas.js"];
 
 self.addEventListener("install", event => {
   event.waitUntil(

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#183f35">
-<meta name="clareza-build" content="2026-11-07.30">
+<meta name="clareza-build" content="2026-11-07.31">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Clareza">
@@ -66,7 +66,7 @@
         <button id="clearFilters" class="filter-clear" type="button">Limpar</button>
       </div>
       <div id="filtersContent" class="filter-panel-content">
-        <nav class="tabs quick-views" aria-label="Visualização das tarefas">
+        <nav class="tabs quick-views" aria-label="Escolha a visualização das tarefas">
           <button class="tab active" data-view="pendentes" type="button"><span aria-hidden="true">◷</span> Pendentes</button>
           <button class="tab" data-view="hoje" type="button"><span aria-hidden="true">▣</span> Hoje</button>
           <button class="tab" data-view="proximas" type="button"><span aria-hidden="true">▦</span> Próximas</button>
@@ -159,7 +159,7 @@
       </form>
       <p id="passwordSettingsMessage" class="msg" hidden></p>
     </section>
-    <section class="settings-card settings-about"><h2>Sobre o Clareza</h2><p>Seus dados são salvos na agenda compartilhada e as configurações são aplicadas sem alteração de código.</p><p id="settingsVersionText">Versão do aplicativo: 2026-11-07.30</p></section>
+    <section class="settings-card settings-about"><h2>Sobre o Clareza</h2><p>Seus dados são salvos na agenda compartilhada e as configurações são aplicadas sem alteração de código.</p><p id="settingsVersionText">Versão do aplicativo: 2026-11-07.31</p></section>
   </main>
 
 </div>
@@ -563,13 +563,15 @@ if(!user||accessPending){panel.hidden=true;return}
 panel.hidden=false;
 const button=$("enablePush"),status=$("pushStatus"),testButton=$("testPush");
 testButton.hidden=true;
-if(!("Notification"in window)||!("serviceWorker"in navigator)||!("PushManager"in window)){
-status.textContent="Este navegador não oferece notificações push. Você ainda pode ver suas tarefas normalmente.";
-button.disabled=true;button.textContent="Indisponível";return;
-}
 if(isIOSDevice()&&!isInstalledWebApp()){
-status.textContent="No iPhone, abra pelo ícone Clareza na Tela de Início para ativar os avisos push.";
-button.disabled=false;button.textContent="Abrir instruções";return;
+status.textContent="No iPhone, os avisos funcionam quando você abre o Clareza como aplicativo. No Safari, toque em Compartilhar → Adicionar à Tela de Início; depois abra o novo ícone e ative os avisos.";
+button.disabled=false;button.textContent="Como ativar no iPhone";return;
+}
+if(!("Notification"in window)||!("serviceWorker"in navigator)||!("PushManager"in window)){
+status.textContent=isIOSDevice()
+?"Os avisos não estão disponíveis neste modo. Abra o Clareza pelo ícone da Tela de Início e confira se o iOS está atualizado."
+:"Este navegador não oferece notificações push. Você ainda pode ver suas tarefas normalmente.";
+button.disabled=true;button.textContent="Indisponível";return;
 }
 if(Notification.permission==="denied"){
 status.textContent="As notificações estão bloqueadas nas configurações do aparelho. Permita os avisos para o Clareza nas Configurações do iPhone.";
@@ -622,7 +624,7 @@ finally{button.disabled=false;button.textContent="Testar aviso";}
 $("enablePush").addEventListener("click",async()=>{
 const button=$("enablePush"),status=$("pushStatus");
 if(isIOSDevice()&&!isInstalledWebApp()){
-status.textContent="Abra o Clareza pelo ícone da Tela de Início e toque em Ativar avisos dentro do aplicativo.";
+status.textContent="No Safari, toque em Compartilhar → Adicionar à Tela de Início. Abra o Clareza pelo novo ícone, entre na sua conta e toque em Ativar avisos.";
 toast("Abra o Clareza pelo ícone da Tela de Início");return;
 }
 if(!("Notification"in window)||!("serviceWorker"in navigator)||!("PushManager"in window)){
@@ -675,7 +677,7 @@ switch(view){case"pendentes":return!t.completed;case"hoje":return dueToday(t);ca
 list.sort((a,b)=>{if(a.completed!==b.completed)return a.completed?1:-1;const ad=a.due_date||"9999-99-99",bd=b.due_date||"9999-99-99";if(ad!==bd)return ad<bd?-1:1;const r={urgente:0,alta:1,media:2,baixa:3};if(r[a.priority]!==r[b.priority])return r[a.priority]-r[b.priority];return String(b.created_at).localeCompare(String(a.created_at))});
 const titles={pendentes:"Suas tarefas",hoje:"Para hoje",atrasadas:"Precisam de atenção",proximas:"Próximas tarefas",concluidas:"Tarefas concluídas",todas:"Todas as tarefas"};
 $("listTitle").textContent=titles[view];$("taskCount").textContent=list.length+" "+(list.length===1?"item":"itens");
-document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.view===view));
+document.querySelectorAll(".tab").forEach(t=>{const selected=t.dataset.view===view;t.classList.toggle("active",selected);t.setAttribute("aria-pressed",String(selected))});
 $("taskList").innerHTML=list.map(t=>{
 const isOver=overdue(t),isToday=dueToday(t);
 const priorityClass=t.priority==="urgente"?"urgent":t.priority==="alta"?"high":t.priority==="baixa"?"low":"";
@@ -740,7 +742,7 @@ $("clearFilters").addEventListener("click",()=>{
 });
 function setViewAndScroll(nextView){
  view=nextView;
- document.querySelectorAll(".tab").forEach(el=>el.classList.toggle("active",el.dataset.view===view));
+ document.querySelectorAll(".tab").forEach(el=>{const selected=el.dataset.view===view;el.classList.toggle("active",selected);el.setAttribute("aria-pressed",String(selected))});
  render();
  $("taskList").scrollIntoView({behavior:"smooth",block:"start"});
 }

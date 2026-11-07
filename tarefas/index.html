@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#183f35">
-<meta name="clareza-build" content="2026-11-07.29">
+<meta name="clareza-build" content="2026-11-07.30">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Clareza">
@@ -123,11 +123,17 @@
         <label class="reminder-choice"><input id="settingsReminderAtTime" type="checkbox" checked><span>Na hora do prazo</span></label>
       </div></fieldset>
       <div class="settings-subhead"><h3>Repetir avisos de atraso</h3><p>Horários compartilhados pela agenda toda.</p></div>
-      <div class="formgrid">
-        <div class="field"><label class="toggle-line" for="settingsOverdueMorning"><input id="settingsOverdueMorning" type="checkbox" checked><span>Ativar aviso da manhã</span></label><label for="settingsMorningTime">Horário da manhã</label><input id="settingsMorningTime" type="time" value="09:00"></div>
-        <div class="field"><label class="toggle-line" for="settingsOverdueAfternoon"><input id="settingsOverdueAfternoon" type="checkbox" checked><span>Ativar aviso da tarde</span></label><label for="settingsAfternoonTime">Horário da tarde</label><input id="settingsAfternoonTime" type="time" value="15:00"></div>
+      <div class="formgrid settings-delay-grid">
+        <div class="settings-delay-control">
+          <label class="reminder-choice settings-inline-checkbox" for="settingsOverdueMorning"><input id="settingsOverdueMorning" type="checkbox" checked><span>Ativar aviso da manhã</span></label>
+          <div class="settings-delay-time"><label for="settingsMorningTime">Horário da manhã</label><input id="settingsMorningTime" type="time" value="09:00"></div>
+        </div>
+        <div class="settings-delay-control">
+          <label class="reminder-choice settings-inline-checkbox" for="settingsOverdueAfternoon"><input id="settingsOverdueAfternoon" type="checkbox" checked><span>Ativar aviso da tarde</span></label>
+          <div class="settings-delay-time"><label for="settingsAfternoonTime">Horário da tarde</label><input id="settingsAfternoonTime" type="time" value="15:00"></div>
+        </div>
       </div>
-      <div class="field"><label class="toggle-line" for="settingsConfirmComplete"><input id="settingsConfirmComplete" type="checkbox" checked><span>Confirmar antes de concluir uma tarefa</span></label></div>
+      <div class="settings-confirm-row"><label class="reminder-choice settings-inline-checkbox" for="settingsConfirmComplete"><input id="settingsConfirmComplete" type="checkbox" checked><span>Confirmar antes de concluir uma tarefa</span></label></div>
       <div class="settings-actions"><button id="saveReminderSettings" class="btn" type="button">Salvar lembretes</button></div>
       <p id="reminderSettingsMessage" class="msg" hidden></p>
     </section>
@@ -153,7 +159,7 @@
       </form>
       <p id="passwordSettingsMessage" class="msg" hidden></p>
     </section>
-    <section class="settings-card settings-about"><h2>Sobre o Clareza</h2><p>Seus dados são salvos na agenda compartilhada e as configurações são aplicadas sem alteração de código.</p><p id="settingsVersionText">Versão do aplicativo: 2026-11-07.29</p></section>
+    <section class="settings-card settings-about"><h2>Sobre o Clareza</h2><p>Seus dados são salvos na agenda compartilhada e as configurações são aplicadas sem alteração de código.</p><p id="settingsVersionText">Versão do aplicativo: 2026-11-07.30</p></section>
   </main>
 
 </div>

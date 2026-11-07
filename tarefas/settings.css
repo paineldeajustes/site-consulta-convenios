@@ -769,3 +769,62 @@ body[data-theme="dark"] .attachment-external-link{color:#a7d9b9}
  #app .settings-screen .settings-delay-time{margin-top:9px}
  #app .settings-screen .settings-confirm-row{padding:12px}
 }
+
+
+/* Visualização de tarefas: corrigir regra legada width:100% que ocultava
+   as opções seguintes em carrossel horizontal no iPhone. */
+#app #filterPanel nav.quick-views{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  display:flex;
+  flex-wrap:wrap;
+  overflow:visible;
+  gap:6px;
+  margin:0 0 12px;
+}
+#app #filterPanel nav.quick-views .tab{
+  flex:0 0 auto;
+  width:auto;
+  min-width:0;
+  max-width:100%;
+  padding:9px 12px;
+  white-space:normal;
+}
+#app #filterPanel nav.quick-views .tab[aria-pressed="true"]{
+  background:var(--green);
+  color:#fff;
+  border-color:var(--green);
+}
+@media(max-width:620px){
+  #app #filterPanel nav.quick-views{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:6px;
+    overflow:visible!important;
+    padding:0 0 5px;
+  }
+  #app #filterPanel nav.quick-views .tab{
+    box-sizing:border-box;
+    display:flex;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    min-height:40px;
+    padding:7px 5px;
+    gap:4px;
+    font-size:11px;
+    line-height:1.2;
+    white-space:normal;
+    overflow-wrap:normal;
+  }
+  #app #filterPanel nav.quick-views .tab span{
+    flex:0 0 auto;
+    font-size:12px;
+  }
+}
+@media(max-width:340px){
+  #app #filterPanel nav.quick-views{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}

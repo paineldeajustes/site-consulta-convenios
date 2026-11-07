@@ -84,3 +84,39 @@ body[data-theme="dark"] #taskModal .ideas-message{background:#294631;color:#c8e8
  #taskModal .modalactions .btn{flex:1 1 40%;min-width:0}
  #taskModal .modalactions .deletebtn{flex:1 1 100%}
 }
+
+/* Corrige seletores de participantes desproporcionais no Safari/iPhone. */
+#taskModal #taskVisibleUsersList{
+ display:flex!important;flex-direction:column;gap:0;
+ width:100%;max-width:100%;min-width:0;box-sizing:border-box;
+ padding:4px 12px;overflow:hidden;
+}
+#taskModal #taskVisibleUsersList[hidden]{display:none!important}
+#taskModal #taskVisibleUsersList .task-visible-user{
+ display:flex!important;flex-direction:row!important;align-items:center!important;
+ justify-content:flex-start!important;gap:11px!important;
+ width:100%!important;max-width:100%;min-width:0;
+ margin:0!important;padding:11px 2px!important;
+ box-sizing:border-box;line-height:1.4!important;
+ font-size:13px!important;font-weight:500!important;
+ border-bottom:1px solid var(--line);
+ text-align:left!important;white-space:normal;overflow-wrap:anywhere;
+}
+#taskModal #taskVisibleUsersList .task-visible-user:last-child{border-bottom:0}
+#taskModal #taskVisibleUsersList .task-visible-user input[type="checkbox"]{
+ appearance:auto!important;-webkit-appearance:checkbox!important;
+ display:inline-block!important;position:static!important;
+ width:19px!important;height:19px!important;min-width:19px!important;
+ min-height:19px!important;max-width:19px!important;max-height:19px!important;
+ flex:0 0 19px!important;margin:0!important;padding:0!important;
+ transform:none!important;box-shadow:none!important;
+ accent-color:#205a45;vertical-align:middle;
+}
+#taskModal #taskVisibleUsersList .task-visible-user span{
+ flex:1 1 auto;min-width:0;max-width:100%;
+ font-size:13px;line-height:1.4;overflow-wrap:anywhere;
+}
+@media(max-width:649px){
+ #taskModal #taskVisibleUsersList{padding:3px 10px}
+ #taskModal #taskVisibleUsersList .task-visible-user{padding:12px 0!important;gap:10px!important}
+}

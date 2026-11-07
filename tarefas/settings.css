@@ -598,3 +598,48 @@ body[data-theme="dark"] .attachment-external-link{color:#a7d9b9}
  .environment-group-tools button{flex:1}
  .environment-group-members{max-height:260px;overflow:auto}
 }
+
+/* iOS: controles de notificações com dimensões fixas e texto ao lado. */
+#app .settings-screen .settings-card .field > label.toggle-line{
+ display:flex!important;flex-direction:row!important;
+ align-items:center!important;justify-content:flex-start!important;
+ gap:10px!important;min-height:34px;
+ margin:0 0 10px!important;padding:0!important;
+ width:100%;max-width:100%;box-sizing:border-box;
+ text-align:left!important;line-height:1.4!important;
+}
+#app .settings-screen .settings-card .field > label.toggle-line input[type="checkbox"],
+#app .settings-screen .settings-card .reminder-choice input[type="checkbox"]{
+ -webkit-appearance:checkbox!important;appearance:auto!important;
+ display:inline-block!important;position:static!important;
+ width:19px!important;height:19px!important;
+ min-width:19px!important;min-height:19px!important;
+ max-width:19px!important;max-height:19px!important;
+ flex:0 0 19px!important;align-self:center!important;
+ padding:0!important;margin:0!important;
+ border-radius:4px;transform:none!important;
+ box-shadow:none!important;accent-color:#205a45;
+}
+#app .settings-screen .settings-card .field > label.toggle-line span,
+#app .settings-screen .settings-card .reminder-choice span{
+ display:block;flex:1 1 auto;min-width:0;
+ font-size:13px;line-height:1.4;overflow-wrap:anywhere;
+}
+#app .settings-screen .settings-card .field > label.toggle-line + label{
+ display:block;margin-top:8px;
+}
+#app .settings-screen .settings-card .reminder-choice{
+ display:flex!important;align-items:center!important;
+ gap:9px!important;min-width:0;max-width:100%;
+}
+@media(max-width:520px){
+ #app .settings-screen .settings-card .formgrid{
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+ #app .settings-screen .settings-card .field{
+  min-width:0;
+ }
+ #app .settings-screen .settings-card .field > label.toggle-line{
+  margin-bottom:8px!important;
+ }
+}

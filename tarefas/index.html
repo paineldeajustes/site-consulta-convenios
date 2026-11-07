@@ -4,13 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#183f35">
-<meta name="clareza-build" content="2026-11-02.25">
+<meta name="clareza-build" content="2026-11-07.26">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Clareza">
 <meta name="description" content="Organize seu dia com clareza. Gerenciador pessoal de tarefas.">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="stylesheet" href="./settings.css">
+<link rel="stylesheet" href="./ideas.css">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon.svg">
 <title>Clareza — Tarefas</title>
@@ -151,7 +152,7 @@
       </form>
       <p id="passwordSettingsMessage" class="msg" hidden></p>
     </section>
-    <section class="settings-card settings-about"><h2>Sobre o Clareza</h2><p>Seus dados são salvos na agenda compartilhada e as configurações são aplicadas sem alteração de código.</p><p id="settingsVersionText">Versão do aplicativo: 2026-11-02.25</p></section>
+    <section class="settings-card settings-about"><h2>Sobre o Clareza</h2><p>Seus dados são salvos na agenda compartilhada e as configurações são aplicadas sem alteração de código.</p><p id="settingsVersionText">Versão do aplicativo: 2026-11-07.26</p></section>
   </main>
 
 </div>
@@ -159,6 +160,8 @@
   <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modalhead"><h2 id="modalTitle">Nova tarefa</h2><button id="closeModal" class="close" type="button" aria-label="Fechar">×</button></div>
     <form id="taskForm">
+      <div class="task-editor-grid">
+        <div class="task-editor-primary">
       <div class="field"><label for="taskTitle">O que precisa ser feito? *</label><input id="taskTitle" maxlength="200" required placeholder="Ex.: Finalizar relatório mensal"></div>
       <div class="field"><label for="taskNotes">Detalhes ou observações</label><textarea id="taskNotes" maxlength="4000" placeholder="Anote informações importantes..."></textarea></div>
       <div class="formgrid">
@@ -179,6 +182,46 @@
         <label class="reminder-choice"><input id="overdueAfternoon" type="checkbox" checked><span id="taskOverdueAfternoonText">Se atrasar: 15h</span></label>
       </div><p class="reminderhint">Os avisos são enviados aos dispositivos que ativarem as notificações da agenda. Sem horário específico, consideramos o prazo às 23h59. Os alertas de atraso se repetem às 9h e às 15h até concluir a tarefa.</p></fieldset>
       <section id="workflowPanel" class="workflow-panel" hidden><div class="workflow-head"><strong id="workflowTitle">Fluxo da tarefa</strong><span id="workflowStatusBadge" class="workflow-badge"></span></div><p id="workflowDescription" class="hint"></p><div id="assigneeResponseFields" hidden><label for="assigneeResponse">Sua resposta</label><select id="assigneeResponse"><option value="accept">Consigo cumprir o prazo original</option><option value="propose_date">Preciso de uma nova data</option><option value="impossible_deadline">O prazo não é possível de atender</option><option value="impossible_task">A própria tarefa não pode ser executada</option></select><div id="assigneeProposalFields" hidden><label for="assigneePlannedDate">Data em que consigo fazer</label><input id="assigneePlannedDate" type="date"><label for="assigneePlannedTime">Horário (opcional)</label><input id="assigneePlannedTime" type="time"></div><label for="assigneeReason">Justificativa / observações</label><textarea id="assigneeReason" maxlength="2000" placeholder="Explique a disponibilidade, impedimento ou necessidade do novo prazo..."></textarea><button id="sendAssigneeResponse" class="btn" type="button">Enviar resposta</button></div><div id="creatorDecisionFields" hidden><p id="proposalSummary" class="workflow-summary"></p><label for="creatorDecision">Decisão final</label><select id="creatorDecision"><option value="accept_date">Aceitar a nova data proposta</option><option value="insist_deadline">Manter o prazo original</option></select><div id="creatorReasonWrap" hidden><label for="creatorReason">Justificativa para manter o prazo</label><textarea id="creatorReason" maxlength="2000" placeholder="Explique por que a data original é necessária..."></textarea></div><button id="sendCreatorDecision" class="btn" type="button">Registrar decisão final</button></div><div id="workflowHistory" class="workflow-history"></div><div id="changeRequestFields" class="change-request-fields" hidden><label for="changeRequestReason">Explique a alteração solicitada</label><textarea id="changeRequestReason" maxlength="2000" placeholder="Explique o que precisa mudar e por quê (mínimo de 8 caracteres)…"></textarea><p class="hint">Sua proposta será enviada ao criador. A tarefa só muda depois da aprovação.</p></div><div id="taskChangeRequests" class="task-change-requests" hidden></div></section>
+
+        </div>
+        <aside class="task-editor-aside">
+          <section id="taskIdeasPanel" class="ideas-panel" aria-labelledby="ideasTitle">
+            <header class="ideas-panel-header">
+              <span class="ideas-panel-icon" aria-hidden="true">✦</span>
+              <div><h3 id="ideasTitle">Diário de Ideias</h3><p>Seu raciocínio, preservado em cada etapa</p></div>
+              <span id="ideasCount" class="ideas-total">0 registros</span>
+            </header>
+            <div class="ideas-section-title">Onde parei · raciocínio atual</div>
+            <div id="ideasCurrent" class="ideas-focus is-empty" aria-live="polite">
+              <p class="ideas-history-empty">Nenhuma ideia registrada ainda.</p>
+            </div>
+            <div id="ideasUnsaved" class="ideas-not-saved" hidden>
+              Salve esta tarefa primeiro para começar a registrar ideias com data, hora e histórico.
+            </div>
+            <div id="ideasComposer" class="ideas-composer">
+              <label for="ideasDraft">Nova ideia ou continuação do raciocínio</label>
+              <textarea id="ideasDraft" maxlength="6000" rows="4" placeholder="O que pensei agora? Qual alternativa estou considerando? Por onde devo continuar?"></textarea>
+              <div class="ideas-composer-controls">
+                <select id="ideasKind" aria-label="Tipo da anotação">
+                  <option value="idea">Ideia</option>
+                  <option value="alternative">Alternativa</option>
+                  <option value="decision">Decisão</option>
+                  <option value="next_step">Próximo passo</option>
+                </select>
+                <button id="ideasAdd" class="btn" type="button">+ Registrar</button>
+              </div>
+              <p class="ideas-hint">As anotações são salvas separadamente da tarefa e só você pode vê-las. Atalho: Ctrl + Enter.</p>
+            </div>
+            <div class="ideas-history">
+              <button id="ideasHistoryToggle" type="button" class="ideas-history-toggle" aria-expanded="true" aria-controls="ideasHistoryList">
+                <span id="ideasHistoryCount">Histórico (0)</span><span id="ideasHistoryChevron" aria-hidden="true">⌃</span>
+              </button>
+              <div id="ideasHistoryList" class="ideas-history-list"></div>
+            </div>
+            <div id="ideasMessage" class="ideas-message" role="status" aria-live="polite" hidden></div>
+          </section>
+        </aside>
+      </div>
       <p id="taskError" class="msg error" hidden></p>
       <div class="modalactions"><button id="saveTask" class="btn" type="submit">Salvar tarefa</button><button id="cancelModal" class="btn ghost" type="button">Cancelar</button><button id="deleteTask" class="btn danger deletebtn" type="button" hidden>Excluir</button></div>
     </form>
@@ -733,9 +776,9 @@ editing=t||null;$("modalTitle").textContent=t?"Editar tarefa":"Nova tarefa";$("t
 const offsets=Array.isArray(t?.notification_offsets)?t.notification_offsets:(householdSettings?.default_notification_offsets||[1440,120,60,0]);
 $("reminderDay").checked=offsets.includes(1440);$("reminder2h").checked=offsets.includes(120);$("reminder1h").checked=offsets.includes(60);$("reminderAtTime").checked=offsets.includes(0);
 $("overdueMorning").checked=t?t.overdue_morning!==false:(householdSettings?.overdue_morning_enabled!==false);$("overdueAfternoon").checked=t?t.overdue_afternoon!==false:(householdSettings?.overdue_afternoon_enabled!==false);
-$("deleteTask").hidden=!t;$("taskError").hidden=true;$("saveTask").textContent=t?"Salvar alterações":"Salvar tarefa";$("taskModal").hidden=false;document.body.style.overflow="hidden";window.ClarezaWorkflow?.onOpenTask?.(t);setTimeout(()=>$("taskTitle").focus({preventScroll:true}),80)
+$("deleteTask").hidden=!t;$("taskError").hidden=true;$("saveTask").textContent=t?"Salvar alterações":"Salvar tarefa";$("taskModal").hidden=false;document.body.style.overflow="hidden";window.ClarezaWorkflow?.onOpenTask?.(t);window.ClarezaIdeas?.onOpenTask?.(t);setTimeout(()=>$("taskTitle").focus({preventScroll:true}),80)
 }
-function closeModal(){$("taskModal").hidden=true;document.body.style.overflow="";editing=null}
+function closeModal(){window.ClarezaIdeas?.onCloseTask?.();$("taskModal").hidden=true;document.body.style.overflow="";editing=null}
 ["newTaskTop","emptyAdd"].forEach(id=>$(id).addEventListener("click",()=>openTask(null)));
 ["closeModal","cancelModal"].forEach(id=>$(id).addEventListener("click",closeModal));
 $("taskModal").addEventListener("click",e=>{if(e.target===$("taskModal"))closeModal()});
@@ -858,5 +901,6 @@ if("serviceWorker"in navigator&&location.protocol==="https:"){navigator.serviceW
 </script>
 <script src="./settings.js"></script>
 <script src="./workflow.js"></script>
+<script src="./ideas.js"></script>
 </body>
 </html>

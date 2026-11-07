@@ -4,13 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#183f35">
-<meta name="clareza-build" content="2026-11-07.26">
+<meta name="clareza-build" content="2026-11-07.27">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Clareza">
 <meta name="description" content="Organize seu dia com clareza. Gerenciador pessoal de tarefas.">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="stylesheet" href="./settings.css">
+<link rel="stylesheet" href="./task-list.css">
 <link rel="stylesheet" href="./ideas.css">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon.svg">
@@ -152,7 +153,7 @@
       </form>
       <p id="passwordSettingsMessage" class="msg" hidden></p>
     </section>
-    <section class="settings-card settings-about"><h2>Sobre o Clareza</h2><p>Seus dados são salvos na agenda compartilhada e as configurações são aplicadas sem alteração de código.</p><p id="settingsVersionText">Versão do aplicativo: 2026-11-07.26</p></section>
+    <section class="settings-card settings-about"><h2>Sobre o Clareza</h2><p>Seus dados são salvos na agenda compartilhada e as configurações são aplicadas sem alteração de código.</p><p id="settingsVersionText">Versão do aplicativo: 2026-11-07.27</p></section>
   </main>
 
 </div>
@@ -670,7 +671,7 @@ const titles={pendentes:"Suas tarefas",hoje:"Para hoje",atrasadas:"Precisam de a
 $("listTitle").textContent=titles[view];$("taskCount").textContent=list.length+" "+(list.length===1?"item":"itens");
 document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.view===view));
 $("taskList").innerHTML=list.map(t=>{
-const isOver=overdue(t),due=t.due_date?'<span class="chip '+(isOver?"overdue":dueToday(t)?"due":"")+'">'+(isOver?"Atrasada · ": "")+esc(formatDate(t.due_date))+(t.due_time?" · "+esc(t.due_time.slice(0,5)):"")+'</span>':"";
+const isOver=overdue(t),isToday=dueToday(t);
 const priorityClass=t.priority==="urgente"?"urgent":t.priority==="alta"?"high":t.priority==="baixa"?"low":"";
 const priorityLabel={urgente:"Urgente",alta:"Alta",media:"Média",baixa:"Baixa"}[t.priority]||"Média";
 const ctx=["trabalho","casa","pessoal","outros"].includes(t.context)?t.context:"pessoal";
@@ -694,27 +695,22 @@ function adaptTaskColor(hex,dark){
  if(h<0)h+=360;s=Math.max(.22,Math.min(.7,s));l=.22;
  const chroma=(1-Math.abs(2*l-1))*s,x=chroma*(1-Math.abs((h/60)%2-1)),m=l-chroma/2;
  let rgb=[0,0,0];
- if(h<60)rgb=[chroma,x,0];else if(h<120)rgb=[x,chroma,0];else if(h<180)rgb=[0,chroma,x];else if(h<240)rgb=[0,x,chroma];else if(h<300)rgb=[x,0,chroma];else rgb=[chroma,0,x];
+ if(h<60)rgb=[chroma,x,0];else if(h<120)rgb=[x,chroma,0];else if(h<180)rgb=[0,chroma,x];else if(h<240)rgb=[0,chroma,x];else if(h<300)rgb=[x,0,chroma];else rgb=[chroma,0,x];
  return "#"+rgb.map(v=>Math.round((v+m)*255).toString(16).padStart(2,"0")).join("");
 }
 const rawContextColor=/^#[0-9a-fA-F]{6}$/.test(contextSettings.color||"")?contextSettings.color:builtins[ctx].color;
 const ctxColor=adaptTaskColor(rawContextColor,isDarkTheme);
-const cardBorderColor=ctxColor;
 const cardTextColor=isDarkTheme?"#eaf0eb":"#26362c";
-const categoryOption=categoryRecords.find(cat=>cat.name===t.category);
-const rawCategoryColor=/^#[0-9a-fA-F]{6}$/.test(categoryOption?.color||"")?categoryOption.color:"#edf1f2";
-const categoryColor=isDarkTheme?"#303b35":rawCategoryColor;
-const categoryTextColor=isDarkTheme?"#eaf0eb":"#26362c";
-const categoryChip=t.category?'<span class="chip" style="background-color:'+categoryColor+';color:'+categoryTextColor+'">'+esc(t.category)+'</span>':"";
-const author=t.created_by_name?'<div class="byline">Criada por '+esc(t.created_by_name)+'</div>':"";
 const canComplete=t.created_by===user?.id||t.assignee_id===user?.id;
-const members=householdMembers||[];const assignee=members.find(m=>m.user_id===t.assignee_id);const assigneeMeta=assignee?'<div class="task-workflow-meta">Responsável: '+esc(assignee.display_name||assignee.email)+'</div>':"";
-const flowLabels={assigned:"Aguardando resposta",accepted:"Prazo aceito",proposed_date:"Aguardando sua decisão",accepted_late:"Nova data aceita · Final",reaffirmed:"Prazo original mantido · Final",impossible_deadline:"Prazo impossível",impossible_task:"Tarefa inexequível"};
-const flowStatus=t.workflow_status||"accepted";const flowTone=["impossible_deadline","impossible_task"].includes(flowStatus)?"impossible":["assigned","proposed_date"].includes(flowStatus)?"pending":"";
-const workflowMeta=flowStatus!=="accepted"?'<div class="task-workflow-meta"><span class="workflow-status-chip '+flowTone+'">'+esc(flowLabels[flowStatus]||flowStatus)+'</span>'+(["accepted_late","reaffirmed"].includes(flowStatus)&&t.original_due_date?'<p>Prazo original: '+esc(formatDate(t.original_due_date))+'</p>':"")+(t.proposal_reason&&flowStatus==="proposed_date"?'<p>Motivo: '+esc(t.proposal_reason)+'</p>':"")+(t.final_reason?'<p>'+esc(t.final_reason)+'</p>':"")+'</div>':"";
-const filesCount=(taskAttachments||[]).filter(a=>a.task_id===t.id).length;
-const filesBadge=filesCount?'<span class="chip">📎 '+filesCount+' anexo(s)</span>':"";
-return '<article class="task context-'+ctx+' '+(t.completed?"completed":"")+'" style="background-color:'+ctxColor+';border-color:'+cardBorderColor+';color:'+cardTextColor+'" data-id="'+esc(t.id)+'"><button class="check '+(t.completed?"done":"")+'" '+(canComplete?"":'disabled title="Somente o criador ou responsável pode concluir"')+' data-action="toggle" aria-label="'+(t.completed?"Reabrir tarefa":"Concluir tarefa")+'">'+(t.completed?"✓":"")+'</button><div class="taskbody" data-action="edit"><div class="tasktitle">'+esc(t.title)+'</div>'+(t.notes?'<div class="notes">'+esc(t.notes)+'</div>':"")+'<div class="chips"><span class="chip context-'+ctx+'" style="background-color:'+ctxColor+';color:'+cardTextColor+'">'+esc(ctxLabel)+'</span><span class="chip '+priorityClass+'">'+esc(priorityLabel)+'</span>'+due+categoryChip+filesBadge+'</div>'+author+assigneeMeta+workflowMeta+'</div><button class="more" data-action="edit" aria-label="Editar tarefa">···</button></article>'
+const member=(householdMembers||[]).find(m=>m.user_id===t.assignee_id);
+const assigneeName=member?.display_name||member?.name||member?.email||"";
+const assigneeBadge=t.assignee_id&&t.assignee_id!==user?.id&&assigneeName?'<span class="task-mini-assignee" title="Responsável: '+esc(assigneeName)+'">👤 '+esc(assigneeName)+'</span>':"";
+const dueLabel=t.completed?"Concluída":isOver?"Atrasada · "+formatDate(t.due_date):isToday?"Hoje"+(t.due_time?" · "+esc(t.due_time.slice(0,5)):""):t.due_date?formatDate(t.due_date)+(t.due_time?" · "+esc(t.due_time.slice(0,5)):""):"Sem prazo";
+const dueClass=t.completed?"complete":isOver?"overdue":isToday?"due":"";
+const status={assigned:"Aguardando aceite",proposed_date:"Aguardando decisão",impossible_deadline:"Prazo inviável",impossible_task:"Tarefa inviável"}[t.workflow_status]||"";
+const statusBadge=!t.completed&&status?'<span class="task-mini-status">'+esc(status)+'</span>':"";
+const meta='<div class="task-mini-meta"><span class="task-mini-environment">'+esc(ctxLabel)+'</span><span class="task-mini-date '+dueClass+'">'+esc(dueLabel)+'</span><span class="task-mini-priority '+priorityClass+'">'+esc(priorityLabel)+'</span>'+assigneeBadge+statusBadge+'</div>';
+return '<article class="task task-compact-card context-'+ctx+' '+(t.completed?"completed":"")+'" style="--task-tint:'+ctxColor+';background-color:'+ctxColor+';border-color:'+ctxColor+';color:'+cardTextColor+'" data-id="'+esc(t.id)+'"><button class="check '+(t.completed?"done":"")+'" '+(canComplete?"":'disabled title="Somente o criador ou responsável pode concluir"')+' data-action="toggle" aria-label="'+(t.completed?"Reabrir tarefa":"Concluir tarefa")+'">'+(t.completed?"✓":"")+'</button><div class="taskbody" data-action="edit" role="button" tabindex="0" aria-label="Abrir detalhes: '+esc(t.title)+'"><div class="tasktitle" title="'+esc(t.title)+'">'+esc(t.title)+'</div>'+meta+'</div><button class="more" data-action="edit" aria-label="Abrir detalhes da tarefa '+esc(t.title)+'" title="Abrir detalhes">›</button></article>';
 }).join("");
 const empty=list.length===0;$("emptyState").hidden=!empty;$("taskList").hidden=empty;
 if(empty){$("emptyTitle").textContent=tasks.length===0?"Tudo começa com uma tarefa":"Nada por aqui";$("emptyText").textContent=tasks.length===0?"Adicione sua primeira tarefa para organizar o que importa.":"Experimente outro filtro ou adicione uma nova tarefa."}
@@ -745,6 +741,11 @@ function setViewAndScroll(nextView){
 $("pendingStat").addEventListener("click",()=>setViewAndScroll("pendentes"));
 $("overdueStat").addEventListener("click",()=>setViewAndScroll("atrasadas"));
 $("doneStat").addEventListener("click",()=>setViewAndScroll("concluidas"));
+$("taskList").addEventListener("keydown",e=>{
+ if((e.key==="Enter"||e.key===" ")&&e.target.matches('.taskbody[data-action="edit"]')){
+  e.preventDefault();e.target.click();
+ }
+});
 $("taskList").addEventListener("click",async e=>{
 const btn=e.target.closest("[data-action]");if(!btn)return;const card=btn.closest(".task");if(!card)return;const t=tasks.find(x=>x.id===card.dataset.id);if(!t)return;
 if(btn.dataset.action==="edit"){openTask(t);return}

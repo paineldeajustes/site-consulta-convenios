@@ -204,8 +204,12 @@ const SUPABASE_URL="https://qkjudfvlaatdcaosadun.supabase.co";
 const SUPABASE_KEY="sb_publishable_B3A7uwmQWUs8oOivjgJ6Qw_6rqx4U0W";
 const VAPID_PUBLIC_KEY="BL9Qy1VshYvVMWjTTNM-GHfGnSJAMb7wMwf7v4UjP9D-NUej0S8i9YSP986MtjI6DzOrga9vuOCh8RowpbIZFX8";
 const AUTH_REDIRECT_URL=new URL("./",window.location.href).href;
+const RECOVERY_CALLBACK_PARAMS=new URLSearchParams(window.location.hash.replace(/^#/,""));
+const RECOVERY_LINK_ON_LOAD=RECOVERY_CALLBACK_PARAMS.get("type")==="recovery";
+const RECOVERY_TOKEN_ON_LOAD=RECOVERY_LINK_ON_LOAD?RECOVERY_CALLBACK_PARAMS.get("access_token"):null;
 const $=id=>document.getElementById(id);
 const sb=window.supabase&&window.supabase.createClient?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
+let recoveryActive=RECOVERY_LINK_ON_LOAD,recoveryVerified=false;
 let user=null,tasks=[],view="pendentes",editing=null,busy=false,toastTimer=null,currentHousehold=null,pendingCompletion=null,accessPending=false,accessRequestStatus="pending",householdSettings=null,userSettings=null,categoryRecords=[],householdMembers=[],taskAttachments=[];
 const APP_BUILD=document.querySelector('meta[name="clareza-build"]')?.content||"unknown";
 let lastDataRefreshAt=0,lastAppCheckAt=0,appReloadInProgress=false,appCheckInProgress=false;
@@ -370,7 +374,7 @@ let result;
 if(signup)result=await sb.auth.signUp({email,password,options:{emailRedirectTo:AUTH_REDIRECT_URL,data:{full_name:$("displayName").value.trim()}}});
 else result=await sb.auth.signInWithPassword({email,password});
 if(result.error)throw result.error;
-if(signup&&!result.data.session){setAuthMode(false);$("email").value=email;authMessage("Conta solicitada. Confira seu e-mail e confirme o cadastro antes de entrar.");return}
+if(signup&&!result.data.session){setAuthMode(false);$("email").value=email;authMessage("Se este e-mail ainda não tiver cadastro, verifique a caixa de entrada para confirmar a conta. Se já possui cadastro, entre normalmente ou use Esqueci a senha.");return}
 user=result.data.user||result.data.session?.user;
 if(user){await loadTasks();showApp();toast(signup?"Conta criada com sucesso":"Bem-vindo de volta")}
 }catch(err){authMessage((err&&err.message)||"Não foi possível autenticar. Confira os dados e tente novamente.","error")}
@@ -814,24 +818,36 @@ if(!session?.user)return;user=session.user;
 try{await loadTasks();showApp()}catch(err){showAuth();authMessage("Não foi possível abrir o Clareza. Confira a conexão e tente entrar novamente. "+(err.message||""),"error")}
 }
 if(new URL(location.href).searchParams.has("clareza_reload")){const cleanUrl=new URL(location.href);cleanUrl.searchParams.delete("clareza_reload");history.replaceState(null,"",cleanUrl.pathname+cleanUrl.search+cleanUrl.hash)}
+function openRecoveryForm(){
+recoveryActive=true;recoveryVerified=true;user=null;
+$("authTitle").textContent="Redefinir senha";
+$("authDesc").textContent="Defina uma nova senha para sua conta do Clareza.";
+$("authForm").hidden=true;$("authLinks").hidden=true;$("recoveryForm").hidden=false;
+showAuth();
+authMessage("Link de recuperação validado. Digite a nova senha e confirme.");
+}
 async function init(){
 if(!sb){authMessage("Não foi possível carregar o serviço. Confira sua internet e atualize.","error");return}
-const {data,error}=await sb.auth.getSession();if(error){authMessage(error.message,"error");return}
-if(data.session)await startSession(data.session);
+// Registra o evento ANTES de consultar a sessão: getSession pode consumir o retorno do e-mail.
 sb.auth.onAuthStateChange((event,session)=>{
-if(event==="PASSWORD_RECOVERY"){
-showAuth();$("authForm").hidden=true;$("authLinks").hidden=true;$("recoveryForm").hidden=false;
-authMessage("Link de recuperação validado. Defina uma nova senha abaixo.");
-}else if(event==="SIGNED_OUT"){user=null;tasks=[];showAuth()}
-else if(session&&!user){setTimeout(()=>startSession(session),0)}
+if(event==="PASSWORD_RECOVERY"){openRecoveryForm()}
+else if(event==="SIGNED_OUT"){recoveryActive=false;recoveryVerified=false;user=null;tasks=[];showAuth()}
+else if(session&&!user&&!recoveryActive){setTimeout(()=>{if(!recoveryActive&&!user)startSession(session)},0)}
 });
+const {data,error}=await sb.auth.getSession();
+if(error){showAuth();authMessage(error.message,"error");return}
+if(recoveryActive&&!recoveryVerified){
+  // O hash já pode ter sido processado pelo SDK; só aceita a sessão do próprio link.
+  if(RECOVERY_TOKEN_ON_LOAD&&data.session?.access_token===RECOVERY_TOKEN_ON_LOAD)openRecoveryForm();
+  else{recoveryActive=false;showAuth();authMessage("Não foi possível validar o link de recuperação. Solicite um novo link em Esqueci a senha.","error")}
+}else if(data.session&&!recoveryActive&&!user){await startSession(data.session)}
 $("recoveryForm").addEventListener("submit",async e=>{
 e.preventDefault();
 const password=$("newPassword").value,confirmPassword=$("newPasswordConfirm").value;
 if(password.length<8){authMessage("Use pelo menos oito caracteres.","error");return}
 if(password!==confirmPassword){authMessage("As senhas não coincidem.","error");return}
 const button=$("updatePassword");button.disabled=true;button.textContent="Salvando…";
-try{const {error}=await sb.auth.updateUser({password});if(error)throw error;await sb.auth.signOut();$("recoveryForm").hidden=true;$("authForm").hidden=false;$("authLinks").hidden=false;$("newPassword").value="";$("newPasswordConfirm").value="";authMessage("Senha atualizada. Entre com a nova senha.");}
+try{const {error}=await sb.auth.updateUser({password});if(error)throw error;await sb.auth.signOut();recoveryActive=false;recoveryVerified=false;$("recoveryForm").hidden=true;$("authForm").hidden=false;$("authLinks").hidden=false;$("newPassword").value="";$("newPasswordConfirm").value="";setAuthMode(false);authMessage("Senha atualizada. Entre com a nova senha.");}
 catch(err){authMessage(err.message||"Não foi possível atualizar a senha. Abra o link de recuperação mais recente.","error")}
 finally{button.disabled=false;button.textContent="Salvar nova senha"}
 });

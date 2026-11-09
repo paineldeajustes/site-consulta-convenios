@@ -1,0 +1,48 @@
+name: Publicar Painel de Ajustes e Clareza na Cloudflare
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - 'tarefas/**'
+      - '.github/scripts/deploy-cloudflare.mjs'
+      - '.github/workflows/deploy-cloudflare.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-painel-clareza
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    name: Publicar ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [painel, clareza]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar credencial de publicação
+        id: credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        shell: bash
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo '::notice title=Cloudflare::Publicação não executada. Cadastre o segredo CLOUDFLARE_API_TOKEN em Settings > Secrets and variables > Actions.'
+            echo 'Publicação ignorada: falta CLOUDFLARE_API_TOKEN.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Publicar ${{ matrix.app }} na Cloudflare
+        if: steps.credentials.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 9b66f19fdeb17a37737c0cf0a740d7e1
+        run: node .github/scripts/deploy-cloudflare.mjs '${{ matrix.app }}'

@@ -35,8 +35,9 @@ jobs:
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             echo 'ready=false' >> "$GITHUB_OUTPUT"
-            echo '::notice title=Cloudflare::Publicação não executada. Cadastre o segredo CLOUDFLARE_API_TOKEN em Settings > Secrets and variables > Actions.'
+            echo '::error title=Cloudflare::Publicação não executada: CLOUDFLARE_API_TOKEN ausente. Configure a integração nativa ou a credencial antes de considerar o deploy ativo.'
             echo 'Publicação ignorada: falta CLOUDFLARE_API_TOKEN.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           else
             echo 'ready=true' >> "$GITHUB_OUTPUT"
           fi

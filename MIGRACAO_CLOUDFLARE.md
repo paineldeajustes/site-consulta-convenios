@@ -38,3 +38,12 @@
 
 ## Atenção ao código privado
 A privacidade do repositório impede acesso público aos arquivos e histórico Git; entretanto, HTML, CSS, JavaScript e chaves **públicas** enviados ao navegador permanecem inspecionáveis. Nunca inserir chaves de serviço ou segredos no frontend.
+
+## Continuidade em 08/11/2026 — publicação automática preparada
+
+- Autorização da Cloudflare no GitHub informada pelo usuário, mas a API ainda retorna erro `8000008` (conta Git desconectada) ao tentar conectar diretamente o repositório `paineldeajustes/site-consulta-convenios`.
+- Alternativa implementada no GitHub Actions: `.github/workflows/deploy-cloudflare.yml`, com script `.github/scripts/deploy-cloudflare.mjs`. A rotina monitora a branch `main` e disponibiliza execução manual.
+- O script publica apenas `index.html` no Worker `painel-de-ajustes` e os dez arquivos de `tarefas/` no Worker `clareza-tarefas`, por Cloudflare API multipart, sem publicar migrações e segredos do repositório.
+- **Pendente indispensável:** cadastrar o segredo de Actions `CLOUDFLARE_API_TOKEN` no GitHub, com permissão Cloudflare Workers Scripts Edit/Write na conta correta. Sem ele, o workflow termina sem publicar e registra aviso; **não declarar CI/CD ativo** antes de execução de teste com sucesso.
+- **Pendente Supabase:** permitir `https://painel-de-ajustes.cicerofabricio.workers.dev/` em Authentication > URL Configuration > Redirect URLs; não retirar o GitHub Pages antigo. Verificar fluxo de recuperação completo, pois apenas o redirecionamento `redirectTo` foi adaptado e a tela de redefinição de senha ainda precisa de teste específico.
+- **Não alterar privacidade do GitHub** até que CI/CD, login e recuperação de senha funcionem, além do Clareza.

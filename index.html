@@ -334,7 +334,7 @@ $('loginForm').addEventListener('submit',async function(e){
 $('resetPassword').addEventListener('click',async function(){
  const email=$('email').value.trim();
  if(!email){errorLogin('Informe primeiro seu e-mail.');return;}
- const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:'https://paineldeajustes.github.io/site-consulta-convenios/'});
+ const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
  if(error)errorLogin(error.message);else errorLogin('Se houver cadastro, enviaremos as instruções para o e-mail informado.');
 });
 $('logout').addEventListener('click',async()=>{

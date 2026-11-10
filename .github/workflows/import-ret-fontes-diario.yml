@@ -61,3 +61,5 @@ jobs:
 
       - name: Concluir
         run: echo 'RET_FONTES.txt e CadConvenios.txt importados; snapshot atualizado sem TXT_EMPENHO/TXT_PAGAMENTO.'
+
+# Reexecução solicitada em 10/11/2026 após atualização do RET_FONTES no Drive.

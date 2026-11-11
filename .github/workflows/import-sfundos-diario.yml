@@ -1,0 +1,39 @@
+name: Importar Suprimento de Fundos diariamente (SISUPRI)
+
+on:
+  push:
+    paths:
+      - '.github/workflows/import-sfundos-diario.yml'
+  schedule:
+    # 09:20 UTC = 06:20 em Brasília, após a rotina de Ajustes das 06h.
+    - cron: '20 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: importar-sfundos
+  cancel-in-progress: false
+
+jobs:
+  importar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Confirmar configuração
+        env:
+          IMPORT_FUNCTION_SECRET: ${{ secrets.IMPORT_FUNCTION_SECRET }}
+        run: test -n "$IMPORT_FUNCTION_SECRET"
+      - name: Reconciliar arquivos e atualizar o módulo privado
+        env:
+          IMPORT_FUNCTION_SECRET: ${{ secrets.IMPORT_FUNCTION_SECRET }}
+        run: |
+          response=$(curl --fail-with-body --silent --show-error --retry 2 --retry-delay 10 --max-time 240 \
+            -X POST \
+            -H "Authorization: Bearer ${IMPORT_FUNCTION_SECRET}" \
+            -H "Content-Type: application/json" \
+            --data '{}' \
+            https://qkjudfvlaatdcaosadun.supabase.co/functions/v1/import-sfundos)
+          echo "$response" | jq '{success,pedidos,empenhos,pagamentos,origens}'
+          echo "$response" | jq -e '.success == true'
